@@ -522,19 +522,6 @@ export async function getTablesInitStatus() {
   return { table0: t0, table1: t1, table2: t2 }
 }
 
-/**
- * Бесплатная выдача мест блогеру/рефоводу (только owner)
- * @param {string} beneficiary - Адрес получателя
- * @param {boolean} t50 - Выдать место $50
- * @param {boolean} t250 - Выдать место $250
- * @param {boolean} t1000 - Выдать место $1000
- */
-export async function giftSlotsFree(beneficiary, t50, t250, t1000) {
-  const matrix = getContract('RealEstateMatrix')
-  const tx = await matrix.giftSlotsFree(beneficiary, t50, t250, t1000)
-  return await tx.wait()
-}
-
 // ═══════════════════════════════════════════════════
 // СВОДНАЯ ЗАГРУЗКА ДАННЫХ
 // ═══════════════════════════════════════════════════
