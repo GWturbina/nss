@@ -113,7 +113,7 @@ export default function AdminPanel() {
                 )}
                 <button onClick={async () => {
                   setLoadingStats(true)
-                  try { const stats = await C.getMatrixHealth(); setContractStats(stats) } catch {}
+                  try { const stats = await C.getContractHealth(); setContractStats(stats) } catch {}
                   setLoadingStats(false)
                 }} disabled={loadingStats}
                   className="mt-2 w-full py-2 rounded-xl text-[10px] font-bold border border-white/10 text-slate-400 hover:text-white">
@@ -132,7 +132,7 @@ export default function AdminPanel() {
                 <div className="flex gap-1">
                   <button onClick={async () => {
                     setTxPending(true)
-                    const r = await C.safeCall(() => C.pauseMatrix())
+                    const r = await C.safeCall(() => C.pauseContract('RealEstateMatrix'))
                     setTxPending(false)
                     if (r.ok) { setIsPaused(true); addNotification(`⏸ ${t('paused')}`) }
                   }} disabled={txPending || isPaused}
@@ -142,7 +142,7 @@ export default function AdminPanel() {
                   </button>
                   <button onClick={async () => {
                     setTxPending(true)
-                    const r = await C.safeCall(() => C.unpauseMatrix())
+                    const r = await C.safeCall(() => C.unpauseContract('RealEstateMatrix'))
                     setTxPending(false)
                     if (r.ok) { setIsPaused(false); addNotification(`▶️ ${t('active')}`) }
                   }} disabled={txPending || !isPaused}
@@ -323,7 +323,7 @@ export default function AdminPanel() {
                 <div className="text-[10px] text-slate-400 mb-3">{t('flushCGTDesc')}</div>
                 <button onClick={async () => {
                   setTxPending(true)
-                  const r = await C.safeCall(() => C.flushCGT())
+                  const r = await C.safeCall(() => C.flushReinvestCGT())
                   setTxPending(false)
                   if (r.ok) addNotification('✅ CGT flushed!')
                   else addNotification(`❌ ${r.error}`)
@@ -347,7 +347,7 @@ export default function AdminPanel() {
                   <button onClick={async () => {
                     if (!authAddress) return
                     setTxPending(true)
-                    const r = await C.safeCall(() => C.authorizeCall(authAddress, true))
+                    const r = await C.safeCall(() => C.setAuthorizedCaller('RealEstateMatrix', authAddress, true))
                     setTxPending(false)
                     if (r.ok) addNotification(`✅ ${t('authorize')}!`)
                     else addNotification(`❌ ${r.error}`)
@@ -358,7 +358,7 @@ export default function AdminPanel() {
                   <button onClick={async () => {
                     if (!authAddress) return
                     setTxPending(true)
-                    const r = await C.safeCall(() => C.authorizeCall(authAddress, false))
+                    const r = await C.safeCall(() => C.setAuthorizedCaller('RealEstateMatrix', authAddress, false))
                     setTxPending(false)
                     if (r.ok) addNotification(`✅ ${t('revoke')}!`)
                     else addNotification(`❌ ${r.error}`)
