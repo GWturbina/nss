@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 const TEMPLATES = {
@@ -17,7 +17,7 @@ const FEATURES = [
   { emoji: '👥', title: '9 уровней партнёрки', desc: 'До 10% ПОЖИЗНЕННО от приглашённых' },
 ]
 
-export default function InvitePage() {
+function InviteContent() {
   const searchParams = useSearchParams()
   const ref = searchParams.get('ref') || '0'
   const t = searchParams.get('t') || 'gems'
@@ -29,7 +29,6 @@ export default function InvitePage() {
   const [copied, setCopied] = useState(false)
   const [selTemplate, setSelTemplate] = useState('gems')
 
-  // Exit-intent: мышь уходит вверх
   useEffect(() => {
     let triggered = false
     const handleMouseLeave = (e) => {
@@ -40,7 +39,6 @@ export default function InvitePage() {
     }
     document.addEventListener('mouseleave', handleMouseLeave)
 
-    // Мобильный: кнопка назад
     const handleBack = () => {
       if (!registered) setShowExitPopup(true)
     }
@@ -61,7 +59,6 @@ export default function InvitePage() {
   }
 
   const myLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/invite?ref=${myRef}&t=${selTemplate}`
-
   const shareText = `💎 NSS — Искатели Камней! Бесплатный старт, реальные камни со скидкой 40%, свой дом под 0%! Присоединяйся: ${myLink}`
 
   const copyLink = () => {
@@ -80,14 +77,10 @@ export default function InvitePage() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #0a0a20 0%, #1a1040 50%, #0a0a20 100%)' }}>
       <div className="max-w-[430px] mx-auto px-4 py-6">
-
-        {/* Логотип */}
         <div className="flex justify-center mb-4">
-          <img src="/icons/logo.png" alt="NSS" className="w-16 h-16 rounded-2xl" 
-            onError={e => { e.target.style.display='none' }} />
+          <img src="/icons/logo.png" alt="NSS" className="w-16 h-16 rounded-2xl" onError={e => { e.target.style.display='none' }} />
         </div>
 
-        {/* Заголовок */}
         <div className="text-center mb-6">
           <h1 className="text-2xl font-black text-white mb-1">
             <span className="mr-2">{tpl.emoji}</span>{tpl.title}
@@ -95,13 +88,11 @@ export default function InvitePage() {
           <p className="text-sm text-slate-400">{tpl.sub}</p>
         </div>
 
-        {/* Пригласивший */}
         <div className="p-3 rounded-2xl mb-4 text-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="text-[12px] text-slate-400">Тебя пригласил участник</div>
           <div className="text-lg font-black" style={{ color: tpl.color }}>ID: {ref}</div>
         </div>
 
-        {/* Иконки */}
         <div className="flex justify-center gap-3 mb-2">
           <span className="text-4xl">💎</span>
           <span className="text-4xl">⛏</span>
@@ -110,7 +101,6 @@ export default function InvitePage() {
         <h2 className="text-center text-lg font-black text-white mb-0.5">NSS — Искатели Камней</h2>
         <p className="text-center text-[12px] text-slate-500 mb-4">Тапай • Зарабатывай • Строй дом</p>
 
-        {/* Фичи */}
         <div className="space-y-2 mb-6">
           {FEATURES.map((f, i) => (
             <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -123,55 +113,36 @@ export default function InvitePage() {
           ))}
         </div>
 
-        {/* Кнопка регистрации */}
         {!registered ? (
-          <button onClick={handleRegister}
-            className="w-full py-4 rounded-2xl text-lg font-black mb-4"
-            style={{ background: 'linear-gradient(135deg, #ffd700, #f5a623)', color: '#000' }}>
+          <button onClick={handleRegister} className="w-full py-4 rounded-2xl text-lg font-black mb-4" style={{ background: 'linear-gradient(135deg, #ffd700, #f5a623)', color: '#000' }}>
             🎁 Получить подарок — БЕСПЛАТНО
           </button>
         ) : (
-          /* Блок шеринга после регистрации */
           <div className="p-4 rounded-2xl mb-4" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
             <div className="text-center mb-3">
               <div className="text-[13px] text-emerald-400 font-bold">✅ Ты в системе!</div>
               <div className="text-lg font-black text-white">Твой ID: {myRef}</div>
               <div className="text-[11px] text-slate-400">Теперь приглашай друзей — получай 10% пожизненно</div>
-              <a href="/" className="block w-full py-3 rounded-2xl text-center text-sm font-black mt-3"
-              style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff' }}>
-              🚀 Войти в кабинет
-            </a>
+              <a href="/" className="block w-full py-3 rounded-2xl text-center text-sm font-black mt-3" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff' }}>
+                🚀 Войти в кабинет
+              </a>
             </div>
-
-            {/* Выбор шаблона */}
             <div className="text-[11px] text-slate-400 mb-1">Стиль приглашения:</div>
             <div className="flex gap-1 mb-3">
               {Object.entries(TEMPLATES).map(([key, val]) => (
-                <button key={key} onClick={() => setSelTemplate(key)}
-                  className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold border ${
-                    selTemplate === key ? 'border-gold-400/30 bg-gold-400/10 text-gold-400' : 'border-white/8 text-slate-500'
-                  }`}>
+                <button key={key} onClick={() => setSelTemplate(key)} className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold border ${selTemplate === key ? 'border-gold-400/30 bg-gold-400/10 text-gold-400' : 'border-white/8 text-slate-500'}`}>
                   {val.emoji} {key === 'gems' ? 'Камни' : key === 'house' ? 'Дом' : 'Доход'}
                 </button>
               ))}
             </div>
-
-            {/* Ссылка */}
-            <div className="p-2 rounded-xl mb-3 text-center break-all text-[11px] font-mono"
-              style={{ background: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.15)', color: '#ffd700' }}>
+            <div className="p-2 rounded-xl mb-3 text-center break-all text-[11px] font-mono" style={{ background: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.15)', color: '#ffd700' }}>
               {myLink}
             </div>
-
-            {/* Кнопки */}
             <div className="grid grid-cols-2 gap-2 mb-2">
-              <button onClick={copyLink}
-                className="py-2 rounded-xl text-[12px] font-bold"
-                style={{ background: 'rgba(255,255,255,0.06)', color: copied ? '#10b981' : '#fff', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <button onClick={copyLink} className="py-2 rounded-xl text-[12px] font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: copied ? '#10b981' : '#fff', border: '1px solid rgba(255,255,255,0.1)' }}>
                 {copied ? '✅ Скопировано!' : '📋 Копировать'}
               </button>
-              <button onClick={() => navigator.share?.({ text: shareText, url: myLink })}
-                className="py-2 rounded-xl text-[12px] font-bold"
-                style={{ background: 'linear-gradient(135deg, #ffd700, #f5a623)', color: '#000' }}>
+              <button onClick={() => navigator.share?.({ text: shareText, url: myLink })} className="py-2 rounded-xl text-[12px] font-bold" style={{ background: 'linear-gradient(135deg, #ffd700, #f5a623)', color: '#000' }}>
                 📤 Поделиться
               </button>
             </div>
@@ -184,13 +155,11 @@ export default function InvitePage() {
           </div>
         )}
 
-        {/* Футер */}
         <div className="text-center text-[10px] text-slate-600 mt-4">
           NSS — Искатели Природных Камней • Powered by GlobalWay
         </div>
       </div>
 
-      {/* EXIT-INTENT POPUP */}
       {showExitPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.85)' }}>
           <div className="max-w-[380px] w-full p-5 rounded-3xl" style={{ background: 'linear-gradient(180deg, #1a1040, #0a0a20)', border: '1px solid rgba(255,215,0,0.2)' }}>
@@ -198,21 +167,16 @@ export default function InvitePage() {
               <div className="text-4xl mb-2">⏳</div>
               <h3 className="text-xl font-black text-white mb-1">Не спеши уходить!</h3>
               <p className="text-[12px] text-slate-400 mb-4">Ты в одном шаге от бесплатного старта</p>
-
               <div className="space-y-2 mb-4 text-left">
                 <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">Бесплатная регистрация</span></div>
                 <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">21 день тестового периода</span></div>
                 <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">Камни со скидкой до 40%</span></div>
                 <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">Свой дом под 0% годовых</span></div>
               </div>
-
-              <button onClick={handleRegister}
-                className="w-full py-3 rounded-2xl text-base font-black mb-2"
-                style={{ background: 'linear-gradient(135deg, #ffd700, #f5a623)', color: '#000' }}>
+              <button onClick={handleRegister} className="w-full py-3 rounded-2xl text-base font-black mb-2" style={{ background: 'linear-gradient(135deg, #ffd700, #f5a623)', color: '#000' }}>
                 🎁 Получить подарок
               </button>
-              <button onClick={() => setShowExitPopup(false)}
-                className="text-[11px] text-slate-500 hover:text-slate-400">
+              <button onClick={() => setShowExitPopup(false)} className="text-[11px] text-slate-500 hover:text-slate-400">
                 Нет, спасибо
               </button>
             </div>
@@ -220,5 +184,13 @@ export default function InvitePage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function InvitePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a20' }}><div className="text-white">Loading...</div></div>}>
+      <InviteContent />
+    </Suspense>
   )
 }
