@@ -133,10 +133,10 @@ const useGameStore = create(
     const tables = data.map(t => {
       if (!t) return { slots: 0, earned: '0', pending: '0', reinvests: 0 }
       return {
-        slots: Number(t.slotCount || t[0] || 0),
-        earned: t.totalEarned ? (Number(t.totalEarned) / 1e18).toFixed(2) : '0',
-        pending: t.pendingAmount ? (Number(t.pendingAmount) / 1e18).toFixed(2) : '0',
-        reinvests: Number(t.reinvestCount || t[3] || 0),
+        slots: Number(t.slotsCount || t[3] || 0),
+        earned: (Number(t.totalEarned || t[0] || 0) / 1e18).toFixed(2),
+        pending: (Number(t.pendingBalance || t[2] || 0) / 1e18).toFixed(2),
+        reinvests: 0,
       }
     })
     const totalSqm = tables[0].slots * 0.05 + tables[1].slots * 0.25 + tables[2].slots * 1.0
