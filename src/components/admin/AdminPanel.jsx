@@ -276,14 +276,14 @@ export default function AdminPanel() {
                   if (giftT250) tables.push('$250')
                   if (giftT1000) tables.push('$1000')
                   setTxPending(true)
-                  // v2.1: giftSlotsFree удалена, используем buySlotFor для каждого стола
+                  // v2.2: giftSlot — бесплатная выдача мест (без USDT)
                   const tablesToGift = []
                   if (giftT50) tablesToGift.push(0)
                   if (giftT250) tablesToGift.push(1)
                   if (giftT1000) tablesToGift.push(2)
                   let result = { ok: true }
                   for (const tId of tablesToGift) {
-                    result = await C.safeCall(() => C.buySlotFor(tId, giftAddress))
+                    result = await C.safeCall(() => C.giftSlot(tId, giftAddress))
                     if (!result.ok) break
                   }
                   setTxPending(false)
