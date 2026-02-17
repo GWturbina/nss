@@ -1,34 +1,106 @@
 'use client'
 import { useState, useEffect } from 'react'
 import useGameStore from '@/lib/store'
-import * as C from '@/lib/contracts'
+import { LEVELS } from '@/lib/gameData'
+import web3, { shortAddress } from '@/lib/web3'
 import { TeamsAdmin } from '@/components/pages/ExtraPages'
+import * as C from '@/lib/contracts'
+
+const FALLBACK_OWNER = '0x7bcd1753868895971e12448412cb3216d47884c8'
 
 export default function AdminPanel() {
-  const { wallet, isAdmin, ownerWallet, addNotification, setTxPending, txPending, 
-    news, quests, addNews, removeNews, addQuest, removeQuest, setLevel, t } = useGameStore()
-
+  const {
+    wallet, news, quests, addNews, removeNews, addQuest, removeQuest,
+    setLevel, setOwnerWallet, addNotification, setTxPending, txPending,
+  } = useGameStore()
   const [activeSection, setActiveSection] = useState('overview')
-  const [newNews, setNewNews] = useState('')
-  const [newQuest, setNewQuest] = useState({ name: '', reward: '' })
-  const [authAddress, setAuthAddress] = useState('')
-  const [contractStats, setContractStats] = useState(null)
-  const [isPaused, setIsPaused] = useState(false)
-  const [loadingStats, setLoadingStats] = useState(false)
+  const [txResult, setTxResult] = useState(null)
+  const [contractOwner, setContractOwner] = useState(FALLBACK_OWNER)
 
-  const isOwner = isAdmin || (wallet && ownerWallet && wallet.toLowerCase() === ownerWallet.toLowerCase())
+  // Form states
+  const [newsText, setNewsText] = useState('')
+  const [qName, setQName] = useState('')
+  const [qReward, setQReward] = useState('')
+  const [withdrawContract, setWithdrawContract] = useState('RealEstateMatrix')
+  const [selectedTable, setSelectedTable] = useState('0')
+  const [newTablePrice, setNewTablePrice] = useState('')
+  const [newAuthorized, setNewAuthorized] = useState('')
+  const [authContract, setAuthContract] = useState('RealEstateMatrix')
+
+  // Blockchain data
+  const [pauseStates, setPauseStates] = useState({})
+  const [contractBalances, setContractBalances] = useState({})
+  const [health, setHealth] = useState(null)
+
+  // Load owner from contract
+  useEffect(() => {
+    async function loadOwner() {
+      try {
+        const owner = await C.getOwner('RealEstateMatrix')
+        if (owner) { setContractOwner(owner); setOwnerWallet(owner) }
+      } catch {}
+    }
+    if (web3.isConnected) loadOwner()
+  }, [web3.isConnected, setOwnerWallet])
+
+  const isOwner = wallet && contractOwner && wallet.toLowerCase() === contractOwner.toLowerCase()
+
+  if (!isOwner) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="glass p-6 text-center rounded-2xl max-w-[300px]">
+          <div className="text-3xl mb-2">🔐</div>
+          <div className="text-sm font-bold text-slate-300">Доступ запрещён</div>
+          <div className="text-[11px] text-slate-500 mt-1">Подключите кошелёк владельца контрактов</div>
+          {wallet && <div className="text-[9px] text-red-400 mt-2">Ваш: {shortAddress(wallet)}</div>}
+        </div>
+      </div>
+    )
+  }
+
+  const showTx = (msg, success = true) => {
+    setTxResult({ msg, success })
+    setTimeout(() => setTxResult(null), 5000)
+  }
+
+  const exec = async (fn, successMsg) => {
+    setTxPending(true)
+    const result = await C.safeCall(fn)
+    setTxPending(false)
+    if (result.ok) {
+      showTx(successMsg || '✅ Готово!')
+      addNotification(successMsg || '✅ Готово!')
+    } else {
+      showTx(`❌ ${result.error}`, false)
+    }
+  }
+
+  // Load blockchain data
+  const loadData = async () => {
+    const contracts = ['RealEstateMatrix', 'CGTToken', 'NSTToken', 'GemVault', 'HousingFund', 'CharityFund']
+    const states = {}
+    for (const name of contracts) {
+      states[name] = await C.isPaused(name).catch(() => null)
+    }
+    setPauseStates(states)
+
+    const h = await C.getContractHealth()
+    setHealth(h)
+  }
+
+  useEffect(() => { if (isOwner) loadData() }, [isOwner])
 
   const SECTIONS = [
-    { id: 'overview', icon: '📊', label: t('overview') },
-    { id: 'init', icon: '🚀', label: t('activation') },
-    { id: 'gift', icon: '🎁', label: t('gifts') },
-    { id: 'teamlinks', icon: '🤝', label: t('teams') },
-    { id: 'contracts', icon: '📜', label: t('contracts') },
-    { id: 'withdraw', icon: '💰', label: t('withdrawAdmin') },
-    { id: 'matrix', icon: '🏔', label: t('business') },
-    { id: 'auth', icon: '🔑', label: t('authorization') },
-    { id: 'content', icon: '📢', label: t('content') },
-    { id: 'test', icon: '🎮', label: t('test') },
+    { id: 'overview', icon: '📊', label: 'Обзор' },
+    { id: 'init', icon: '🚀', label: 'Активация' },
+    { id: 'gift', icon: '🎁', label: 'Подарки' },
+    { id: 'teamlinks', icon: '🤝', label: 'Команды' },
+    { id: 'contracts', icon: '📜', label: 'Контракты' },
+    { id: 'withdraw', icon: '💰', label: 'Вывод' },
+    { id: 'matrix', icon: '🏔', label: 'Бизнесы' },
+    { id: 'auth', icon: '🔑', label: 'Авторизация' },
+    { id: 'content', icon: '📢', label: 'Контент' },
+    { id: 'test', icon: '🎮', label: 'Тест' },
   ]
 
   // State for table initialization
@@ -55,420 +127,432 @@ export default function AdminPanel() {
   return (
     <div className="flex-1 overflow-y-auto pb-4">
       <div className="px-3 pt-3 pb-1">
-        <h2 className="text-lg font-black text-gold-400">⚙️ {t('adminPanel')}</h2>
-        <p className="text-[10px] text-slate-500">{t('owner')}: {ownerWallet ? `${ownerWallet.slice(0, 8)}...` : '?'}</p>
+        <h2 className="text-lg font-black text-gold-400">⚙️ Админ-панель</h2>
+        <p className="text-[11px] text-slate-500">Владелец: {shortAddress(wallet)}</p>
       </div>
 
-      {!isOwner && (
-        <div className="mx-3 mt-4 p-4 rounded-2xl glass text-center">
-          <div className="text-3xl mb-2">🔐</div>
-          <div className="text-sm font-bold text-red-400">{t('accessDenied')}</div>
-          <div className="text-[11px] text-slate-500 mt-1">{t('connectOwnerWallet')}</div>
-          <div className="text-[10px] text-slate-600 mt-2">{t('yourWallet')}: {wallet ? `${wallet.slice(0, 10)}...` : '—'}</div>
+      {txResult && (
+        <div className={`mx-3 mt-1 p-2 rounded-xl text-[11px] font-bold text-center ${txResult.success ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-red-500/15 text-red-400 border border-red-500/25'}`}>
+          {txResult.msg}
         </div>
       )}
 
-      {isOwner && (
-        <>
-          {/* Section tabs */}
-          <div className="flex flex-wrap gap-1 px-3 mt-1">
-            {SECTIONS.map(s => (
-              <button key={s.id} onClick={() => setActiveSection(s.id)}
-                className={`px-2 py-1.5 rounded-xl text-[9px] font-bold border transition-all ${
-                  activeSection === s.id 
-                    ? 'bg-gold-400/15 border-gold-400/30 text-gold-400' 
-                    : 'border-white/8 text-slate-500 hover:border-white/15'
-                }`}>
-                {s.icon} {s.label}
+      {txPending && (
+        <div className="mx-3 mt-1 p-2 rounded-xl bg-gold-400/10 border border-gold-400/20 text-[11px] font-bold text-gold-400 text-center animate-pulse">
+          ⏳ Транзакция...
+        </div>
+      )}
+
+      {/* Nav */}
+      <div className="flex flex-wrap gap-1 px-3 mt-2">
+        {SECTIONS.map(s => (
+          <button key={s.id} onClick={() => setActiveSection(s.id)}
+            className={`px-2 py-1 rounded-lg text-[10px] font-bold border ${activeSection === s.id ? 'bg-gold-400/15 border-gold-400/30 text-gold-400' : 'border-white/8 text-slate-500'}`}>
+            {s.icon} {s.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="px-3 mt-3 space-y-3">
+        {/* ═══ OVERVIEW ═══ */}
+        {activeSection === 'overview' && (
+          <>
+            {health && (
+              <div className="p-3 rounded-2xl glass">
+                <div className="text-[12px] font-bold text-emerald-400 mb-2">🏥 Здоровье RealEstateMatrix</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2 rounded-lg bg-white/5 text-center">
+                    <div className="text-sm font-black text-gold-400">{parseFloat(health.balance).toFixed(2)}</div>
+                    <div className="text-[9px] text-slate-500">Баланс USDT</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-white/5 text-center">
+                    <div className="text-sm font-black text-emerald-400">{parseFloat(health.surplus).toFixed(2)}</div>
+                    <div className="text-[9px] text-slate-500">Излишек</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-white/5 text-center">
+                    <div className="text-sm font-black text-orange-400">{parseFloat(health.owedWithdrawals).toFixed(2)}</div>
+                    <div className="text-[9px] text-slate-500">К выводу</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-white/5 text-center">
+                    <div className="text-sm font-black text-pink-400">{parseFloat(health.owedCharity).toFixed(2)}</div>
+                    <div className="text-[9px] text-slate-500">Благо</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="p-3 rounded-2xl glass">
+              <div className="text-[12px] font-bold text-gold-400 mb-2">⏸ Статус контрактов</div>
+              <div className="space-y-1">
+                {Object.entries(pauseStates).map(([name, paused]) => (
+                  <div key={name} className="flex items-center justify-between py-1 border-b border-white/5">
+                    <span className="text-[11px] text-slate-300">{name}</span>
+                    <span className={`text-[10px] font-bold ${paused ? 'text-red-400' : 'text-emerald-400'}`}>
+                      {paused === null ? '—' : paused ? '⏸ Paused' : '✅ Active'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <button onClick={loadData} className="mt-2 w-full py-1.5 rounded-lg text-[10px] font-bold border border-white/8 text-slate-500">
+                🔄 Обновить
               </button>
-            ))}
-          </div>
+            </div>
+          </>
+        )}
 
-          {/* Overview */}
-          {activeSection === 'overview' && (
-            <div className="px-3 mt-2 space-y-2">
-              <div className="p-3 rounded-2xl glass">
-                <div className="text-[12px] font-bold text-emerald-400 mb-2">📊 {t('contractHealth')}</div>
-                {contractStats ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="p-2 rounded-lg bg-white/5 text-center">
-                      <div className="text-sm font-black text-gold-400">{contractStats.usdtBalance}</div>
-                      <div className="text-[9px] text-slate-500">{t('usdtBalance')}</div>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/5 text-center">
-                      <div className="text-sm font-black text-emerald-400">{contractStats.surplus}</div>
-                      <div className="text-[9px] text-slate-500">{t('surplus')}</div>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/5 text-center">
-                      <div className="text-sm font-black text-purple-400">{contractStats.pendingTotal}</div>
-                      <div className="text-[9px] text-slate-500">{t('toWithdrawAdmin')}</div>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/5 text-center">
-                      <div className="text-sm font-black text-pink-400">{contractStats.charityBalance}</div>
-                      <div className="text-[9px] text-slate-500">{t('charityAdmin')}</div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-4 text-slate-500 text-[11px]">{t('loadingFromContract')}</div>
-                )}
-                <button onClick={async () => {
-                  setLoadingStats(true)
-                  try { const stats = await C.getContractHealth(); setContractStats(stats) } catch {}
-                  setLoadingStats(false)
-                }} disabled={loadingStats}
-                  className="mt-2 w-full py-2 rounded-xl text-[10px] font-bold border border-white/10 text-slate-400 hover:text-white">
-                  {loadingStats ? '⏳...' : `🔄 ${t('refreshData')}`}
+        {/* ═══ TEAMS ═══ */}
+        {activeSection === 'teamlinks' && <TeamsAdmin />}
+
+        {/* ═══ GIFT SLOTS ═══ */}
+        {activeSection === 'gift' && (
+          <div className="space-y-3">
+            <div className="p-3 rounded-2xl glass border-pink-400/20">
+              <div className="text-[12px] font-bold text-pink-400 mb-3">🎁 Бесплатная выдача мест (для блогеров)</div>
+              
+              <div className="p-2 rounded-lg bg-white/5 text-[9px] text-slate-400 mb-3">
+                Выдаёт места БЕЗ оплаты. Получатель должен быть зарегистрирован в GlobalWay.
+                <br/>Порядок: сначала $50, потом $250, потом $1000.
+              </div>
+
+              {/* Address input */}
+              <div className="mb-3">
+                <label className="text-[10px] text-slate-400 mb-1 block">Адрес получателя:</label>
+                <input
+                  value={giftAddress}
+                  onChange={e => setGiftAddress(e.target.value)}
+                  placeholder="0x..."
+                  className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none"
+                />
+              </div>
+
+              {/* Checkboxes for tables */}
+              <div className="mb-3">
+                <label className="text-[10px] text-slate-400 mb-2 block">Какие места выдать:</label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 p-2 rounded-lg bg-white/5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={giftT50}
+                      onChange={e => setGiftT50(e.target.checked)}
+                      className="w-4 h-4 rounded"
+                    />
+                    <span className="text-[11px] text-white">🏠 Малый Бизнес ($50)</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 rounded-lg bg-white/5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={giftT250}
+                      onChange={e => setGiftT250(e.target.checked)}
+                      className="w-4 h-4 rounded"
+                    />
+                    <span className="text-[11px] text-white">🏢 Средний Бизнес ($250)</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 rounded-lg bg-white/5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={giftT1000}
+                      onChange={e => setGiftT1000(e.target.checked)}
+                      className="w-4 h-4 rounded"
+                    />
+                    <span className="text-[11px] text-white">🏰 Большой Бизнес ($1000)</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Quick select buttons */}
+              <div className="flex gap-1 mb-3">
+                <button onClick={() => { setGiftT50(true); setGiftT250(false); setGiftT1000(false) }}
+                  className="flex-1 py-1.5 rounded-lg text-[9px] font-bold border border-white/10 text-slate-400">
+                  Только $50
+                </button>
+                <button onClick={() => { setGiftT50(true); setGiftT250(true); setGiftT1000(false) }}
+                  className="flex-1 py-1.5 rounded-lg text-[9px] font-bold border border-white/10 text-slate-400">
+                  $50 + $250
+                </button>
+                <button onClick={() => { setGiftT50(true); setGiftT250(true); setGiftT1000(true) }}
+                  className="flex-1 py-1.5 rounded-lg text-[9px] font-bold border border-white/10 text-slate-400">
+                  Все три
                 </button>
               </div>
 
-              <div className="p-3 rounded-2xl glass">
-                <div className="text-[12px] font-bold text-blue-400 mb-2">🔧 {t('contractStatus')}</div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] text-slate-400">RealEstateMatrix</span>
-                  <span className={`text-[10px] font-bold ${isPaused ? 'text-red-400' : 'text-emerald-400'}`}>
-                    {isPaused ? `⏸ ${t('paused')}` : `✅ ${t('active')}`}
-                  </span>
-                </div>
-                <div className="flex gap-1">
-                  <button onClick={async () => {
-                    setTxPending(true)
-                    const r = await C.safeCall(() => C.pauseContract('RealEstateMatrix'))
-                    setTxPending(false)
-                    if (r.ok) { setIsPaused(true); addNotification(`⏸ ${t('paused')}`) }
-                  }} disabled={txPending || isPaused}
-                    className="flex-1 py-1.5 rounded-lg text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20"
-                    style={{ opacity: isPaused ? 0.4 : 1 }}>
-                    ⏸ {t('pause')}
-                  </button>
-                  <button onClick={async () => {
-                    setTxPending(true)
-                    const r = await C.safeCall(() => C.unpauseContract('RealEstateMatrix'))
-                    setTxPending(false)
-                    if (r.ok) { setIsPaused(false); addNotification(`▶️ ${t('active')}`) }
-                  }} disabled={txPending || !isPaused}
-                    className="flex-1 py-1.5 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                    style={{ opacity: !isPaused ? 0.4 : 1 }}>
-                    ▶️ {t('unpause')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Activation (init) */}
-          {activeSection === 'init' && (
-            <div className="px-3 mt-2 space-y-2">
-              <div className="p-3 rounded-2xl glass">
-                <div className="text-[12px] font-bold text-gold-400 mb-2">🚀 {t('tableActivation')}</div>
-                
-                <div className="mb-3">
-                  <div className="text-[10px] text-slate-500 mb-1">{t('tableStatus')}:</div>
-                  <div className="flex gap-2">
-                    {[
-                      { id: 0, name: `$50 (${t('small')})`, status: tablesInit.table0 },
-                      { id: 1, name: `$250 (${t('medium')})`, status: tablesInit.table1 },
-                      { id: 2, name: `$1000 (${t('large')})`, status: tablesInit.table2 },
-                    ].map(tb => (
-                      <div key={tb.id} className={`flex-1 p-2 rounded-lg text-center text-[10px] ${tb.status ? 'bg-emerald-500/15 text-emerald-400' : 'bg-white/5 text-slate-500'}`}>
-                        {tb.name}
-                        <div className="text-[9px] mt-0.5">{tb.status ? `✅ ${t('activated')}` : `❌ ${t('notActivated')}`}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <button onClick={loadTablesInit} className="mt-1 text-[9px] text-slate-500 hover:text-white">🔄 {t('refreshStatus')}</button>
-                </div>
-
-                <div className="mb-2">
-                  <label className="text-[10px] text-slate-500 mb-1 block">{t('selectTable')}:</label>
-                  <div className="flex gap-1">
-                    {['0', '1', '2'].map(id => (
-                      <button key={id} onClick={() => setInitTable(id)}
-                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold border ${initTable === id ? 'bg-gold-400/15 border-gold-400/30 text-gold-400' : 'border-white/8 text-slate-500'}`}>
-                        {['$50', '$250', '$1000'][parseInt(id)]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-2">
-                  <label className="text-[10px] text-slate-500 mb-1 block">{t('founderAddresses')}:</label>
-                  {founders.map((f, i) => (
-                    <input key={i} value={f} onChange={e => {
-                      const newF = [...founders]
-                      newF[i] = e.target.value
-                      setFounders(newF)
-                    }}
-                      placeholder={`${t('address')} ${i + 1} (0x...)`}
-                      className="w-full p-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white outline-none mb-1" />
-                  ))}
-                  <button onClick={() => setFounders(founders.map(() => wallet))}
-                    className="text-[9px] text-gold-400 hover:underline">
-                    📋 {t('fillWithYourAddress')}
-                  </button>
-                </div>
-
-                <button onClick={async () => {
-                  const valid = founders.filter(f => /^0x[a-fA-F0-9]{40}$/.test(f))
-                  if (valid.length !== 7) {
-                    addNotification(`❌ ${t('need7Addresses')}`); return
-                  }
-                  setTxPending(true)
-                  const result = await C.safeCall(() => C.initializeFounderSlots(parseInt(initTable), founders))
-                  setTxPending(false)
-                  if (result.ok) {
-                    addNotification(`✅ ${['$50', '$250', '$1000'][parseInt(initTable)]} ${t('tableActivated')}`)
-                    loadTablesInit()
-                  } else {
-                    addNotification(`❌ ${result.error}`)
-                  }
-                }} disabled={txPending}
-                  className="w-full py-2.5 rounded-xl text-xs font-bold gold-btn">
-                  {txPending ? `⏳ ${t('activating')}` : `🚀 ${t('activate')} ${['$50', '$250', '$1000'][parseInt(initTable)]}`}
-                </button>
-
-                <div className="mt-2 text-[9px] text-slate-500">
-                  ℹ️ {t('afterActivation')}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Gift slots */}
-          {activeSection === 'gift' && (
-            <div className="px-3 mt-2 space-y-2">
-              <div className="p-3 rounded-2xl glass">
-                <div className="text-[12px] font-bold text-pink-400 mb-2">🎁 {t('giftFreeSlots')}</div>
-                <div className="text-[10px] text-slate-400 mb-3">{t('giftDesc')}</div>
-
-                <div className="mb-2">
-                  <label className="text-[10px] text-slate-500 mb-1 block">{t('recipientAddress')}:</label>
-                  <input value={giftAddress} onChange={e => setGiftAddress(e.target.value)}
-                    placeholder="0x..."
-                    className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none" />
-                </div>
-
-                <div className="mb-3">
-                  <label className="text-[10px] text-slate-500 mb-1 block">{t('selectSlots')}:</label>
-                  <div className="flex gap-2">
-                    {[
-                      { key: 'giftT50', label: '$50', checked: giftT50, set: setGiftT50 },
-                      { key: 'giftT250', label: '$250', checked: giftT250, set: setGiftT250 },
-                      { key: 'giftT1000', label: '$1000', checked: giftT1000, set: setGiftT1000 },
-                    ].map(item => (
-                      <label key={item.key} className="flex-1 flex items-center justify-center gap-1 p-2 rounded-lg bg-white/5 cursor-pointer">
-                        <input type="checkbox" checked={item.checked} onChange={e => item.set(e.target.checked)}
-                          className="w-4 h-4 accent-gold-400" />
-                        <span className="text-[11px] text-white font-bold">{item.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <button onClick={async () => {
+              {/* Gift button */}
+              <button
+                onClick={async () => {
                   if (!giftAddress.startsWith('0x') || giftAddress.length !== 42) {
-                    addNotification(`❌ ${t('invalidAddress')}`); return
+                    showTx('❌ Введите корректный адрес', false)
+                    return
                   }
                   if (!giftT50 && !giftT250 && !giftT1000) {
-                    addNotification(`❌ ${t('selectAtLeastOne')}`); return
+                    showTx('❌ Выберите хотя бы одно место', false)
+                    return
                   }
                   const tables = []
                   if (giftT50) tables.push('$50')
                   if (giftT250) tables.push('$250')
                   if (giftT1000) tables.push('$1000')
-                  setTxPending(true)
-                  const result = await C.safeCall(() => C.giftSlotsFree(giftAddress, giftT50, giftT250, giftT1000))
-                  setTxPending(false)
-                  if (result.ok) {
-                    addNotification(`✅ ${t('gifted')}: ${tables.join(' + ')} → ${giftAddress.slice(0,8)}...`)
-                    setGiftAddress('')
-                  } else {
-                    addNotification(`❌ ${result.error}`)
+                  await exec(
+                    () => C.initializeFounderSlots(giftT50 ? 0 : giftT250 ? 1 : 2, [giftAddress, giftAddress, giftAddress, giftAddress, giftAddress, giftAddress, giftAddress]),
+                    `✅ Выдано: ${tables.join(' + ')} → ${giftAddress.slice(0,8)}...`
+                  )
+                  setGiftAddress('')
+                }}
+                disabled={txPending}
+                className="w-full py-2.5 rounded-xl text-[11px] font-bold bg-pink-500/15 text-pink-400 border border-pink-500/30">
+                {txPending ? '⏳ Выдача...' : '🎁 Выдать места бесплатно'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ INITIALIZATION ═══ */}
+        {activeSection === 'init' && (
+          <div className="space-y-3">
+            <div className="p-3 rounded-2xl glass border-gold-400/20">
+              <div className="text-[12px] font-bold text-gold-400 mb-3">🚀 Активация Бизнесов (Столов)</div>
+              
+              {/* Status */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {[
+                  { id: 0, name: 'Малый', price: '$50' },
+                  { id: 1, name: 'Средний', price: '$250' },
+                  { id: 2, name: 'Большой', price: '$1000' },
+                ].map(t => (
+                  <div key={t.id} className={`p-2 rounded-xl text-center border ${tablesInit[`table${t.id}`] ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-orange-500/30 bg-orange-500/10'}`}>
+                    <div className="text-[10px] font-bold text-white">{t.name}</div>
+                    <div className="text-[9px] text-slate-400">{t.price}</div>
+                    <div className={`text-[10px] font-bold mt-1 ${tablesInit[`table${t.id}`] ? 'text-emerald-400' : 'text-orange-400'}`}>
+                      {tablesInit[`table${t.id}`] === null ? '...' : tablesInit[`table${t.id}`] ? '✅ Активен' : '⏳ Не активен'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button onClick={loadTablesInit} className="w-full mb-4 py-1.5 rounded-lg text-[10px] font-bold border border-white/10 text-slate-400">
+                🔄 Обновить статус
+              </button>
+
+              {/* Selector */}
+              <div className="mb-3">
+                <label className="text-[10px] text-slate-400 mb-1 block">Выберите стол для активации:</label>
+                <select value={initTable} onChange={e => setInitTable(e.target.value)}
+                  className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white">
+                  <option value="0">🏠 Малый Бизнес ($50)</option>
+                  <option value="1">🏢 Средний Бизнес ($250)</option>
+                  <option value="2">🏰 Большой Бизнес ($1000)</option>
+                </select>
+              </div>
+
+              {/* 7 Founders inputs */}
+              <div className="mb-3">
+                <label className="text-[10px] text-slate-400 mb-1 block">7 адресов основателей:</label>
+                <div className="space-y-1">
+                  {founders.map((addr, i) => (
+                    <div key={i} className="flex items-center gap-1">
+                      <span className="text-[9px] text-slate-500 w-4">{i + 1}.</span>
+                      <input
+                        value={addr}
+                        onChange={e => {
+                          const newFounders = [...founders]
+                          newFounders[i] = e.target.value
+                          setFounders(newFounders)
+                        }}
+                        placeholder={`Адрес ${i + 1} (0x...)`}
+                        className="flex-1 p-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fill with owner button */}
+              <button 
+                onClick={() => setFounders(Array(7).fill(wallet))}
+                className="w-full mb-2 py-1.5 rounded-lg text-[10px] font-bold border border-white/10 text-slate-400">
+                📋 Заполнить своим адресом (все 7)
+              </button>
+
+              {/* Initialize button */}
+              <button
+                onClick={async () => {
+                  const validFounders = founders.filter(f => f.startsWith('0x') && f.length === 42)
+                  if (validFounders.length !== 7) {
+                    showTx('❌ Нужно 7 валидных адресов (0x...)', false)
+                    return
                   }
-                }} disabled={txPending || !giftAddress}
-                  className="w-full py-2.5 rounded-xl text-xs font-bold bg-pink-500/10 text-pink-400 border border-pink-500/25"
-                  style={{ opacity: (!giftAddress || txPending) ? 0.5 : 1 }}>
-                  {txPending ? '⏳...' : `🎁 ${t('sendGift')}`}
-                </button>
+                  await exec(
+                    () => C.initializeFounderSlots(parseInt(initTable), founders),
+                    `✅ Стол ${initTable} активирован!`
+                  )
+                  loadTablesInit()
+                }}
+                disabled={txPending}
+                className="w-full py-2.5 rounded-xl text-[11px] font-bold bg-gold-400/15 text-gold-400 border border-gold-400/30">
+                {txPending ? '⏳ Активация...' : `🚀 Активировать Стол ${['Малый $50', 'Средний $250', 'Большой $1000'][initTable]}`}
+              </button>
+
+              <div className="mt-3 p-2 rounded-lg bg-white/5 text-[9px] text-slate-500">
+                ⚠️ После активации стол начнёт работать. 7 основателей получат первые места в матрице.
+                Обычно все 7 мест отдают одному кошельку (себе).
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Teams */}
-          {activeSection === 'teamlinks' && (
-            <div className="px-3 mt-2">
-              <TeamsAdmin />
-            </div>
-          )}
-
-          {/* Withdraw */}
-          {activeSection === 'withdraw' && (
-            <div className="px-3 mt-2 space-y-2">
-              <div className="p-3 rounded-2xl glass">
-                <div className="text-[12px] font-bold text-gold-400 mb-2">💰 {t('emergencyWithdraw')}</div>
-                <div className="text-[10px] text-slate-400 mb-3">{t('emergencyWithdrawDesc')}</div>
-                <button onClick={async () => {
-                  setTxPending(true)
-                  const r = await C.safeCall(() => C.emergencyWithdraw())
-                  setTxPending(false)
-                  if (r.ok) addNotification(`✅ ${t('withdrawn')}!`)
-                  else addNotification(`❌ ${r.error}`)
-                }} disabled={txPending}
-                  className="w-full py-2.5 rounded-xl text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/25">
-                  {txPending ? '⏳...' : `⚠️ ${t('emergencyWithdraw')}`}
-                </button>
-              </div>
-
-              <div className="p-3 rounded-2xl glass">
-                <div className="text-[12px] font-bold text-emerald-400 mb-2">🔄 {t('flushCGT')}</div>
-                <div className="text-[10px] text-slate-400 mb-3">{t('flushCGTDesc')}</div>
-                <button onClick={async () => {
-                  setTxPending(true)
-                  const r = await C.safeCall(() => C.flushReinvestCGT())
-                  setTxPending(false)
-                  if (r.ok) addNotification('✅ CGT flushed!')
-                  else addNotification(`❌ ${r.error}`)
-                }} disabled={txPending}
-                  className="w-full py-2.5 rounded-xl text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
-                  {txPending ? '⏳...' : `🔄 ${t('flushCGT')}`}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Authorization */}
-          {activeSection === 'auth' && (
-            <div className="px-3 mt-2 space-y-2">
-              <div className="p-3 rounded-2xl glass">
-                <div className="text-[12px] font-bold text-purple-400 mb-2">🔑 {t('authorizeCalls')}</div>
-                <input value={authAddress} onChange={e => setAuthAddress(e.target.value)}
-                  placeholder="0x..."
-                  className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none mb-2" />
+        {/* ═══ CONTRACTS ═══ */}
+        {activeSection === 'contracts' && (
+          <div className="space-y-2">
+            {['RealEstateMatrix', 'CGTToken', 'NSTToken', 'GemVault', 'HousingFund', 'CharityFund'].map(name => (
+              <div key={name} className="p-3 rounded-2xl glass">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[12px] font-bold text-white">{name}</span>
+                  <span className={`text-[10px] font-bold ${pauseStates[name] ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {pauseStates[name] ? '⏸' : '✅'}
+                  </span>
+                </div>
                 <div className="flex gap-1">
-                  <button onClick={async () => {
-                    if (!authAddress) return
-                    setTxPending(true)
-                    const r = await C.safeCall(() => C.setAuthorizedCaller('RealEstateMatrix', authAddress, true))
-                    setTxPending(false)
-                    if (r.ok) addNotification(`✅ ${t('authorize')}!`)
-                    else addNotification(`❌ ${r.error}`)
-                  }} disabled={txPending}
-                    className="flex-1 py-2 rounded-xl text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    ✅ {t('authorize')}
+                  <button onClick={() => exec(() => C.pauseContract(name), `⏸ ${name} paused`)}
+                    disabled={txPending}
+                    className="flex-1 py-1.5 rounded-lg text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                    ⏸ Pause
                   </button>
-                  <button onClick={async () => {
-                    if (!authAddress) return
-                    setTxPending(true)
-                    const r = await C.safeCall(() => C.setAuthorizedCaller('RealEstateMatrix', authAddress, false))
-                    setTxPending(false)
-                    if (r.ok) addNotification(`✅ ${t('revoke')}!`)
-                    else addNotification(`❌ ${r.error}`)
-                  }} disabled={txPending}
-                    className="flex-1 py-2 rounded-xl text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">
-                    ❌ {t('revoke')}
+                  <button onClick={() => exec(() => C.unpauseContract(name), `✅ ${name} unpaused`)}
+                    disabled={txPending}
+                    className="flex-1 py-1.5 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    ▶ Unpause
                   </button>
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* ═══ EMERGENCY WITHDRAW ═══ */}
+        {activeSection === 'withdraw' && (
+          <div className="space-y-2">
+            <div className="p-3 rounded-2xl glass border-red-500/15">
+              <div className="text-[12px] font-bold text-red-400 mb-2">⚠️ Emergency Withdraw</div>
+              <div className="text-[10px] text-slate-400 mb-2">Выводит ТОЛЬКО излишек (сверх обязательств). Безопасно для пользователей.</div>
+              <select value={withdrawContract} onChange={e => setWithdrawContract(e.target.value)}
+                className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white mb-2">
+                <option value="RealEstateMatrix">RealEstateMatrix</option>
+                <option value="MatrixPaymentsV2">MatrixPaymentsV2</option>
+              </select>
+              <button onClick={() => exec(() => C.emergencyWithdraw(withdrawContract), `💰 Излишек выведен из ${withdrawContract}`)}
+                disabled={txPending}
+                className="w-full py-2 rounded-xl text-[11px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                {txPending ? '⏳...' : '💰 Emergency Withdraw (только излишек)'}
+              </button>
             </div>
-          )}
 
-          {/* Content */}
-          {activeSection === 'content' && (
-            <div className="px-3 mt-2 space-y-2">
-              <div className="p-3 rounded-2xl glass">
-                <div className="text-[12px] font-bold text-blue-400 mb-2">📰 {t('news')}</div>
-                <div className="space-y-1 mb-2">
-                  {news.map((n, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white/5 text-[10px]">
-                      <span className="text-slate-300">{n}</span>
-                      <button onClick={() => removeNews(i)} className="text-red-400">✕</button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-1">
-                  <input value={newNews} onChange={e => setNewNews(e.target.value)}
-                    placeholder={t('newNews')}
-                    className="flex-1 p-2 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white outline-none" />
-                  <button onClick={() => { if (newNews.trim()) { addNews(newNews.trim()); setNewNews('') } }}
-                    className="px-3 py-2 rounded-lg text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">+</button>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-2xl glass">
-                <div className="text-[12px] font-bold text-emerald-400 mb-2">🎯 {t('quests')}</div>
-                <div className="space-y-1 mb-2">
-                  {quests.map((q, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white/5 text-[10px]">
-                      <span className="text-slate-300">{q.name} — <span className="text-gold-400">{q.reward}</span></span>
-                      <button onClick={() => removeQuest(i)} className="text-red-400">✕</button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-1">
-                  <input value={newQuest.name} onChange={e => setNewQuest({ ...newQuest, name: e.target.value })}
-                    placeholder={t('questName')}
-                    className="flex-1 p-2 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white outline-none" />
-                  <input value={newQuest.reward} onChange={e => setNewQuest({ ...newQuest, reward: e.target.value })}
-                    placeholder={t('reward')}
-                    className="w-20 p-2 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white outline-none" />
-                  <button onClick={() => { if (newQuest.name && newQuest.reward) { addQuest(newQuest); setNewQuest({ name: '', reward: '' }) } }}
-                    className="px-3 py-2 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">+</button>
-                </div>
-              </div>
+            <div className="p-3 rounded-2xl glass border-purple-500/15">
+              <div className="text-[12px] font-bold text-purple-400 mb-2">🔄 Flush CGT</div>
+              <div className="text-[10px] text-slate-400 mb-2">Отправить накопленные 2% CGT на капитализацию</div>
+              <button onClick={() => exec(() => C.flushReinvestCGT(), '✅ CGT flushed')}
+                disabled={txPending}
+                className="w-full py-2 rounded-xl text-[11px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                {txPending ? '⏳...' : '🔄 Flush reinvest CGT'}
+              </button>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Test */}
-          {activeSection === 'test' && (
-            <div className="px-3 mt-2 space-y-2">
-              <div className="p-3 rounded-2xl glass">
-                <div className="text-[12px] font-bold text-purple-400 mb-2">🎮 {t('testMode')}</div>
-                <div className="text-[10px] text-slate-400 mb-2">{t('switchLevel')}</div>
-                <div className="flex flex-wrap gap-1">
-                  {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(lv => (
-                    <button key={lv} onClick={() => setLevel(lv)}
-                      className="w-8 h-8 rounded-lg text-[10px] font-bold bg-white/5 text-slate-400 hover:bg-purple-500/15 hover:text-purple-400">
-                      {lv}
-                    </button>
-                  ))}
-                </div>
-              </div>
+        {/* ═══ AUTHORIZATION ═══ */}
+        {activeSection === 'auth' && (
+          <div className="p-3 rounded-2xl glass">
+            <div className="text-[12px] font-bold text-gold-400 mb-2">🔑 Авторизация вызовов</div>
+            <select value={authContract} onChange={e => setAuthContract(e.target.value)}
+              className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white mb-2">
+              {['RealEstateMatrix', 'CGTToken', 'GemVault', 'HousingFund', 'CharityFund', 'MatrixPaymentsV2', 'NSSPlatform'].map(n => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+            <input value={newAuthorized} onChange={e => setNewAuthorized(e.target.value)}
+              placeholder="Адрес (0x...)"
+              className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white mb-2" />
+            <div className="flex gap-1.5">
+              <button onClick={() => exec(() => C.setAuthorizedCaller(authContract, newAuthorized, true), `✅ Authorized in ${authContract}`)}
+                disabled={txPending}
+                className="flex-1 py-2 rounded-xl text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                ✅ Authorize
+              </button>
+              <button onClick={() => exec(() => C.setAuthorizedCaller(authContract, newAuthorized, false), `❌ Revoked in ${authContract}`)}
+                disabled={txPending}
+                className="flex-1 py-2 rounded-xl text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                ❌ Revoke
+              </button>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Matrix stats */}
-          {activeSection === 'matrix' && (
-            <div className="px-3 mt-2 space-y-2">
-              <div className="p-3 rounded-2xl glass">
-                <div className="text-[12px] font-bold text-gold-400 mb-2">🏔 {t('businessStats')}</div>
-                <div className="text-[11px] text-slate-400">{t('loadingFromContract')}</div>
-              </div>
-            </div>
-          )}
-
-          {/* Contracts */}
-          {activeSection === 'contracts' && (
-            <div className="px-3 mt-2 space-y-2">
-              <div className="p-3 rounded-2xl glass">
-                <div className="text-[12px] font-bold text-blue-400 mb-2">📜 {t('contracts')}</div>
-                <div className="space-y-1 text-[9px]">
-                  {[
-                    ['RealEstateMatrix', '0xb00F7672FbdC11cDF273399FB579fa68eEF77Ffb'],
-                    ['CGTToken', '0x28cC38ebe329D3618f8aeD85a238339128Bd4649'],
-                    ['NSTToken', '0xA1A7BAb7930dBaE59d73918f1fc6c8B9aFD43992'],
-                    ['CharityFund', '0x090EEc8b07805310b06FD3d9198c8947E7067A59'],
-                    ['HousingFund', '0x52de242eD94963f7F66df1dAe70351c346758A25'],
-                  ].map(([name, addr]) => (
-                    <div key={name} className="flex justify-between p-1.5 rounded bg-white/5">
-                      <span className="text-slate-400">{name}</span>
-                      <span className="text-emerald-400 font-mono">{addr.slice(0, 10)}...</span>
-                    </div>
-                  ))}
+        {/* ═══ CONTENT ═══ */}
+        {activeSection === 'content' && (
+          <div className="space-y-2">
+            <div className="p-3 rounded-2xl glass">
+              <div className="text-[12px] font-bold text-gold-400 mb-2">📢 Новости</div>
+              {news.map((n, i) => (
+                <div key={i} className="flex items-center gap-2 py-1 border-b border-white/5">
+                  <span className="flex-1 text-[11px] text-slate-300">{n}</span>
+                  <button onClick={() => removeNews(i)} className="text-red-400/60 text-[10px]">✕</button>
                 </div>
+              ))}
+              <div className="flex gap-1 mt-2">
+                <input value={newsText} onChange={e => setNewsText(e.target.value)}
+                  placeholder="Новая новость..."
+                  className="flex-1 p-2 rounded-lg bg-white/5 border border-white/10 text-[11px] text-white outline-none" />
+                <button onClick={() => { if (newsText.trim()) { addNews(newsText.trim()); setNewsText('') } }}
+                  className="px-3 py-2 rounded-lg text-[10px] font-bold gold-btn">+</button>
               </div>
             </div>
-          )}
-        </>
-      )}
+
+            <div className="p-3 rounded-2xl glass">
+              <div className="text-[12px] font-bold text-purple-400 mb-2">🎯 Задания</div>
+              {quests.map((q, i) => (
+                <div key={i} className="flex items-center gap-2 py-1 border-b border-white/5">
+                  <span className="flex-1 text-[11px] text-slate-300">{q.name} <span className="text-emerald-400">({q.reward})</span></span>
+                  <button onClick={() => removeQuest(i)} className="text-red-400/60 text-[10px]">✕</button>
+                </div>
+              ))}
+              <div className="flex gap-1 mt-2">
+                <input value={qName} onChange={e => setQName(e.target.value)} placeholder="Задание..."
+                  className="flex-1 p-2 rounded-lg bg-white/5 border border-white/10 text-[11px] text-white outline-none" />
+                <input value={qReward} onChange={e => setQReward(e.target.value)} placeholder="Награда"
+                  className="w-20 p-2 rounded-lg bg-white/5 border border-white/10 text-[11px] text-white outline-none" />
+                <button onClick={() => { if (qName.trim()) { addQuest({ name: qName.trim(), reward: qReward || '?', done: false }); setQName(''); setQReward('') } }}
+                  className="px-3 py-2 rounded-lg text-[10px] font-bold gold-btn">+</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ TEST ═══ */}
+        {activeSection === 'test' && (
+          <div className="p-3 rounded-2xl glass">
+            <div className="text-[12px] font-bold text-gold-400 mb-2">🎮 Тест-режим</div>
+            <div className="text-[10px] text-slate-500 mb-2">Переключить уровень (только UI, не блокчейн)</div>
+            <div className="grid grid-cols-4 gap-1">
+              {LEVELS.slice(0, 12).map((lv, i) => (
+                <button key={i} onClick={() => setLevel(i)}
+                  className="py-1.5 rounded-lg text-[9px] font-bold border border-white/8 text-slate-400 hover:border-gold-400/30 hover:text-gold-400">
+                  {lv.emoji} {i}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ MATRIX ═══ */}
+        {activeSection === 'matrix' && (
+          <div className="p-3 rounded-2xl glass">
+            <div className="text-[12px] font-bold text-gold-400 mb-2">🏔 Статистика бизнесов</div>
+            <div className="text-[10px] text-slate-400">
+              Загрузка из контракта... Используйте обзор для просмотра здоровья контракта.
+            </div>
+            <button onClick={loadData} className="mt-2 w-full py-1.5 rounded-lg text-[10px] font-bold border border-white/8 text-slate-500">
+              🔄 Обновить данные
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
