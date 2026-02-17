@@ -171,7 +171,7 @@ export async function getUserNSSInfo(address) {
 }
 
 export async function isRegistered(address) {
-  const result = await safeRead('NSSPlatform', 'isUserRegistered', [address])
+  const result = await safeRead('NSSPlatform', 'isNSSUser', [address])
   return result === true
 }
 
