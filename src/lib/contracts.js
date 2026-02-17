@@ -505,6 +505,19 @@ export async function initializeFounderSlots(tableId, founders) {
 }
 
 /**
+ * Купить место для другого пользователя (оплата USDT с кошелька вызывающего)
+ * Только authorizedCaller
+ */
+export async function buySlotFor(tableId, beneficiary) {
+  const matrix = getContract('RealEstateMatrix')
+  const config = await matrix.tables(tableId)
+  const price = config.entryPrice
+  await ensureApproval(ADDRESSES.RealEstateMatrix, price)
+  const tx = await matrix.buySlotFor(tableId, beneficiary)
+  return await tx.wait()
+}
+
+/**
  * Проверить инициализирован ли стол
  */
 export async function isTableInitialized(tableId) {
