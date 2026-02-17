@@ -247,6 +247,31 @@
     "inputs": [
       {
         "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "repaymentAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "userReceived",
+        "type": "uint256"
+      }
+    ],
+    "name": "HousingRepayment",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "enum RealEstateMatrix.TableId",
         "name": "table",
         "type": "uint8"
@@ -1346,6 +1371,35 @@
         "type": "uint8"
       }
     ],
+    "name": "getUserTableExtra",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "enteredNext",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "withdrawable",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "enum RealEstateMatrix.TableId",
+        "name": "table",
+        "type": "uint8"
+      }
+    ],
     "name": "getUserTableInfo",
     "outputs": [
       {
@@ -1371,16 +1425,6 @@
       {
         "internalType": "uint256",
         "name": "sqmOwned",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "enteredNext",
-        "type": "bool"
-      },
-      {
-        "internalType": "uint256",
-        "name": "withdrawable",
         "type": "uint256"
       }
     ],
@@ -1432,6 +1476,19 @@
     "name": "giftSlotsFree",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "housingFund",
+    "outputs": [
+      {
+        "internalType": "contract IHousingFund",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -1712,6 +1769,19 @@
       }
     ],
     "name": "setClubFund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_h",
+        "type": "address"
+      }
+    ],
+    "name": "setHousingFund",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
