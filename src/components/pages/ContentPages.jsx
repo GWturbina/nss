@@ -493,13 +493,44 @@ export function ExchangeTab() {
     if (!wallet || !amount) return
     addNotification(`⏳ ${t('transactionPending')}`)
     setTxPending(true)
-    // Swap logic would go here
-    setTimeout(() => {
+    let result
+    if (fromToken === 'BNB' && toToken === 'USDT') {
+      result = await C.safeCall(() => C.swapBNBtoUSDT(amount))
+    } else if (fromToken === 'USDT' && toToken === 'BNB') {
+      result = await C.safeCall(() => C.swapUSDTtoBNB(amount))
+    } else {
       setTxPending(false)
+      addNotification(`❌ ${t('unsupportedPair')} ${fromToken}→${toToken}`)
+      return
+    }
+    setTxPending(false)
+    if (result.ok) {
       addNotification(`✅ ${t('transactionSuccess')}`)
       setAmount('')
-    }, 2000)
+    } else {
+      addNotification(`❌ ${result.error}`)
+    }
   }
+
+  // Получаем реальную котировку
+  useEffect(() => {
+    if (!amount || !parseFloat(amount)) { setRate(null); return }
+    const fetchQuote = async () => {
+      try {
+        if (fromToken === 'BNB' && toToken === 'USDT') {
+          const q = await C.quoteBNBtoUSDT(amount)
+          if (q) setRate(`≈ ${parseFloat(q.usdtOut).toFixed(4)} USDT`)
+        } else if (fromToken === 'USDT' && toToken === 'BNB') {
+          const q = await C.quoteUSDTtoBNB(amount)
+          if (q) setRate(`≈ ${parseFloat(q.bnbOut).toFixed(6)} BNB`)
+        } else {
+          setRate(null)
+        }
+      } catch { setRate(null) }
+    }
+    const timer = setTimeout(fetchQuote, 500)
+    return () => clearTimeout(timer)
+  }, [amount, fromToken, toToken])
 
   const fromTokenData = tokens.find(t => t.id === fromToken)
   const toTokenData = tokens.find(t => t.id === toToken)
@@ -556,9 +587,9 @@ export function ExchangeTab() {
         </div>
 
         {/* Rate */}
-        {amount && (
+        {amount && rate && (
           <div className="p-2 rounded-lg bg-white/5 text-center text-[11px] text-slate-400 mb-3">
-            {t('exchangeRate')}: 1 {fromToken} ≈ 0.85 {toToken}
+            {amount} {fromToken} {rate}
           </div>
         )}
 
