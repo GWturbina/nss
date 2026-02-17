@@ -232,7 +232,7 @@ const useGameStore = create(
 }),
     {
       name: 'nss-storage',
-      partialize: (state) => ({ lang: state.lang }), // Сохраняем только язык
+      partialize: (state) => ({ lang: state.lang, level: state.level }),
     }
   )
 )
