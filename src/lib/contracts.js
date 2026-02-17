@@ -47,11 +47,24 @@ function getContract(name) {
   return new ethers.Contract(addr, ABIS[name], web3.signer)
 }
 
+const READ_RPCS = [
+  'https://opbnb-mainnet-rpc.bnbchain.org',
+  'https://opbnb.publicnode.com',
+  'https://1rpc.io/opbnb',
+]
+let _readProvider = null
+function getReadProvider() {
+  if (!_readProvider) {
+    _readProvider = new ethers.JsonRpcProvider(READ_RPCS[0])
+  }
+  return _readProvider
+}
+
 function getReadContract(name) {
-  if (!web3.provider) throw new Error('Провайдер не инициализирован')
+  const provider = web3.provider || getReadProvider()
   const addr = ADDRESSES[name]
   if (!addr || addr.startsWith('0x_')) return null
-  return new ethers.Contract(addr, ABIS[name], web3.provider)
+  return new ethers.Contract(addr, ABIS[name], provider)
 }
 
 function getUSDT() {
