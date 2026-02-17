@@ -37,6 +37,13 @@ const ABIS = {
 }
 
 // ═══════════════════════════════════════════════════
+// ПРЯМОЙ RPC ПРОВАЙДЕР ДЛЯ ЧТЕНИЯ (без кошелька!)
+// Решает "Request limit exceeded" от расширений
+// ═══════════════════════════════════════════════════
+const READ_RPC = 'https://opbnb-mainnet-rpc.bnbchain.org'
+const readProvider = new ethers.JsonRpcProvider(READ_RPC)
+
+// ═══════════════════════════════════════════════════
 // ХЕЛПЕРЫ
 // ═══════════════════════════════════════════════════
 
@@ -47,24 +54,10 @@ function getContract(name) {
   return new ethers.Contract(addr, ABIS[name], web3.signer)
 }
 
-const READ_RPCS = [
-  'https://opbnb-mainnet-rpc.bnbchain.org',
-  'https://opbnb.publicnode.com',
-  'https://1rpc.io/opbnb',
-]
-let _readProvider = null
-function getReadProvider() {
-  if (!_readProvider) {
-    _readProvider = new ethers.JsonRpcProvider(READ_RPCS[0])
-  }
-  return _readProvider
-}
-
 function getReadContract(name) {
-  const provider = web3.provider || getReadProvider()
   const addr = ADDRESSES[name]
   if (!addr || addr.startsWith('0x_')) return null
-  return new ethers.Contract(addr, ABIS[name], provider)
+  return new ethers.Contract(addr, ABIS[name], readProvider)
 }
 
 function getUSDT() {
@@ -104,24 +97,21 @@ const fmt = ethers.formatEther
 const parse = ethers.parseEther
 
 // ═══════════════════════════════════════════════════
-// USDT / BNB БАЛАНСЫ
+// USDT / BNB БАЛАНСЫ (через прямой RPC!)
 // ═══════════════════════════════════════════════════
 
 export async function getBalances(address) {
-  const provider = web3.provider
-  if (!provider || !address) return { bnb: '0', usdt: '0', cgt: '0', nst: '0' }
+  if (!address) return { bnb: '0', usdt: '0', cgt: '0', nst: '0' }
 
-  const [bnbRaw, usdtRaw, cgtRaw, nstRaw] = await Promise.all([
-    provider.getBalance(address),
-    getReadContract('CGTToken') ? Promise.resolve(0n) : Promise.resolve(0n),
+  const [bnbRaw, cgtRaw, nstRaw] = await Promise.all([
+    readProvider.getBalance(address).catch(() => 0n),
     safeRead('CGTToken', 'balanceOf', [address]),
     safeRead('NSTToken', 'balanceOf', [address]),
   ])
 
-  // USDT balance
   let usdtBal = 0n
   try {
-    const usdt = new ethers.Contract(ADDRESSES.USDT, ['function balanceOf(address) view returns (uint256)'], provider)
+    const usdt = new ethers.Contract(ADDRESSES.USDT, ['function balanceOf(address) view returns (uint256)'], readProvider)
     usdtBal = await usdt.balanceOf(address)
   } catch {}
 
@@ -153,11 +143,10 @@ export async function register(sponsorId = 0) {
 
 export async function buyLevel(level) {
   const nss = getContract('NSSPlatform')
-  // Получаем цену уровня из bridge
   const bridgeAddr = await nss.bridge()
   const bridge = new ethers.Contract(bridgeAddr, [
     'function getLevelPrice(uint8) view returns (uint256)'
-  ], web3.provider)
+  ], readProvider)
   const price = await bridge.getLevelPrice(level)
   const tx = await nss.buyLevel(level, { value: price })
   return await tx.wait()
@@ -170,7 +159,7 @@ export async function getUserLevel(address) {
     const bridgeAddr = await nss.bridge()
     const bridge = new ethers.Contract(bridgeAddr, [
       'function getUserRank(address user) external view returns (uint8)'
-    ], web3.provider)
+    ], readProvider)
     return Number(await bridge.getUserRank(address))
   } catch {
     return 0
@@ -195,7 +184,6 @@ export async function buySlot(tableId) {
   const config = await matrix.tables(tableId)
   const price = config.entryPrice
 
-  // Approve USDT
   await ensureApproval(ADDRESSES.RealEstateMatrix, price)
 
   const tx = await matrix.buySlot(tableId)
@@ -402,7 +390,6 @@ export async function getCGTInfo() {
   } catch { return null }
 }
 
-// P2P Ордера CGT
 export async function createSellOrder(tokenAmount, pricePerToken) {
   const cgt = getContract('CGTToken')
   const tx = await cgt.createSellOrder(parse(tokenAmount), parse(pricePerToken))
@@ -505,11 +492,6 @@ export async function flushReinvestCGT() {
 // ИНИЦИАЛИЗАЦИЯ СТОЛОВ (БИЗНЕСОВ)
 // ═══════════════════════════════════════════════════
 
-/**
- * Инициализация стола с 7 основателями
- * @param {number} tableId - 0 (Малый $50), 1 (Средний $250), 2 (Большой $1000)
- * @param {string[]} founders - Массив из 7 адресов основателей
- */
 export async function initializeFounderSlots(tableId, founders) {
   if (founders.length !== 7) throw new Error('Нужно ровно 7 адресов основателей')
   const matrix = getContract('RealEstateMatrix')
@@ -517,19 +499,12 @@ export async function initializeFounderSlots(tableId, founders) {
   return await tx.wait()
 }
 
-/**
- * Бесплатная выдача места (только owner, без USDT)
- */
 export async function giftSlot(tableId, beneficiary) {
   const matrix = getContract('RealEstateMatrix')
   const tx = await matrix.giftSlot(tableId, beneficiary)
   return await tx.wait()
 }
 
-/**
- * Купить место для другого пользователя (оплата USDT с кошелька вызывающего)
- * Только authorizedCaller
- */
 export async function buySlotFor(tableId, beneficiary) {
   const matrix = getContract('RealEstateMatrix')
   const config = await matrix.tables(tableId)
@@ -539,16 +514,10 @@ export async function buySlotFor(tableId, beneficiary) {
   return await tx.wait()
 }
 
-/**
- * Проверить инициализирован ли стол
- */
 export async function isTableInitialized(tableId) {
   return await safeRead('RealEstateMatrix', 'founderInitialized', [tableId])
 }
 
-/**
- * Получить статус всех столов
- */
 export async function getTablesInitStatus() {
   const [t0, t1, t2] = await Promise.all([
     isTableInitialized(0),
@@ -562,7 +531,6 @@ export async function getTablesInitStatus() {
 // СВОДНАЯ ЗАГРУЗКА ДАННЫХ
 // ═══════════════════════════════════════════════════
 
-/** Загружает все данные для dashboard одним вызовом */
 export async function loadUserDashboard(address) {
   const [balances, nssInfo, tables, pending, charityBal, houseInfo] = await Promise.all([
     getBalances(address),
