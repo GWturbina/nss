@@ -2,7 +2,7 @@
 import { useEffect } from 'react'
 import useGameStore from '@/lib/store'
 import { LEVELS } from '@/lib/gameData'
-import { useBlockchain } from '@/lib/useBlockchain'
+import { useBlockchainInit } from '@/lib/useBlockchain'
 import { useTelegram } from '@/lib/useTelegram'
 import Header from '@/components/ui/Header'
 import BottomNav from '@/components/ui/BottomNav'
@@ -16,8 +16,8 @@ export default function Home() {
   const { activeTab, level, dayMode } = useGameStore()
   const themeClass = LEVELS[level]?.themeClass || 'theme-0'
 
-  // Инициализация
-  useBlockchain()
+  // Инициализация — ОДИН РАЗ
+  useBlockchainInit()
   const { isInTelegram, startParam } = useTelegram()
 
   // Если пришли с реферальной ссылки из Telegram
