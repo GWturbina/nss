@@ -505,6 +505,15 @@ export async function initializeFounderSlots(tableId, founders) {
 }
 
 /**
+ * Бесплатная выдача места (только owner, без USDT)
+ */
+export async function giftSlot(tableId, beneficiary) {
+  const matrix = getContract('RealEstateMatrix')
+  const tx = await matrix.giftSlot(tableId, beneficiary)
+  return await tx.wait()
+}
+
+/**
  * Купить место для другого пользователя (оплата USDT с кошелька вызывающего)
  * Только authorizedCaller
  */
