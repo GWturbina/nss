@@ -108,9 +108,9 @@
         "inputs": [
             {
                 "indexed": true,
-                "internalType": "string",
+                "internalType": "uint8",
                 "name": "param",
-                "type": "string"
+                "type": "uint8"
             },
             {
                 "indexed": false,
@@ -459,37 +459,6 @@
             }
         ],
         "name": "SlotPurchased",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "beneficiary",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "bool",
-                "name": "t50",
-                "type": "bool"
-            },
-            {
-                "indexed": false,
-                "internalType": "bool",
-                "name": "t250",
-                "type": "bool"
-            },
-            {
-                "indexed": false,
-                "internalType": "bool",
-                "name": "t1000",
-                "type": "bool"
-            }
-        ],
-        "name": "SlotsGifted",
         "type": "event"
     },
     {
@@ -1297,11 +1266,6 @@
             },
             {
                 "internalType": "uint256",
-                "name": "parentPosition",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
                 "name": "totalReceived",
                 "type": "uint256"
             },
@@ -1314,6 +1278,30 @@
                 "internalType": "bool",
                 "name": "completed",
                 "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "slotId",
+                "type": "uint256"
+            }
+        ],
+        "name": "getSlotParent",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "position",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "parentPosition",
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -1448,34 +1436,6 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "beneficiary",
-                "type": "address"
-            },
-            {
-                "internalType": "bool",
-                "name": "t50",
-                "type": "bool"
-            },
-            {
-                "internalType": "bool",
-                "name": "t250",
-                "type": "bool"
-            },
-            {
-                "internalType": "bool",
-                "name": "t1000",
-                "type": "bool"
-            }
-        ],
-        "name": "giftSlotsFree",
-        "outputs": [],
-        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
