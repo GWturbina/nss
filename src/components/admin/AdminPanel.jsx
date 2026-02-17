@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import useGameStore from '@/lib/store'
 import * as C from '@/lib/contracts'
+import ADDRESSES from '@/contracts/addresses'
 import { TeamsAdmin } from '@/components/pages/ExtraPages'
 
 export default function AdminPanel() {
@@ -92,7 +93,7 @@ export default function AdminPanel() {
                 {contractStats ? (
                   <div className="grid grid-cols-2 gap-2">
                     <div className="p-2 rounded-lg bg-white/5 text-center">
-                      <div className="text-sm font-black text-gold-400">{contractStats.usdtBalance}</div>
+                      <div className="text-sm font-black text-gold-400">{contractStats.balance}</div>
                       <div className="text-[9px] text-slate-500">{t('usdtBalance')}</div>
                     </div>
                     <div className="p-2 rounded-lg bg-white/5 text-center">
@@ -100,11 +101,11 @@ export default function AdminPanel() {
                       <div className="text-[9px] text-slate-500">{t('surplus')}</div>
                     </div>
                     <div className="p-2 rounded-lg bg-white/5 text-center">
-                      <div className="text-sm font-black text-purple-400">{contractStats.pendingTotal}</div>
+                      <div className="text-sm font-black text-purple-400">{contractStats.owedWithdrawals}</div>
                       <div className="text-[9px] text-slate-500">{t('toWithdrawAdmin')}</div>
                     </div>
                     <div className="p-2 rounded-lg bg-white/5 text-center">
-                      <div className="text-sm font-black text-pink-400">{contractStats.charityBalance}</div>
+                      <div className="text-sm font-black text-pink-400">{contractStats.owedCharity}</div>
                       <div className="text-[9px] text-slate-500">{t('charityAdmin')}</div>
                     </div>
                   </div>
@@ -317,7 +318,7 @@ export default function AdminPanel() {
                 <div className="text-[10px] text-slate-400 mb-3">{t('emergencyWithdrawDesc')}</div>
                 <button onClick={async () => {
                   setTxPending(true)
-                  const r = await C.safeCall(() => C.emergencyWithdraw())
+                  const r = await C.safeCall(() => C.emergencyWithdraw('RealEstateMatrix'))
                   setTxPending(false)
                   if (r.ok) addNotification(`✅ ${t('withdrawn')}!`)
                   else addNotification(`❌ ${r.error}`)
@@ -461,11 +462,19 @@ export default function AdminPanel() {
                 <div className="text-[12px] font-bold text-blue-400 mb-2">📜 {t('contracts')}</div>
                 <div className="space-y-1 text-[9px]">
                   {[
-                    ['RealEstateMatrix', '0xb00F7672FbdC11cDF273399FB579fa68eEF77Ffb'],
-                    ['CGTToken', '0x28cC38ebe329D3618f8aeD85a238339128Bd4649'],
-                    ['NSTToken', '0xA1A7BAb7930dBaE59d73918f1fc6c8B9aFD43992'],
-                    ['CharityFund', '0x090EEc8b07805310b06FD3d9198c8947E7067A59'],
-                    ['HousingFund', '0x52de242eD94963f7F66df1dAe70351c346758A25'],
+                    ['RealEstateMatrix', ADDRESSES.RealEstateMatrix],
+                    ['CGTToken', ADDRESSES.CGTToken],
+                    ['NSTToken', ADDRESSES.NSTToken],
+                    ['CharityFund', ADDRESSES.CharityFund],
+                    ['HousingFund', ADDRESSES.HousingFund],
+                    ['NSSPlatform', ADDRESSES.NSSPlatform],
+                    ['MatrixPaymentsV2', ADDRESSES.MatrixPaymentsV2],
+                    ['GemVault', ADDRESSES.GemVault],
+                    ['SwapHelper', ADDRESSES.SwapHelper],
+                    ['SafeVault', ADDRESSES.SafeVault],
+                    ['AICredits', ADDRESSES.AICredits],
+                    ['CardGiftMarketing', ADDRESSES.CardGiftMarketing],
+                    ['P2PEscrow', ADDRESSES.P2PEscrow],
                   ].map(([name, addr]) => (
                     <div key={name} className="flex justify-between p-1.5 rounded bg-white/5">
                       <span className="text-slate-400">{name}</span>
