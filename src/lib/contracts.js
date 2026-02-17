@@ -227,7 +227,7 @@ export async function chooseContinueReinvest(continueChoice) {
 export async function getMatrixStats() {
   const c = getReadContract('RealEstateMatrix')
   if (!c) return null
-  const [totalSlots, totalVolume, totalCharity, totalRotation] = await c.getStats()
+  const [totalSlots, totalVolume, totalCharity, totalRotation] = await c.getGlobalStats()
   return {
     totalSlots: Number(totalSlots),
     totalVolume: fmt(totalVolume),
@@ -491,19 +491,6 @@ export async function flushReinvestCGT() {
 // ═══════════════════════════════════════════════════
 // ИНИЦИАЛИЗАЦИЯ СТОЛОВ (БИЗНЕСОВ)
 // ═══════════════════════════════════════════════════
-
-/**
- * Бесплатная выдача мест (только owner)
- * @param beneficiary Адрес получателя
- * @param t50 Выдать $50
- * @param t250 Выдать $250
- * @param t1000 Выдать $1000
- */
-export async function giftSlotsFree(beneficiary, t50, t250, t1000) {
-  const matrix = getContract('RealEstateMatrix')
-  const tx = await matrix.giftSlotsFree(beneficiary, t50, t250, t1000)
-  return await tx.wait()
-}
 
 /**
  * Инициализация стола с 7 основателями
