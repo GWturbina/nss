@@ -135,7 +135,7 @@ const useGameStore = create(
       return {
         slots: Number(t.slotsCount || t[3] || 0),
         earned: (Number(t.totalEarned || t[0] || 0) / 1e18).toFixed(2),
-        pending: (Number(t.pendingBalance || t[2] || 0) / 1e18).toFixed(2),
+        pending: (Number(t.pending || t[2] || 0) / 1e18).toFixed(2),
         reinvests: 0,
       }
     })
