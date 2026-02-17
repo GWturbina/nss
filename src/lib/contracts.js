@@ -150,6 +150,20 @@ export async function buyLevel(level) {
   return await tx.wait()
 }
 
+export async function getUserLevel(address) {
+  try {
+    const nss = getReadContract('NSSPlatform')
+    if (!nss) return 0
+    const bridgeAddr = await nss.bridge()
+    const bridge = new ethers.Contract(bridgeAddr, [
+      'function getUserRank(address user) external view returns (uint8)'
+    ], web3.provider)
+    return Number(await bridge.getUserRank(address))
+  } catch {
+    return 0
+  }
+}
+
 export async function getUserNSSInfo(address) {
   return await safeRead('NSSPlatform', 'getUserNSSInfo', [address])
 }
