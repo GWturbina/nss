@@ -22,18 +22,20 @@ export function useBlockchain() {
   const refreshData = useCallback(async (address) => {
     if (!address) return
     try {
-      const [balances, regCheck, tables, pending, charity, house] = await Promise.all([
+      const [balances, regCheck, tables, pending, charity, house, userLevel] = await Promise.all([
         C.getBalances(address).catch(() => ({ bnb: '0', usdt: '0', cgt: '0', nst: '0' })),
         C.isRegistered(address).catch(() => false),
         C.getUserAllTables(address).catch(() => [null, null, null]),
         C.getMyPendingWithdrawal(address).catch(() => 0n),
         C.canGiveGift(address).catch(() => null),
         C.getHouseInfo(address).catch(() => null),
+        C.getUserLevel(address).catch(() => 0),
       ])
 
       updateBalances(balances)
       updateRegistration(regCheck, null)
       updateTables(tables)
+      if (userLevel > 0) useGameStore.getState().setLevel(userLevel)
       if (pending) updatePending((Number(pending) / 1e18).toFixed(2))
       if (charity) updateCharity((Number(charity[1]) / 1e18).toFixed(2), charity[0])
       if (house) updateHouse(house)
