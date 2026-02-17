@@ -369,12 +369,16 @@ export async function quoteUSDTtoBNB(usdtAmount) {
 
 export async function buyCGT(bnbAmount) {
   const cgt = getContract('CGTToken')
-  const tx = await cgt.buyTokens({ value: parse(bnbAmount) })
+  const price = await cgt.currentPrice()
+  // tokenAmount = максимум (контракт сам ограничит по BNB)
+  // maxPricePerToken = текущая цена + 10% слипажа
+  const maxPrice = price + (price / 10n)
+  const tx = await cgt.buyTokens(ethers.MaxUint256, maxPrice, { value: parse(bnbAmount) })
   return await tx.wait()
 }
 
 export async function getCGTPrice() {
-  return await safeRead('CGTToken', 'getCurrentPrice', [])
+  return await safeRead('CGTToken', 'currentPrice', [])
 }
 
 export async function getCGTInfo() {
@@ -382,9 +386,9 @@ export async function getCGTInfo() {
   if (!c) return null
   try {
     const [price, cap, supply] = await Promise.all([
-      c.getCurrentPrice(),
+      c.currentPrice(),
       c.realCapitalization(),
-      c.circulatingSupply(),
+      c.getCirculatingSupply(),
     ])
     return { price: fmt(price), capitalization: fmt(cap), supply: fmt(supply) }
   } catch { return null }
@@ -420,7 +424,7 @@ export async function buyAICredits(packageId) {
 }
 
 export async function getAIBalance(address) {
-  return await safeRead('AICredits', 'getUserCredits', [address])
+  return await safeRead('AICredits', 'getUserCreditsInfo', [address])
 }
 
 // ═══════════════════════════════════════════════════
@@ -499,9 +503,9 @@ export async function initializeFounderSlots(tableId, founders) {
   return await tx.wait()
 }
 
-export async function giftSlot(tableId, beneficiary) {
+export async function giftSlot(beneficiary, t50, t250, t1000) {
   const matrix = getContract('RealEstateMatrix')
-  const tx = await matrix.giftSlot(tableId, beneficiary)
+  const tx = await matrix.giftSlotsFree(beneficiary, t50, t250, t1000)
   return await tx.wait()
 }
 
