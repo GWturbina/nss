@@ -29,7 +29,7 @@ export async function generateMetadata({ searchParams }) {
       siteName: 'NSS — Natural Stone Seekers',
       images: [
         {
-          url: `${baseUrl}/og/invite-${t}.svg`,
+          url: `${baseUrl}/previews/invite-${t}.jpg`,
           width: 1200,
           height: 630,
           alt: tpl.title,
@@ -42,7 +42,7 @@ export async function generateMetadata({ searchParams }) {
       card: 'summary_large_image',
       title: tpl.title,
       description: tpl.description,
-      images: [`${baseUrl}/og/invite-${t}.svg`],
+      images: [`${baseUrl}/previews/invite-${t}.jpg`],
     },
     other: {
       'telegram:channel': '@nss_stones',
