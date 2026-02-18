@@ -14,21 +14,33 @@ let _listenersAttached = false
 async function refreshDataForAddress(address) {
   if (!address) return
   try {
-    const [balances, regCheck, tables, pending, charity, house, userLevel] = await Promise.all([
+    // Сначала получаем полный статус из GlobalWayBridge — это главный источник правды
+    const gwStatus = await C.getGWUserStatus(address).catch(() => null)
+
+    const [balances, tables, pending, charity, house] = await Promise.all([
       C.getBalances(address).catch(() => ({ bnb: '0', usdt: '0', cgt: '0', nst: '0' })),
-      C.isRegistered(address).catch(() => false),
       C.getUserAllTables(address).catch(() => [null, null, null]),
       C.getMyPendingWithdrawal(address).catch(() => 0n),
       C.canGiveGift(address).catch(() => null),
       C.getHouseInfo(address).catch(() => null),
-      C.getUserLevel(address).catch(() => 0),
     ])
 
     const store = useGameStore.getState()
     store.updateBalances(balances)
-    store.updateRegistration(regCheck, null)
+
+    // Синхронизируем статус регистрации и уровень из GlobalWay
+    if (gwStatus) {
+      // isRegistered = зарегистрирован в GlobalWay (достаточно для покупки уровней)
+      store.updateRegistration(gwStatus.isRegistered, gwStatus.odixId || null)
+      // maxPackage = реальный уровень из GlobalWay (0-12), НЕ ранг (0-5)!
+      if (gwStatus.maxPackage > 0) store.setLevel(gwStatus.maxPackage)
+    } else {
+      // Fallback: читаем из NSSPlatform напрямую
+      const nssReg = await C.isNSSRegistered(address).catch(() => false)
+      store.updateRegistration(nssReg, null)
+    }
+
     store.updateTables(tables)
-    if (userLevel > 0) store.setLevel(userLevel)
     if (pending) store.updatePending((Number(pending) / 1e18).toFixed(2))
     if (charity) store.updateCharity((Number(charity[1]) / 1e18).toFixed(2), charity[0])
     if (house) store.updateHouse(house)
