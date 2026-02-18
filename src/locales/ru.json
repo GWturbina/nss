@@ -316,5 +316,8 @@
   "totalUsers": "Всего участников",
   "activeThisWeek": "Активных за неделю",
   "newThisMonth": "Новых за месяц",
-  "unsupportedPair": "Пара не поддерживается"
+  "unsupportedPair": "Пара не поддерживается",
+  "uploadPhoto": "Загрузить своё фото",
+  "removePhoto": "Удалить фото",
+  "orChooseEmoji": "или выберите аватарку"
 }
