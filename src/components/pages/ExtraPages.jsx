@@ -345,11 +345,75 @@ function P2PSection() {
 // Экспорт TeamsAdmin для AdminPanel
 export function TeamsAdmin() {
   const { t } = useGameStore()
+  const [searchAddr, setSearchAddr] = useState('')
+  const [contestData, setContestData] = useState({
+    weeklyPrize: '500',
+    monthlyPrize: '2000',
+    weeklyActive: true,
+    monthlyActive: true,
+  })
+
   return (
-    <div className="p-3 rounded-2xl glass">
-      <div className="text-[12px] font-bold text-gold-400 mb-2">🤝 {t('teams')}</div>
-      <div className="text-[11px] text-slate-400">
-        Coming soon...
+    <div className="space-y-3">
+      {/* Управление соревнованиями */}
+      <div className="p-3 rounded-2xl glass">
+        <div className="text-[12px] font-bold text-purple-400 mb-2">⚔️ {t('contests')}</div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-white/5">
+            <div>
+              <div className="text-[11px] font-bold text-white">{t('weeklyContest')}</div>
+              <div className="text-[9px] text-slate-500">{t('weeklyContestDesc')}</div>
+            </div>
+            <div className={`w-10 h-5 rounded-full flex items-center px-0.5 cursor-pointer transition-all ${contestData.weeklyActive ? 'bg-emerald-500' : 'bg-white/15'}`}
+              onClick={() => setContestData(p => ({ ...p, weeklyActive: !p.weeklyActive }))}>
+              <div className={`w-4 h-4 rounded-full bg-white transition-transform ${contestData.weeklyActive ? 'translate-x-5' : ''}`} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between p-2 rounded-xl bg-white/5">
+            <div>
+              <div className="text-[11px] font-bold text-white">{t('monthlyContest')}</div>
+              <div className="text-[9px] text-slate-500">{t('monthlyContestDesc')}</div>
+            </div>
+            <div className={`w-10 h-5 rounded-full flex items-center px-0.5 cursor-pointer transition-all ${contestData.monthlyActive ? 'bg-emerald-500' : 'bg-white/15'}`}
+              onClick={() => setContestData(p => ({ ...p, monthlyActive: !p.monthlyActive }))}>
+              <div className={`w-4 h-4 rounded-full bg-white transition-transform ${contestData.monthlyActive ? 'translate-x-5' : ''}`} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Поиск пользователя */}
+      <div className="p-3 rounded-2xl glass">
+        <div className="text-[12px] font-bold text-gold-400 mb-2">🔍 {t('searchUser')}</div>
+        <input value={searchAddr} onChange={e => setSearchAddr(e.target.value)}
+          placeholder="0x... адрес кошелька"
+          className="w-full p-2.5 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none mb-2" />
+        <button className="w-full py-2 rounded-xl text-[11px] font-bold gold-btn">
+          🔍 {t('search')}
+        </button>
+      </div>
+
+      {/* Статистика команд */}
+      <div className="p-3 rounded-2xl glass">
+        <div className="text-[12px] font-bold text-emerald-400 mb-2">📊 {t('teamStats')}</div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="p-2 rounded-xl bg-white/5 text-center">
+            <div className="text-lg font-black text-gold-400">0</div>
+            <div className="text-[9px] text-slate-500">{t('totalUsers')}</div>
+          </div>
+          <div className="p-2 rounded-xl bg-white/5 text-center">
+            <div className="text-lg font-black text-emerald-400">0</div>
+            <div className="text-[9px] text-slate-500">{t('activeThisWeek')}</div>
+          </div>
+          <div className="p-2 rounded-xl bg-white/5 text-center">
+            <div className="text-lg font-black text-purple-400">0</div>
+            <div className="text-[9px] text-slate-500">{t('newThisMonth')}</div>
+          </div>
+          <div className="p-2 rounded-xl bg-white/5 text-center">
+            <div className="text-lg font-black text-blue-400">9</div>
+            <div className="text-[9px] text-slate-500">{t('partnerLines')}</div>
+          </div>
+        </div>
       </div>
     </div>
   )
