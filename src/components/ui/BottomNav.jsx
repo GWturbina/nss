@@ -5,7 +5,7 @@ export default function BottomNav() {
   const { activeTab, setTab, isAdmin, t } = useGameStore()
 
   const BOTTOM_TABS = [
-    { id: 'home', icon: '🏠', label: t('tabHome') },
+    { id: 'levels', icon: '🗺', label: t('tabLevels') },
     { id: 'team', icon: '👥', label: t('tabTeam') },
     { id: 'links', icon: '✂️', label: t('tabLinks') },
     { id: 'vault', icon: '🔐', label: t('tabVault') },
