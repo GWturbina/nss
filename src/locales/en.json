@@ -316,5 +316,8 @@
   "totalUsers": "Total users",
   "activeThisWeek": "Active this week",
   "newThisMonth": "New this month",
-  "unsupportedPair": "Unsupported pair"
+  "unsupportedPair": "Unsupported pair",
+  "uploadPhoto": "Upload your photo",
+  "removePhoto": "Remove photo",
+  "orChooseEmoji": "or choose an avatar"
 }
