@@ -9,7 +9,7 @@ import { shortAddress } from '@/lib/web3'
 // GEMS PAGE — Магазин камней (GemVault)
 // ═════════════════════════════════════════════════════════
 export function GemsTab() {
-  const { wallet, addNotification, setTxPending, txPending, t } = useGameStore()
+  const { wallet, registered, addNotification, setTxPending, txPending, t } = useGameStore()
   const [selectedGem, setSelectedGem] = useState(null)
   const [nstBurn, setNstBurn] = useState(0)
   const [filter, setFilter] = useState('all')
@@ -76,6 +76,7 @@ export function GemsTab() {
 
   const handleBuy = async (gem) => {
     if (!wallet) { addNotification(`❌ ${t('connectWalletFirst')}`); return }
+    if (!registered) { addNotification('❌ Требуется регистрация в GlobalWay'); return }
     setTxPending(true)
     const result = await C.safeCall(() => C.buyGem(gem.id, gem.categoryId || 0))
     setTxPending(false)
