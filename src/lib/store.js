@@ -111,15 +111,30 @@ const useGameStore = create(
       : false,
   })),
   clearWallet: () => set({
+    // Кошелёк
     wallet: null, chainId: null, walletType: null,
     registered: false, sponsorId: null,
+    // Балансы — ОБНУЛЯЕМ полностью
     bnb: 0, usdt: 0, cgt: 0, nst: 0, gwt: 0,
+    // Уровень сбрасываем в 0 (данные следующего пользователя должны загрузиться заново)
+    level: 0,
+    localNst: 0,
+    taps: 0,
+    energy: 500,
+    evapActive: false,
+    evapSeconds: 1800,
+    // Бизнесы
     tables: [
-      { slots: 0, earned: '0', pending: '0', reinvests: 0 },
-      { slots: 0, earned: '0', pending: '0', reinvests: 0 },
-      { slots: 0, earned: '0', pending: '0', reinvests: 0 },
+      { slots: 0, earned: '0', pending: '0', reinvests: 0, sqm: 0 },
+      { slots: 0, earned: '0', pending: '0', reinvests: 0, sqm: 0 },
+      { slots: 0, earned: '0', pending: '0', reinvests: 0, sqm: 0 },
     ],
-    pendingWithdrawal: '0', houseStatus: 'none',
+    totalSqm: 0,
+    pendingWithdrawal: '0',
+    // Дом
+    houseStatus: 'none', housePrice: 0, houseDeposit: 0, houseLoan: 0, houseRepaid: 0,
+    // Благодарю
+    charityBalance: '0', canGive: false,
   }),
   setConnecting: (v) => set({ isConnecting: v }),
 
@@ -240,12 +255,14 @@ const useGameStore = create(
   setLevel: (lv) => set({ level: lv }),
 }),
     {
-      name: 'nss-storage',
+      name: 'nss-storage-v3',   // Смени на v4, v5... при изменениях структуры — старый кеш автоматом игнорируется
       partialize: (state) => ({ 
         lang: state.lang, 
-        level: state.level,
+        // level НЕ сохраняем — загружается из блокчейна каждый раз
         ownerWallet: state.ownerWallet,
       }),
+      version: 3,
+      migrate: () => ({}),      // При несовпадении версии — чистый старт без ошибок
     }
   )
 )
