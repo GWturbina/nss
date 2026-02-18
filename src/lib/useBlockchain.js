@@ -81,6 +81,7 @@ async function doConnect() {
 function doDisconnect() {
   web3.disconnect()
   stopRefreshCycle()
+  C.resetContractsCache()        // сброс кеша bridge адреса
   useGameStore.getState().clearWallet()
 }
 
