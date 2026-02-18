@@ -3,7 +3,19 @@ import Script from 'next/script'
 
 export const metadata = {
   title: 'NSS — Natural Stone Seekers',
-  description: 'Mine gems, invest in precious stones, build your home!',
+  description: 'Ищи натуральные камни, зарабатывай, строй свой дом! Бесплатный старт.',
+  openGraph: {
+    title: 'NSS — Natural Stone Seekers',
+    description: 'Ищи натуральные камни, зарабатывай, строй свой дом! Бесплатный старт.',
+    siteName: 'NSS',
+    type: 'website',
+    locale: 'ru_RU',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NSS — Natural Stone Seekers',
+    description: 'Ищи натуральные камни, зарабатывай, строй свой дом!',
+  },
 }
 
 export default function RootLayout({ children }) {
