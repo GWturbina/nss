@@ -19,6 +19,9 @@ export default function MineTab() {
   const [thoughts, setThoughts] = useState([])
   const tapCountRef = useRef(0)
   const [buyingLevel, setBuyingLevel] = useState(false)
+  const [showRegModal, setShowRegModal] = useState(false)
+  const [sponsorInput, setSponsorInput] = useState('')
+  const [registering, setRegistering] = useState(false)
 
   const totalNst = nst + localNst
 
@@ -70,16 +73,49 @@ export default function MineTab() {
     }
   }, [doTap, lv, showThought, isInTelegram, haptic])
 
-  const handleBuyNextLevel = async () => {
+  // Открыть модал регистрации если незарегистрирован, иначе купить уровень
+  const handleBuyNextLevel = () => {
     if (!wallet || !nextLv) return
+    if (!registered) {
+      // Пробуем взять реф. код из localStorage (Telegram startParam)
+      const savedRef = typeof window !== 'undefined' ? localStorage.getItem('nss_ref') || '' : ''
+      setSponsorInput(savedRef)
+      setShowRegModal(true)
+      return
+    }
+    doBuyLevel()
+  }
+
+  // Регистрация + покупка уровня (с проверкой sponsorId)
+  const handleRegisterAndBuy = async () => {
+    const sid = parseInt(sponsorInput)
+    if (!sid || sid <= 0) {
+      addNotification('❌ Введи корректный ID спонсора (число > 0)')
+      return
+    }
+    setRegistering(true)
+    setTxPending(true)
+    try {
+      addNotification(`⏳ Регистрация со спонсором #${sid}...`)
+      await C.register(sid)
+      useGameStore.getState().updateRegistration(true, sid)
+      addNotification('✅ Регистрация успешна!')
+      setShowRegModal(false)
+      // После регистрации сразу покупаем первый уровень
+      await doBuyLevel()
+    } catch (err) {
+      const msg = err?.reason || err?.shortMessage || err?.message || 'Ошибка'
+      addNotification(`❌ ${msg.slice(0, 100)}`)
+    }
+    setTxPending(false)
+    setRegistering(false)
+  }
+
+  const doBuyLevel = async () => {
+    if (!nextLv) return
     setBuyingLevel(true)
     setTxPending(true)
     try {
-      if (!registered) {
-        addNotification(`⏳ ${t('registeringNSS')}`)
-        await C.register(0)
-        useGameStore.getState().updateRegistration(true, null)
-      }
       addNotification(`⏳ ${t('buyingLevel')} ${nextLv.name}...`)
       await C.buyLevel(nextLv.id)
       setLevel(nextLv.id)
@@ -138,7 +174,52 @@ export default function MineTab() {
         )}
         {wallet && !registered && (
           <div className="p-2.5 rounded-xl text-[11px] font-bold text-center bg-yellow-500/8 border border-yellow-500/15 text-yellow-400">
-            💳 {t('walletConnected')}
+            🆔 Кошелёк подключён — нужна регистрация в NSS
+          </div>
+        )}
+
+        {/* Модал регистрации */}
+        {showRegModal && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center pb-6 px-3" style={{ background: 'rgba(0,0,0,0.7)' }}
+            onClick={() => setShowRegModal(false)}>
+            <div className="w-full max-w-[400px] rounded-3xl p-5 space-y-4"
+              style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,215,0,0.25)' }}
+              onClick={e => e.stopPropagation()}>
+              <div className="text-center">
+                <div className="text-2xl mb-1">🆔</div>
+                <div className="text-sm font-black text-white">Регистрация в NSS</div>
+                <div className="text-[10px] text-slate-400 mt-1">
+                  Введи ID спонсора (odixId из GlobalWay). Это тот кто тебя пригласил.
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500 mb-1 block">ID спонсора (число):</label>
+                <input
+                  type="number"
+                  value={sponsorInput}
+                  onChange={e => setSponsorInput(e.target.value)}
+                  placeholder="Например: 12345"
+                  className="w-full p-3 rounded-xl text-sm text-white outline-none"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,215,0,0.2)' }}
+                  autoFocus
+                />
+                {sponsorInput && parseInt(sponsorInput) <= 0 && (
+                  <div className="text-[10px] text-red-400 mt-1">❌ ID должен быть больше 0</div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setShowRegModal(false)}
+                  className="flex-1 py-3 rounded-2xl text-[11px] font-bold text-slate-400 border border-white/10">
+                  Отмена
+                </button>
+                <button onClick={handleRegisterAndBuy}
+                  disabled={registering || !sponsorInput || parseInt(sponsorInput) <= 0}
+                  className="flex-1 py-3 rounded-2xl text-[11px] font-black gold-btn"
+                  style={{ opacity: (!sponsorInput || parseInt(sponsorInput) <= 0 || registering) ? 0.5 : 1 }}>
+                  {registering ? '⏳ Регистрация...' : '✅ Зарегистрироваться'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
