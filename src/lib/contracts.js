@@ -166,6 +166,12 @@ const BRIDGE_ABI = [
 
 // Кеш адреса bridge — читаем один раз
 let _bridgeAddr = null
+
+/** Вызывается при дисконнекте кошелька — сбрасываем кеш */
+export function resetContractsCache() {
+  _bridgeAddr = null
+}
+
 async function getBridgeContract() {
   try {
     if (!_bridgeAddr) {
