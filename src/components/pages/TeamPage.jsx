@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import useGameStore from '@/lib/store'
 import { LEVELS, LEADERBOARD } from '@/lib/gameData'
 import { shortAddress } from '@/lib/web3'
@@ -22,6 +22,55 @@ export default function TeamTab() {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [editingNick, setEditingNick] = useState(false)
   const [tempNick, setTempNick] = useState('')
+  const fileInputRef = useRef(null)
+
+  // Загрузка фото — обрезка до 200x200, сохранение в localStorage
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) return
+
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const size = 200
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext('2d')
+
+        // Обрезка по центру (квадрат)
+        const min = Math.min(img.width, img.height)
+        const sx = (img.width - min) / 2
+        const sy = (img.height - min) / 2
+
+        // Круглая маска
+        ctx.beginPath()
+        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2)
+        ctx.closePath()
+        ctx.clip()
+
+        ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size)
+
+        const base64 = canvas.toDataURL('image/jpeg', 0.85)
+        setAvatar(base64)
+        localStorage.setItem('nss_avatar', base64)
+        setShowAvatarPicker(false)
+      }
+      img.src = ev.target.result
+    }
+    reader.readAsDataURL(file)
+    // Очистить input чтобы можно было загрузить тот же файл
+    e.target.value = ''
+  }
+
+  const removePhoto = () => {
+    setAvatar('👨‍💼')
+    localStorage.setItem('nss_avatar', '👨‍💼')
+  }
+
+  const isCustomPhoto = avatar.startsWith('data:')
 
   // Загрузка профиля
   useEffect(() => {
@@ -106,24 +155,54 @@ export default function TeamTab() {
             {/* Аватарка */}
             <div className="relative inline-block mb-2">
               <div onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-                className="w-20 h-20 rounded-full flex items-center justify-center text-4xl cursor-pointer border-3 transition-all hover:scale-105"
-                style={{ borderColor: `${lv.color}60`, background: `${lv.color}15`, border: `3px solid ${lv.color}60` }}>
-                {avatar}
+                className="w-20 h-20 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 overflow-hidden"
+                style={{ border: `3px solid ${lv.color}60`, background: `${lv.color}15` }}>
+                {isCustomPhoto ? (
+                  <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-4xl">{avatar}</span>
+                )}
               </div>
               <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center text-sm border-2"
                 style={{ background: `${lv.color}30`, borderColor: lv.color, color: lv.color }}>
                 {level}
               </div>
+              {/* Маленькая иконка камеры */}
+              <div className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full flex items-center justify-center text-[10px] bg-white/10 border border-white/20 cursor-pointer"
+                onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}>
+                📷
+              </div>
             </div>
 
+            {/* Скрытый input для загрузки фото */}
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+
             {showAvatarPicker && (
-              <div className="grid grid-cols-6 gap-2 p-3 rounded-xl bg-white/5 mb-3">
-                {AVATARS.map((av, i) => (
-                  <button key={i} onClick={() => selectAvatar(av)}
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl ${avatar === av ? 'bg-gold-400/20 border border-gold-400/40' : 'hover:bg-white/10'}`}>
-                    {av}
+              <div className="p-3 rounded-xl bg-white/5 mb-3">
+                {/* Кнопка загрузки фото */}
+                <button onClick={() => fileInputRef.current?.click()}
+                  className="w-full py-2.5 rounded-xl text-[11px] font-bold mb-2 bg-blue-500/15 text-blue-400 border border-blue-500/25 hover:bg-blue-500/25 transition-all">
+                  📷 {t('uploadPhoto')}
+                </button>
+
+                {/* Удалить фото если есть */}
+                {isCustomPhoto && (
+                  <button onClick={removePhoto}
+                    className="w-full py-2 rounded-xl text-[10px] font-bold mb-2 bg-red-500/10 text-red-400 border border-red-500/20">
+                    ✕ {t('removePhoto')}
                   </button>
-                ))}
+                )}
+
+                {/* Эмодзи-аватарки */}
+                <div className="text-[9px] text-slate-500 mb-1.5 text-center">{t('orChooseEmoji')}</div>
+                <div className="grid grid-cols-6 gap-2">
+                  {AVATARS.map((av, i) => (
+                    <button key={i} onClick={() => selectAvatar(av)}
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl ${avatar === av ? 'bg-gold-400/20 border border-gold-400/40' : 'hover:bg-white/10'}`}>
+                      {av}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -294,7 +373,13 @@ export default function TeamTab() {
             <div className="p-3 rounded-2xl glass border-gold-400/20">
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold text-gold-400 w-5">—</span>
-                <span className="text-lg">{avatar}</span>
+                {isCustomPhoto ? (
+                  <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                    <img src={avatar} alt="" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <span className="text-lg">{avatar}</span>
+                )}
                 <div className="flex-1">
                   <div className="text-[11px] font-bold text-gold-400">{nickname || shortAddress(wallet)} ({t('you')})</div>
                   <div className="text-[9px] text-slate-500">Lv.{level}</div>
