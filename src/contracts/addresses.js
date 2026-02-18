@@ -9,12 +9,12 @@ const ADDRESSES = {
 
   // ═══ NSS Core (13 контрактов) ═══
   CGTToken:          '0x56F5c29096BB7859e52086118aed31Fe08Fd6659',
-  NSTToken:          '0xA1A7BAb7930dBaE59d73918f1fc6c8B9aFD43992',
+  NSTToken:          '0xE9a2758F4BB29C4869d3Eee8fB9c9b176Fc4816A',
   NSSPlatform:       '0xFb1ddFa8A7EAB0081EAe24ec3d24B0ED4Dd84f2B',
   RealEstateMatrix:  '0xCA10A6971C9Dcbda4e8AdFC6328977261B8B82Fe', // v2.4 + i18n
   MatrixPaymentsV2:  '0x959217Aab60f01cc582373E1a2bc36e7a076bc39',
   SwapHelper:        '0xFF0e9BFFf1cc5A6B65f689bF2442056627686Bf5',
-  CharityFund:       '0x090EEc8b07805310b06FD3d9198c8947E7067A59',
+  CharityFund:       '0x06047f659a367dDB9ea60237ba09676202A0EBF8',
   HousingFund:       '0x1d2aF2A868fCC547c3F9339AeC3e2DfaA533bE92',
   CardGiftMarketing: '0x67dD9ed3E63bA44047A70DA70AeC508101F048b7',
   GemVault:          '0x9b0fA988b0fb5Fe79332f66aB1F7a86584a1fd47',
