@@ -2,7 +2,10 @@
 import useGameStore from '@/lib/store'
 
 export default function BottomNav() {
-  const { activeTab, setTab, isAdmin, t } = useGameStore()
+  const { activeTab, setTab, isAdmin, wallet, ownerWallet, t } = useGameStore()
+
+  // isAdmin = true если wallet совпадает с ownerWallet (и при reload, и после подключения)
+  const showAdmin = isAdmin || (wallet && ownerWallet && wallet.toLowerCase() === ownerWallet.toLowerCase())
 
   const BOTTOM_TABS = [
     { id: 'levels', icon: '🗺', label: t('tabLevels') },
@@ -11,7 +14,7 @@ export default function BottomNav() {
     { id: 'vault', icon: '🔐', label: t('tabVault') },
   ]
 
-  const tabs = isAdmin
+  const tabs = showAdmin
     ? [...BOTTOM_TABS, { id: 'admin', icon: '⚙️', label: t('tabAdmin') }]
     : BOTTOM_TABS
 
