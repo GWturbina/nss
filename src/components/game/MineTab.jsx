@@ -4,17 +4,21 @@ import useGameStore from '@/lib/store'
 import { LEVELS } from '@/lib/gameData'
 import { useBlockchain } from '@/lib/useBlockchain'
 import { useTelegram } from '@/lib/useTelegram'
+import * as C from '@/lib/contracts'
 
 export default function MineTab() {
   const { level, localNst, nst, energy, maxEnergy, taps, registered, wallet,
-    evapActive, evapSeconds, doTap, tickEvap, news, t } = useGameStore()
+    evapActive, evapSeconds, doTap, tickEvap, news, setTab, addNotification,
+    setTxPending, txPending, setLevel, t } = useGameStore()
   const { connect } = useBlockchain()
   const { haptic, isInTelegram } = useTelegram()
   const lv = LEVELS[level]
+  const nextLv = LEVELS[level + 1] || null
   const tapAreaRef = useRef(null)
   const [effects, setEffects] = useState([])
   const [thoughts, setThoughts] = useState([])
   const tapCountRef = useRef(0)
+  const [buyingLevel, setBuyingLevel] = useState(false)
 
   const totalNst = nst + localNst
 
@@ -44,10 +48,7 @@ export default function MineTab() {
     e.preventDefault()
     const earned = doTap()
     if (earned === null) return
-    
-    // Вибрация в Telegram
     if (isInTelegram) haptic('light')
-    
     const rect = tapAreaRef.current.getBoundingClientRect()
     const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left
     const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top
@@ -68,6 +69,28 @@ export default function MineTab() {
       showThought(lv.thought, lv.thoughtColor, lv.thoughtIcon, shape)
     }
   }, [doTap, lv, showThought, isInTelegram, haptic])
+
+  const handleBuyNextLevel = async () => {
+    if (!wallet || !nextLv) return
+    setBuyingLevel(true)
+    setTxPending(true)
+    try {
+      if (!registered) {
+        addNotification(`⏳ ${t('registeringNSS')}`)
+        await C.register(0)
+        useGameStore.getState().updateRegistration(true, null)
+      }
+      addNotification(`⏳ ${t('buyingLevel')} ${nextLv.name}...`)
+      await C.buyLevel(nextLv.id)
+      setLevel(nextLv.id)
+      addNotification(`✅ ${nextLv.name} ${t('levelActivated')}`)
+    } catch (err) {
+      const msg = err?.reason || err?.shortMessage || err?.message || t('error')
+      addNotification(`❌ ${msg.slice(0, 80)}`)
+    }
+    setTxPending(false)
+    setBuyingLevel(false)
+  }
 
   const evapMin = Math.floor(evapSeconds / 60)
   const evapSec = evapSeconds % 60
@@ -102,7 +125,7 @@ export default function MineTab() {
         </div>
       </div>
 
-      <div className="px-3 mt-2">
+      <div className="px-3 mt-2 space-y-1.5">
         {!wallet && taps === 0 && (
           <button onClick={connect} className="w-full p-2.5 rounded-xl text-xs font-bold text-center bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/15 transition-all">
             🚀 {t('connectSaveStones')}
@@ -118,15 +141,49 @@ export default function MineTab() {
             💳 {t('walletConnected')}
           </div>
         )}
-        {wallet && registered && level === 0 && (
-          <div className="p-2.5 rounded-xl text-[11px] font-bold text-center bg-emerald-500/8 border border-emerald-500/15 text-emerald-400">
-            ✅ {t('registeredBuyShovel')}
+
+        {/* ═══ КНОПКА ПОКУПКИ СЛЕДУЮЩЕГО РАНГА ═══ */}
+        {wallet && nextLv && (
+          <button onClick={handleBuyNextLevel} disabled={buyingLevel || txPending}
+            className="w-full p-3 rounded-2xl font-bold text-sm transition-all active:scale-[0.98] border-2 flex items-center justify-center gap-2"
+            style={{
+              background: `linear-gradient(135deg, ${nextLv.color}20, ${nextLv.color}08)`,
+              borderColor: `${nextLv.color}50`,
+              color: nextLv.color,
+              opacity: (buyingLevel || txPending) ? 0.6 : 1,
+            }}>
+            {buyingLevel ? (
+              <span>⏳ {t('buying')}</span>
+            ) : (
+              <>
+                <span className="text-lg">{nextLv.emoji}</span>
+                <span>{t('buy')} {nextLv.name}</span>
+                <span className="text-[11px] opacity-75">({nextLv.price})</span>
+              </>
+            )}
+          </button>
+        )}
+        {wallet && !nextLv && level === 12 && (
+          <div className="p-2.5 rounded-xl text-[11px] font-bold text-center bg-gold-400/10 border border-gold-400/25 text-gold-400">
+            👑 {t('maxLevelReached')}
           </div>
         )}
       </div>
 
+      {nextLv && (
+        <div className="px-3 mt-1.5">
+          <div className="flex items-center justify-between text-[9px] mb-0.5">
+            <span className="text-slate-500">{lv.emoji} Lv.{level} (+{lv.nstPerTap})</span>
+            <span style={{ color: nextLv.color }} className="font-bold">{nextLv.emoji} {nextLv.name} (+{nextLv.nstPerTap})</span>
+          </div>
+          <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+            <div className="h-full rounded-full" style={{ width: '100%', background: `linear-gradient(90deg, ${lv.color}, ${nextLv.color}40)` }} />
+          </div>
+        </div>
+      )}
+
       <div ref={tapAreaRef} onClick={handleTap} onTouchStart={handleTap}
-        className="flex-1 mx-3 my-2 rounded-2xl relative overflow-hidden flex items-center justify-center cursor-pointer select-none min-h-[240px] border border-white/5 transition-all duration-700"
+        className="flex-1 mx-3 my-2 rounded-2xl relative overflow-hidden flex items-center justify-center cursor-pointer select-none min-h-[200px] border border-white/5 transition-all duration-700"
         style={{ background: `radial-gradient(circle at 50% 60%, var(--lv-bg), #10101e)`, boxShadow: `inset 0 0 50px var(--lv-glow)` }}>
         <div className="relative z-10 active:animate-shake select-none transition-transform w-[100px] h-[100px] flex items-center justify-center">
           <img src={toolSrc} alt={lv.name} className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }} />
