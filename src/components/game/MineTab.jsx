@@ -73,7 +73,7 @@ export default function MineTab() {
     }
   }, [doTap, lv, showThought, isInTelegram, haptic])
 
-  // Открыть модал регистрации если незарегистрирован, иначе купить уровень
+  // Открыть модал регистрации если НЕ зарегистрирован в GlobalWay, иначе купить уровень
   const handleBuyNextLevel = () => {
     if (!wallet || !nextLv) return
     if (!registered) {
@@ -83,10 +83,11 @@ export default function MineTab() {
       setShowRegModal(true)
       return
     }
+    // Уже зарегистрирован в GlobalWay — просто покупаем уровень
     doBuyLevel()
   }
 
-  // Регистрация + покупка уровня (с проверкой sponsorId)
+  // Регистрация в NSS+GlobalWay с проверкой sponsorId
   const handleRegisterAndBuy = async () => {
     const sid = parseInt(sponsorInput)
     if (!sid || sid <= 0) {
@@ -97,15 +98,27 @@ export default function MineTab() {
     setTxPending(true)
     try {
       addNotification(`⏳ Регистрация со спонсором #${sid}...`)
+      // register() → NSSPlatform → вызывает bridge.registerUser → MatrixRegistry → GlobalWay
       await C.register(sid)
       useGameStore.getState().updateRegistration(true, sid)
       addNotification('✅ Регистрация успешна!')
       setShowRegModal(false)
-      // После регистрации сразу покупаем первый уровень
+      // Небольшая пауза для подтверждения блока, затем покупаем уровень
+      await new Promise(r => setTimeout(r, 1500))
       await doBuyLevel()
     } catch (err) {
       const msg = err?.reason || err?.shortMessage || err?.message || 'Ошибка'
-      addNotification(`❌ ${msg.slice(0, 100)}`)
+      // Понятные сообщения для частых ошибок
+      if (msg.includes('Already registered')) {
+        addNotification('ℹ️ Ты уже зарегистрирован! Покупаем уровень...')
+        useGameStore.getState().updateRegistration(true, sid)
+        setShowRegModal(false)
+        await doBuyLevel()
+      } else if (msg.includes('Sponsor not found') || msg.includes('Invalid sponsor')) {
+        addNotification(`❌ Спонсор #${sid} не найден в GlobalWay. Уточни ID.`)
+      } else {
+        addNotification(`❌ ${msg.slice(0, 100)}`)
+      }
     }
     setTxPending(false)
     setRegistering(false)
@@ -118,11 +131,22 @@ export default function MineTab() {
     try {
       addNotification(`⏳ ${t('buyingLevel')} ${nextLv.name}...`)
       await C.buyLevel(nextLv.id)
+      // Обновляем уровень локально и через блокчейн
       setLevel(nextLv.id)
+      // Рефреш через 2 сек чтобы GlobalWay подтвердил
+      setTimeout(async () => {
+        const newLevel = await C.getUserLevel(wallet).catch(() => 0)
+        if (newLevel > 0) useGameStore.getState().setLevel(newLevel)
+      }, 2000)
       addNotification(`✅ ${nextLv.name} ${t('levelActivated')}`)
     } catch (err) {
       const msg = err?.reason || err?.shortMessage || err?.message || t('error')
-      addNotification(`❌ ${msg.slice(0, 80)}`)
+      if (msg.includes('Not registered')) {
+        addNotification('❌ Требуется регистрация в GlobalWay')
+        setShowRegModal(true)
+      } else {
+        addNotification(`❌ ${msg.slice(0, 80)}`)
+      }
     }
     setTxPending(false)
     setBuyingLevel(false)
@@ -172,10 +196,11 @@ export default function MineTab() {
             ⚠️ {t('stonesEvaporating')} <span className="font-display text-lg">{evapMin}:{evapSec < 10 ? '0' : ''}{evapSec}</span> 💨
           </button>
         )}
-        {wallet && !registered && (
-          <div className="p-2.5 rounded-xl text-[11px] font-bold text-center bg-yellow-500/8 border border-yellow-500/15 text-yellow-400">
-            🆔 Кошелёк подключён — нужна регистрация в NSS
-          </div>
+        {wallet && !registered && !showRegModal && (
+          <button onClick={handleBuyNextLevel}
+            className="w-full p-2.5 rounded-xl text-[11px] font-bold text-center bg-yellow-500/8 border border-yellow-500/25 text-yellow-400 hover:bg-yellow-500/12 transition-all">
+            🆔 Зарегистрироваться в NSS и начать
+          </button>
         )}
 
         {/* Модал регистрации */}
