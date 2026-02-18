@@ -19,6 +19,18 @@ export default function Home() {
 
   // Инициализация — ОДИН РАЗ
   useBlockchainInit()
+
+  // Авто-очистка старых версий кеша (nss-storage, nss-storage-v1, v2...)
+  useEffect(() => {
+    const CURRENT_KEY = 'nss-storage-v3'
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('nss-storage') && key !== CURRENT_KEY) {
+          localStorage.removeItem(key)
+        }
+      })
+    } catch {}
+  }, [])
   const { isInTelegram, startParam } = useTelegram()
 
   // Если пришли с реферальной ссылки из Telegram
