@@ -153,27 +153,87 @@ export async function buyLevel(level) {
   return await tx.wait()
 }
 
+// ═══════════════════════════════════════════════════
+// МОСТ GlobalWayBridge — ABI для чтения статуса
+// ═══════════════════════════════════════════════════
+const BRIDGE_ABI = [
+  'function isUserRegistered(address user) external view returns (bool)',
+  'function getUserStatus(address user) external view returns (tuple(bool isRegistered, uint256 odixId, uint8 maxPackage, uint8 rank, bool quarterlyActive, address sponsor, bool[12] activeLevels))',
+  'function getUserOdixId(address user) external view returns (uint256)',
+  'function getLevelPrice(uint8 level) external view returns (uint256)',
+  'function getMultipleLevelsPrice(address user, uint8 fromLevel, uint8 toLevel) external view returns (uint256)',
+]
+
+// Кеш адреса bridge — читаем один раз
+let _bridgeAddr = null
+async function getBridgeContract() {
+  try {
+    if (!_bridgeAddr) {
+      const nss = getReadContract('NSSPlatform')
+      if (!nss) return null
+      _bridgeAddr = await nss.bridge()
+    }
+    return new ethers.Contract(_bridgeAddr, BRIDGE_ABI, readProvider)
+  } catch { return null }
+}
+
+/**
+ * Полный статус пользователя из GlobalWayBridge:
+ * isRegistered, odixId, maxPackage(0-12), rank(0-5), quarterlyActive, sponsor, activeLevels
+ */
+export async function getGWUserStatus(address) {
+  try {
+    const bridge = await getBridgeContract()
+    if (!bridge) return null
+    const s = await bridge.getUserStatus(address)
+    return {
+      isRegistered: s.isRegistered,
+      odixId: Number(s.odixId),
+      maxPackage: Number(s.maxPackage),   // 0-12 — это и есть NSS уровень!
+      rank: Number(s.rank),               // 0-5 AccessRank
+      quarterlyActive: s.quarterlyActive,
+      sponsor: s.sponsor,
+      activeLevels: [...s.activeLevels],  // bool[12]
+    }
+  } catch { return null }
+}
+
+/**
+ * Уровень пользователя = maxPackage из GlobalWay (0-12)
+ * getUserRank возвращал AccessRank 0-5 — это было НЕПРАВИЛЬНО!
+ */
 export async function getUserLevel(address) {
   try {
-    const nss = getReadContract('NSSPlatform')
-    if (!nss) return 0
-    const bridgeAddr = await nss.bridge()
-    const bridge = new ethers.Contract(bridgeAddr, [
-      'function getUserRank(address user) external view returns (uint8)'
-    ], readProvider)
-    return Number(await bridge.getUserRank(address))
-  } catch {
-    return 0
-  }
+    const status = await getGWUserStatus(address)
+    return status ? status.maxPackage : 0
+  } catch { return 0 }
+}
+
+/**
+ * Проверка регистрации:
+ * - isGWRegistered = зарегистрирован в GlobalWay (через bridge)
+ * - isNSSRegistered = зарегистрирован через NSS конкретно
+ * Для показа кнопки уровней нужен isGWRegistered!
+ */
+export async function isRegistered(address) {
+  try {
+    const bridge = await getBridgeContract()
+    if (!bridge) {
+      // Fallback на NSSPlatform
+      const result = await safeRead('NSSPlatform', 'isNSSUser', [address])
+      return result === true
+    }
+    return await bridge.isUserRegistered(address)
+  } catch { return false }
+}
+
+export async function isNSSRegistered(address) {
+  const result = await safeRead('NSSPlatform', 'isNSSUser', [address])
+  return result === true
 }
 
 export async function getUserNSSInfo(address) {
   return await safeRead('NSSPlatform', 'getUserNSSInfo', [address])
-}
-
-export async function isRegistered(address) {
-  const result = await safeRead('NSSPlatform', 'isNSSUser', [address])
-  return result === true
 }
 
 // ═══════════════════════════════════════════════════
