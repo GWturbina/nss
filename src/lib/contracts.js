@@ -8,32 +8,33 @@ import web3 from './web3'
 import ADDRESSES from '@/contracts/addresses'
 
 // ABI импорты
-import RealEstateMatrixABI from '@/contracts/abi/RealEstateMatrix.json'
-import CGTTokenABI from '@/contracts/abi/CGTToken.json'
-import NSTTokenABI from '@/contracts/abi/NSTToken.json'
-import GemVaultABI from '@/contracts/abi/GemVault.json'
-import HousingFundABI from '@/contracts/abi/HousingFund.json'
-import CharityFundABI from '@/contracts/abi/CharityFund.json'
-import MatrixPaymentsABI from '@/contracts/abi/MatrixPaymentsV2.json'
-import NSSPlatformABI from '@/contracts/abi/NSSPlatform.json'
-import SwapHelperABI from '@/contracts/abi/SwapHelper.json'
-import AICreditsABI from '@/contracts/abi/AICredits.json'
-import CardGiftMarketingABI from '@/contracts/abi/CardGiftMarketing.json'
-import SafeVaultABI from '@/contracts/abi/SafeVault.json'
+import RealEstateMatrixABIFile from '@/contracts/abi/RealEstateMatrix.json'
+import CGTTokenABIFile from '@/contracts/abi/CGTToken.json'
+import NSTTokenABIFile from '@/contracts/abi/NSTToken.json'
+import GemVaultABIFile from '@/contracts/abi/GemVault.json'
+import HousingFundABIFile from '@/contracts/abi/HousingFund.json'
+import CharityFundABIFile from '@/contracts/abi/CharityFund.json'
+import MatrixPaymentsABIFile from '@/contracts/abi/MatrixPaymentsV2.json'
+import NSSPlatformABIFile from '@/contracts/abi/NSSPlatform.json'
+import SwapHelperABIFile from '@/contracts/abi/SwapHelper.json'
+import AICreditsABIFile from '@/contracts/abi/AICredits.json'
+import CardGiftMarketingABIFile from '@/contracts/abi/CardGiftMarketing.json'
+import SafeVaultABIFile from '@/contracts/abi/SafeVault.json'
 
+// Извлекаем массив ABI из обёртки GlobalWay формата {contractName, address, network, chainId, abi:[]}
 const ABIS = {
-  RealEstateMatrix: RealEstateMatrixABI,
-  CGTToken: CGTTokenABI,
-  NSTToken: NSTTokenABI,
-  GemVault: GemVaultABI,
-  HousingFund: HousingFundABI,
-  CharityFund: CharityFundABI,
-  MatrixPaymentsV2: MatrixPaymentsABI,
-  NSSPlatform: NSSPlatformABI,
-  SwapHelper: SwapHelperABI,
-  AICredits: AICreditsABI,
-  CardGiftMarketing: CardGiftMarketingABI,
-  SafeVault: SafeVaultABI,
+  RealEstateMatrix: RealEstateMatrixABIFile.abi || RealEstateMatrixABIFile,
+  CGTToken: CGTTokenABIFile.abi || CGTTokenABIFile,
+  NSTToken: NSTTokenABIFile.abi || NSTTokenABIFile,
+  GemVault: GemVaultABIFile.abi || GemVaultABIFile,
+  HousingFund: HousingFundABIFile.abi || HousingFundABIFile,
+  CharityFund: CharityFundABIFile.abi || CharityFundABIFile,
+  MatrixPaymentsV2: MatrixPaymentsABIFile.abi || MatrixPaymentsABIFile,
+  NSSPlatform: NSSPlatformABIFile.abi || NSSPlatformABIFile,
+  SwapHelper: SwapHelperABIFile.abi || SwapHelperABIFile,
+  AICredits: AICreditsABIFile.abi || AICreditsABIFile,
+  CardGiftMarketing: CardGiftMarketingABIFile.abi || CardGiftMarketingABIFile,
+  SafeVault: SafeVaultABIFile.abi || SafeVaultABIFile,
 }
 
 // ═══════════════════════════════════════════════════
@@ -200,7 +201,13 @@ export async function getUserAllTables(address) {
     getUserTableInfo(address, 1),
     getUserTableInfo(address, 2),
   ])
-  return results
+  // Дополняем данными о реинвестах из userReinvestCount
+  const reinvests = await Promise.all([
+    safeRead('RealEstateMatrix', 'userReinvestCount', [address, 0]),
+    safeRead('RealEstateMatrix', 'userReinvestCount', [address, 1]),
+    safeRead('RealEstateMatrix', 'userReinvestCount', [address, 2]),
+  ])
+  return results.map((r, i) => r ? { ...r, _reinvests: Number(reinvests[i] || 0) } : r)
 }
 
 export async function getMyPendingWithdrawal(address) {
@@ -228,21 +235,39 @@ export async function chooseContinueReinvest(continueChoice) {
 export async function getMatrixStats() {
   const c = getReadContract('RealEstateMatrix')
   if (!c) return null
-  const [totalSlots, totalVolume, totalCharity, totalRotation] = await c.getGlobalStats()
-  return {
-    totalSlots: Number(totalSlots),
-    totalVolume: fmt(totalVolume),
-    totalCharity: fmt(totalCharity),
-    totalRotation: fmt(totalRotation),
-  }
+  try {
+    const [totalSlots, totalVolume, totalCharity, totalRotation] = await Promise.all([
+      c.totalSlots().catch(() => 0n),
+      c.totalVolume().catch(() => 0n),
+      c.totalCharityFunded().catch(() => 0n),
+      c.totalRotationFunded().catch(() => 0n),
+    ])
+    return {
+      totalSlots: Number(totalSlots),
+      totalVolume: fmt(totalVolume),
+      totalCharity: fmt(totalCharity),
+      totalRotation: fmt(totalRotation),
+    }
+  } catch { return null }
 }
 
 export async function getContractHealth() {
   const c = getReadContract('RealEstateMatrix')
   if (!c) return null
   try {
-    const [balance, owedW, owedC, owedCGT, surplus] = await c.getContractHealth()
-    return { balance: fmt(balance), owedWithdrawals: fmt(owedW), owedCharity: fmt(owedC), owedCGT: fmt(owedCGT), surplus: fmt(surplus) }
+    // getContractHealth удалена из контракта для оптимизации размера
+    // читаем доступные публичные переменные напрямую
+    const [totalPending, totalCharity] = await Promise.all([
+      c.totalPendingWithdrawals().catch(() => 0n),
+      c.totalCharityOwed().catch(() => 0n),
+    ])
+    return {
+      balance: '—',
+      owedWithdrawals: fmt(totalPending),
+      owedCharity: fmt(totalCharity),
+      owedCGT: '—',
+      surplus: '—',
+    }
   } catch { return null }
 }
 
