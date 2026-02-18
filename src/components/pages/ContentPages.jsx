@@ -1,6 +1,6 @@
 'use client'
 import useGameStore from '@/lib/store'
-import { GEMS, LEVELS, LEADERBOARD } from '@/lib/gameData'
+import { GEMS, LEVELS } from '@/lib/gameData'
 import { useState, useEffect, useCallback } from 'react'
 import * as C from '@/lib/contracts'
 import { shortAddress } from '@/lib/web3'
@@ -611,84 +611,4 @@ export function ExchangeTab() {
   )
 }
 
-// ═════════════════════════════════════════════════════════
-// TEAM PAGE — Команда
-// ═════════════════════════════════════════════════════════
-export function TeamTab() {
-  const { wallet, registered, sponsorId, addNotification, t } = useGameStore()
-  const [referralLink, setReferralLink] = useState('')
-  const [copied, setCopied] = useState(false)
-
-  useEffect(() => {
-    if (wallet && registered) {
-      const id = sponsorId || wallet.slice(2, 10)
-      const link = `${typeof window !== 'undefined' ? window.location.origin : ''}/invite?ref=${id}`
-      setReferralLink(link)
-    }
-  }, [wallet, registered, sponsorId])
-
-  const copyLink = () => {
-    navigator.clipboard.writeText(referralLink)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const shareLinks = {
-    tg: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('💎 NSS — Natural Stone Seekers!')}`,
-    wa: `https://wa.me/?text=${encodeURIComponent(`💎 NSS — Join! ${referralLink}`)}`,
-    vb: `viber://forward?text=${encodeURIComponent(`💎 NSS — Join! ${referralLink}`)}`,
-  }
-
-  return (
-    <div className="flex-1 overflow-y-auto pb-4">
-      <div className="px-3 pt-3 pb-1">
-        <h2 className="text-lg font-black text-gold-400">👥 {t('team')}</h2>
-        <p className="text-[11px] text-slate-500">{t('teamDesc')}</p>
-      </div>
-
-      {!registered ? (
-        <div className="mx-3 mt-4 p-4 rounded-2xl glass text-center">
-          <div className="text-3xl mb-2">🔐</div>
-          <div className="text-sm font-bold text-slate-300">{t('connectWallet')}</div>
-          <div className="text-[11px] text-slate-500 mt-1">{t('registerToGetLink')}</div>
-        </div>
-      ) : (
-        <>
-          <div className="mx-3 mt-2 p-3 rounded-2xl glass">
-            <div className="text-[12px] font-bold text-gold-400 mb-2">🔗 {t('myLink')}</div>
-            <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-[10px] text-slate-300 break-all">{referralLink}</div>
-            <div className="flex gap-1.5 mt-2">
-              <button onClick={copyLink}
-                className={`flex-1 py-2 rounded-xl text-[11px] font-bold transition-all ${copied ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'gold-btn'}`}>
-                {copied ? `✅ ${t('copied')}` : `📋 ${t('copy')}`}
-              </button>
-            </div>
-            <div className="flex gap-1.5 mt-1.5">
-              <a href={shareLinks.tg} target="_blank" rel="noopener" className="flex-1 py-2 rounded-xl text-[10px] font-bold text-center bg-blue-500/10 text-blue-400 border border-blue-500/20">📱 Telegram</a>
-              <a href={shareLinks.wa} target="_blank" rel="noopener" className="flex-1 py-2 rounded-xl text-[10px] font-bold text-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">💬 WhatsApp</a>
-              <a href={shareLinks.vb} target="_blank" rel="noopener" className="flex-1 py-2 rounded-xl text-[10px] font-bold text-center bg-purple-500/10 text-purple-400 border border-purple-500/20">📞 Viber</a>
-            </div>
-          </div>
-
-          <div className="mx-3 mt-2 p-3 rounded-2xl glass">
-            <div className="text-[12px] font-bold text-emerald-400 mb-2">📊 9 {t('partnerLines')}</div>
-            <div className="space-y-1">
-              {[10, 7, 5, 3, 2, 1, 1, 0.5, 0.5].map((pct, i) => (
-                <div key={i} className="flex items-center gap-2 py-1 border-b border-white/5">
-                  <span className="text-[10px] font-bold text-gold-400 w-6">{i + 1}</span>
-                  <div className="flex-1 h-1.5 rounded-full bg-white/5">
-                    <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct * 10}%` }} />
-                  </div>
-                  <span className="text-[10px] font-bold text-emerald-400 w-10 text-right">{pct}%</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-2 text-[10px] text-slate-500 text-center">
-              {t('totalFromPurchases')}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
+// TeamTab moved to TeamPage.jsx
