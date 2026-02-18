@@ -69,47 +69,97 @@ export const LEVELS = [
     earn:'4096 партнёров = ~6,100 BNB (~$4M+)', team:4096, nstBonus:100000, cgtBonus:4500, gwtBonus:4500 },
 ];
 
+// ═══════════════════════════════════════════════════
+// ПРИРОДНЫЕ КАМНИ — id совпадает с GemVault контрактом (gemId)
+// img: /images/gems/{img} — PNG файлы
+// Пока img нет — показывается SVG заглушка по svgType
+// ═══════════════════════════════════════════════════
 export const GEMS = [
   // === ДОСТУПНЫЕ (от $50) ===
-  { name:'Агат', category:'budget', price:50, supplierCost:25, carat:'8.0', origin:'Бразилия', grade:'Полосатый A', cert:'NSS', stakingAPR:12, svgType:'agate',
-    desc:'Натуральный полосатый агат. Идеален для начала коллекции.' },
-  { name:'Цитрин', category:'budget', price:120, supplierCost:60, carat:'4.5', origin:'Бразилия', grade:'Golden AA', cert:'NSS', stakingAPR:12, svgType:'citrine',
-    desc:'Солнечный камень. Символ богатства и успеха.' },
-  { name:'Гранат', category:'budget', price:200, supplierCost:100, carat:'3.2', origin:'Мозамбик', grade:'Deep Red A', cert:'NSS', stakingAPR:14, svgType:'garnet',
-    desc:'Огненный гранат. Камень страсти и энергии.' },
-  { name:'Топаз', category:'budget', price:350, supplierCost:175, carat:'6.1', origin:'Бразилия', grade:'Swiss Blue AA', cert:'GIA', stakingAPR:14, svgType:'topaz',
-    desc:'Голубой топаз высшего качества. Инвестиционный камень.' },
-  { name:'Перидот', category:'budget', price:500, supplierCost:250, carat:'3.8', origin:'Пакистан', grade:'Vivid Green A', cert:'GIA', stakingAPR:15, svgType:'peridot',
-    desc:'Яркий зелёный перидот. Редкий и красивый.' },
+  { id:0, name:'Агат',      section:'gems', category:'budget',  price:50,   supplierCost:25,   carat:'8.0', origin:'Бразилия',  grade:'Полосатый A',    cert:'NSS', stakingAPR:12, svgType:'agate',
+    img:'agate.png',         desc:'Натуральный полосатый агат. Идеален для начала коллекции.',  active:true },
+  { id:1, name:'Цитрин',    section:'gems', category:'budget',  price:120,  supplierCost:60,   carat:'4.5', origin:'Бразилия',  grade:'Golden AA',      cert:'NSS', stakingAPR:12, svgType:'citrine',
+    img:'citrine.png',       desc:'Солнечный камень. Символ богатства и успеха.',               active:true },
+  { id:2, name:'Гранат',    section:'gems', category:'budget',  price:200,  supplierCost:100,  carat:'3.2', origin:'Мозамбик',  grade:'Deep Red A',     cert:'NSS', stakingAPR:14, svgType:'garnet',
+    img:'garnet.png',        desc:'Огненный гранат. Камень страсти и энергии.',                 active:true },
+  { id:3, name:'Топаз',     section:'gems', category:'budget',  price:350,  supplierCost:175,  carat:'6.1', origin:'Бразилия',  grade:'Swiss Blue AA',  cert:'GIA', stakingAPR:14, svgType:'topaz',
+    img:'topaz.png',         desc:'Голубой топаз высшего качества. Инвестиционный камень.',     active:true },
+  { id:4, name:'Перидот',   section:'gems', category:'budget',  price:500,  supplierCost:250,  carat:'3.8', origin:'Пакистан',  grade:'Vivid Green A',  cert:'GIA', stakingAPR:15, svgType:'peridot',
+    img:'peridot.png',       desc:'Яркий зелёный перидот. Редкий и красивый.',                  active:true },
   // === СРЕДНИЕ ($800-$3200) ===
-  { name:'Аметист', category:'mid', price:800, supplierCost:400, carat:'5.3', origin:'Бразилия', grade:'Deep Purple', cert:'GIA', stakingAPR:16, svgType:'amethyst',
-    desc:'Глубокий фиолетовый. Королевский камень.' },
-  { name:'Аквамарин', category:'mid', price:1500, supplierCost:750, carat:'4.2', origin:'Бразилия', grade:'Santa Maria AA', cert:'GIA', stakingAPR:18, svgType:'aquamarine',
-    desc:'Редкий Santa Maria. Цвет океана.' },
-  { name:'Рубин', category:'mid', price:3200, supplierCost:1600, carat:'1.2', origin:'Мьянма', grade:'Pigeon Blood', cert:'GIA', stakingAPR:20, svgType:'ruby',
-    desc:'Легендарный Pigeon Blood. Король камней.' },
+  { id:5, name:'Аметист',   section:'gems', category:'mid',     price:800,  supplierCost:400,  carat:'5.3', origin:'Бразилия',  grade:'Deep Purple',    cert:'GIA', stakingAPR:16, svgType:'amethyst',
+    img:'amethyst.png',      desc:'Глубокий фиолетовый. Королевский камень.',                   active:true },
+  { id:6, name:'Аквамарин', section:'gems', category:'mid',     price:1500, supplierCost:750,  carat:'4.2', origin:'Бразилия',  grade:'Santa Maria AA', cert:'GIA', stakingAPR:18, svgType:'aquamarine',
+    img:'aquamarine.png',    desc:'Редкий Santa Maria. Цвет океана.',                           active:true },
+  { id:7, name:'Рубин',     section:'gems', category:'mid',     price:3200, supplierCost:1600, carat:'1.2', origin:'Мьянма',    grade:'Pigeon Blood',   cert:'GIA', stakingAPR:20, svgType:'ruby',
+    img:'ruby.png',          desc:'Легендарный Pigeon Blood. Король камней.',                   active:true },
   // === ПРЕМИУМ ($4500+) ===
-  { name:'Сапфир', category:'premium', price:4500, supplierCost:2250, carat:'1.8', origin:'Шри-Ланка', grade:'Royal Blue', cert:'GIA', stakingAPR:22, svgType:'sapphire',
-    desc:'Цейлонский Royal Blue. Камень мудрости.' },
-  { name:'Изумруд', category:'premium', price:5800, supplierCost:2900, carat:'2.1', origin:'Колумбия', grade:'Vivid Green', cert:'GRS', stakingAPR:24, svgType:'emerald',
-    desc:'Колумбийский Vivid. Самый ценный зелёный камень.' },
-  { name:'Танзанит', category:'premium', price:6200, supplierCost:3100, carat:'3.0', origin:'Танзания', grade:'AAA Vivid', cert:'GRS', stakingAPR:24, svgType:'tanzanite',
-    desc:'Исчезающий камень. Добывается только в одном месте на Земле.' },
+  { id:8, name:'Сапфир',    section:'gems', category:'premium', price:4500, supplierCost:2250, carat:'1.8', origin:'Шри-Ланка', grade:'Royal Blue',     cert:'GIA', stakingAPR:22, svgType:'sapphire',
+    img:'sapphire.png',      desc:'Цейлонский Royal Blue. Камень мудрости.',                    active:true },
+  { id:9, name:'Изумруд',   section:'gems', category:'premium', price:5800, supplierCost:2900, carat:'2.1', origin:'Колумбия',  grade:'Vivid Green',    cert:'GRS', stakingAPR:24, svgType:'emerald',
+    img:'emerald.png',       desc:'Колумбийский Vivid. Самый ценный зелёный камень.',           active:true },
+  { id:10,name:'Танзанит',  section:'gems', category:'premium', price:6200, supplierCost:3100, carat:'3.0', origin:'Танзания',  grade:'AAA Vivid',      cert:'GRS', stakingAPR:24, svgType:'tanzanite',
+    img:'tanzanite.png',     desc:'Исчезающий камень. Добывается только в одном месте на Земле.',active:true },
 ];
 
-// Распределение денег при покупке камня (BP = базисные пункты, 10000 = 100%)
+// ═══════════════════════════════════════════════════
+// МЕТАЛЛЫ — отдельная секция, пока БЕЗ контракта (будущий раздел)
+// Показываются в интерфейсе, покупка через P2PEscrow или отдельный контракт
+// ═══════════════════════════════════════════════════
+export const METALS = [
+  // Золото
+  { id:100, name:'Золото 999',    section:'metals', category:'gold',   price:95,   unit:'1г',   purity:'999', img:'gold_bar.png',
+    desc:'Инвестиционное золото 999 пробы. 1 грамм. Выкуп лома по рыночной цене.',    active:true,  stakingAPR:8 },
+  { id:101, name:'Золото 585',    section:'metals', category:'gold',   price:52,   unit:'1г',   purity:'585', img:'gold_585.png',
+    desc:'Ювелирное золото 585 пробы. 1 грамм. Идеально для ювелиров клуба.',         active:true,  stakingAPR:7 },
+  { id:102, name:'Золотой Слиток',section:'metals', category:'gold',   price:4750, unit:'50г',  purity:'999', img:'gold_ingot.png',
+    desc:'50-граммовый слиток золота 999. Сертифицированный. Хранение в клубе.',      active:false, stakingAPR:9 },
+  // Серебро
+  { id:110, name:'Серебро 999',   section:'metals', category:'silver', price:1.1,  unit:'1г',   purity:'999', img:'silver_bar.png',
+    desc:'Инвестиционное серебро 999 пробы. 1 грамм.',                                active:true,  stakingAPR:6 },
+  { id:111, name:'Серебро 925',   section:'metals', category:'silver', price:0.85, unit:'1г',   purity:'925', img:'silver_925.png',
+    desc:'Стерлинговое серебро 925. Ювелирное качество.',                             active:true,  stakingAPR:6 },
+  { id:112, name:'Серебряный Лот',section:'metals', category:'silver', price:110,  unit:'100г', purity:'999', img:'silver_lot.png',
+    desc:'100 грамм серебра 999 пробы оптом. Выгодная цена.',                         active:false, stakingAPR:7 },
+  // Лом
+  { id:120, name:'Лом Золота',    section:'metals', category:'scrap',  price:45,   unit:'1г',   purity:'~585',img:'gold_scrap.png',
+    desc:'Принимаем золотой лом. Оценка и выкуп. Перерабатываем для ювелиров клуба.',active:true,  stakingAPR:0 },
+  { id:121, name:'Лом Серебра',   section:'metals', category:'scrap',  price:0.7,  unit:'1г',   purity:'~925',img:'silver_scrap.png',
+    desc:'Принимаем серебряный лом. Честная оценка.',                                 active:true,  stakingAPR:0 },
+];
+
+// ═══════════════════════════════════════════════════
+// ЭКОНОМИКА КАМНЕЙ — меняется только через Админку
+// BP = базисные пункты: 10000 = 100%
+// ═══════════════════════════════════════════════════
 export const GEM_ECONOMICS = {
-  supplierCut: 7000,   // 70% — закупка камня
-  sponsorCut: 1000,    // 10% — спонсору (маркетинг, мгновенно)
-  stakingFund: 1000,   // 10% — фонд стейкинга (из него платятся %)
-  platformCut: 1000,   // 10% — платформа (операционные)
-  baseDiscountBP: 3000,     // 30% — базовая клубная скидка
-  maxDiscountBP: 4000,      // 40% — максимум скидки (с NST)
-  maxNstBonusBP: 1000,      // 10% — макс доп.скидка за NST
-  nstPerPercent: 1000,       // 1000 NST = +1% скидки (итого 10,000 NST = +10%)
-  stakingLockMonths: 6,      // Заморозка 6 месяцев
-  stakingMinAPR: 12,         // Мин % годовых (дешёвые камни)
-  stakingMaxAPR: 24,         // Макс % годовых (премиум)
+  // Распределение при покупке камня
+  supplierCut:       7000,  // 70% — закупочная стоимость камня
+  sponsorCut:        1000,  // 10% — спонсору (реферальный маркетинг)
+  stakingFund:       1000,  // 10% — фонд стейкинга (платит % владельцам)
+  platformCut:       1000,  // 10% — операционные расходы платформы
+
+  // Скидки клуба
+  baseDiscountBP:    3000,  // 30% — базовая клубная скидка (все зарегистрированные)
+  maxDiscountBP:     4000,  // 40% — максимальная скидка (30% + 10% NST бонус)
+  maxNstBonusBP:     1000,  // 10% — максимальный бонус за NST
+  nstPerPercent:     1000,  // 1000 NST = +1% к скидке (нужно 10,000 NST для макс)
+
+  // Стейкинг
+  stakingLockMonths: 6,     // Заморозка в месяцах
+  stakingMinAPR:     12,    // Мин % годовых
+  stakingMaxAPR:     24,    // Макс % годовых
+};
+
+// ═══════════════════════════════════════════════════
+// ЭКОНОМИКА МЕТАЛЛОВ
+// ═══════════════════════════════════════════════════
+export const METAL_ECONOMICS = {
+  buyupSpread:       500,   // 5% — наша наценка при покупке у нас
+  sellSpread:        300,   // 3% — скидка при продаже нам (лом)
+  sponsorCut:        800,   // 8% — спонсору
+  platformCut:       700,   // 7% — платформа
+  stakingFund:       500,   // 5% — фонд хранения
 };
 
 // Три Бизнеса (м²)
