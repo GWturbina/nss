@@ -316,5 +316,8 @@
   "totalUsers": "Всього учасників",
   "activeThisWeek": "Активних за тиждень",
   "newThisMonth": "Нових за місяць",
-  "unsupportedPair": "Пара не підтримується"
+  "unsupportedPair": "Пара не підтримується",
+  "uploadPhoto": "Завантажити своє фото",
+  "removePhoto": "Видалити фото",
+  "orChooseEmoji": "або оберіть аватарку"
 }
