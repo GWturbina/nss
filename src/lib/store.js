@@ -101,11 +101,15 @@ const useGameStore = create(
   // ═══════════════════════════════════════════════════
   // WALLET ACTIONS
   // ═══════════════════════════════════════════════════
-  setWallet: (data) => set({
+  setWallet: (data) => set((s) => ({
     wallet: data.address,
     chainId: data.chainId,
     walletType: data.walletType,
-  }),
+    // Сразу проверяем isAdmin если ownerWallet уже сохранён из localStorage
+    isAdmin: s.ownerWallet 
+      ? data.address.toLowerCase() === s.ownerWallet.toLowerCase()
+      : false,
+  })),
   clearWallet: () => set({
     wallet: null, chainId: null, walletType: null,
     registered: false, sponsorId: null,
@@ -131,15 +135,20 @@ const useGameStore = create(
   updateRegistration: (isReg, id) => set({ registered: isReg, sponsorId: id }),
   updateTables: (data) => {
     const tables = data.map(t => {
-      if (!t) return { slots: 0, earned: '0', pending: '0', reinvests: 0 }
+      if (!t) return { slots: 0, earned: '0', pending: '0', reinvests: 0, sqm: 0 }
+      // getUserTableInfo возвращает: totalEarned, totalPaidOut, pending, slotsCount, sqmOwned
+      const slotsCount = Number(t.slotsCount ?? t[3] ?? 0)
+      const sqmOwned = Number(t.sqmOwned ?? t[4] ?? 0) / 1e18
       return {
-        slots: Number(t.slotsCount || t[3] || 0),
-        earned: (Number(t.totalEarned || t[0] || 0) / 1e18).toFixed(2),
-        pending: (Number(t.pending || t[2] || 0) / 1e18).toFixed(2),
-        reinvests: 0,
+        slots: slotsCount,
+        earned: (Number(t.totalEarned ?? t[0] ?? 0) / 1e18).toFixed(2),
+        pending: (Number(t.pending ?? t[2] ?? 0) / 1e18).toFixed(2),
+        reinvests: Number(t._reinvests ?? 0),
+        sqm: sqmOwned,
       }
     })
-    const totalSqm = tables[0].slots * 0.05 + tables[1].slots * 0.25 + tables[2].slots * 1.0
+    // totalSqm берём из контракта (sqmOwned в каждой таблице)
+    const totalSqm = tables.reduce((s, t) => s + t.sqm, 0)
     set({ tables, totalSqm })
   },
   updatePending: (amount) => set({ pendingWithdrawal: amount }),
@@ -232,7 +241,11 @@ const useGameStore = create(
 }),
     {
       name: 'nss-storage',
-      partialize: (state) => ({ lang: state.lang, level: state.level }),
+      partialize: (state) => ({ 
+        lang: state.lang, 
+        level: state.level,
+        ownerWallet: state.ownerWallet,
+      }),
     }
   )
 )
