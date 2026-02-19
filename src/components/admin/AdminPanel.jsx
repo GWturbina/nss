@@ -635,16 +635,48 @@ export default function AdminPanel() {
                           {parseFloat(fund.bal) === 0 && (
                             <div className="text-[9px] text-slate-700 text-center">нет средств для вывода</div>
                           )}
+
+                          {/* Прямые ссылки bscscan для каждого фонда */}
+                          {fund.addr && (
+                            <div className="flex gap-1 mt-1.5 flex-wrap">
+                              <a href={`https://opbnb.bscscan.com/address/${fund.addr}`}
+                                target="_blank" rel="noopener noreferrer"
+                                className="text-[9px] px-2 py-1 rounded-lg bg-blue-500/8 border border-blue-500/15 text-blue-400">
+                                📊 Баланс
+                              </a>
+                              <a href={`https://opbnb.bscscan.com/address/${fund.addr}#tokentxns`}
+                                target="_blank" rel="noopener noreferrer"
+                                className="text-[9px] px-2 py-1 rounded-lg bg-blue-500/8 border border-blue-500/15 text-blue-400">
+                                📋 История
+                              </a>
+                              <a href={`https://opbnb.bscscan.com/address/0xCA10A6971C9Dcbda4e8AdFC6328977261B8B82Fe#writeContract`}
+                                target="_blank" rel="noopener noreferrer"
+                                className="text-[9px] px-2 py-1 rounded-lg bg-emerald-500/8 border border-emerald-500/15 text-emerald-400">
+                                💸 Вывод через BscScan
+                              </a>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
 
-                    {/* Ссылка на bscscan */}
-                    <div className="mt-3 pt-3 border-t border-white/5">
+                    {/* Инструкция вывода через bscscan */}
+                    <div className="mt-3 p-2.5 rounded-xl bg-white/3 border border-white/7">
+                      <div className="text-[10px] font-bold text-slate-400 mb-1.5">📖 Как вывести через BscScan:</div>
+                      <div className="text-[9px] text-slate-500 space-y-0.5">
+                        <div>1. Нажми "💸 Вывод через BscScan" у нужного фонда</div>
+                        <div>2. Подключи MetaMask с кошельком владельца фонда</div>
+                        <div>3. Найди функцию <span className="text-white font-mono">withdraw()</span></div>
+                        <div>4. Нажми Write → подтверди транзакцию</div>
+                      </div>
+                    </div>
+
+                    {/* Общая ссылка на контракт */}
+                    <div className="mt-2 pt-2 border-t border-white/5">
                       <a href="https://opbnb.bscscan.com/address/0xCA10A6971C9Dcbda4e8AdFC6328977261B8B82Fe#readContract"
                         target="_blank" rel="noopener noreferrer"
                         className="block text-center text-[10px] text-blue-400 underline">
-                        🔍 Открыть контракт на opBNB BscScan →
+                        🔍 Открыть RealEstateMatrix на opBNB BscScan →
                       </a>
                     </div>
                   </>
