@@ -239,13 +239,24 @@ export function StakingTab() {
     }
   }
 
+  // Сумма к выводу: глобальный pendingWithdrawals ИЛИ сумма pendingBalance по таблицам (fallback)
+  const tablePendingSum = tables.reduce((s, t) => s + parseFloat(t.pending || 0), 0)
+  const effectivePending = parseFloat(pendingWithdrawal) > 0
+    ? pendingWithdrawal
+    : tablePendingSum > 0 ? tablePendingSum.toFixed(2) : '0'
+
   const handleWithdraw = async () => {
     if (!wallet) return
     setTxPending(true)
     const result = await C.safeCall(() => C.withdrawFromMatrix())
     setTxPending(false)
     if (result.ok) {
-      addNotification(`✅ ${t('withdrawn')} ${pendingWithdrawal} USDT!`)
+      addNotification(`✅ ${t('withdrawn')} ${effectivePending} USDT!`)
+      // Обновляем pending через 2 сек
+      setTimeout(async () => {
+        const fresh = await C.getMyPendingWithdrawal(wallet).catch(() => null)
+        if (fresh !== null) useGameStore.getState().updatePending((Number(fresh) / 1e18).toFixed(2))
+      }, 2000)
     } else {
       addNotification(`❌ ${result.error}`)
     }
@@ -262,17 +273,17 @@ export function StakingTab() {
         <div className="flex justify-between items-center">
           <div>
             <div className="text-[10px] text-slate-500">{t('toWithdraw')}</div>
-            <div className="text-xl font-black text-gold-400">{pendingWithdrawal} USDT</div>
+            <div className="text-xl font-black text-gold-400">{effectivePending} USDT</div>
           </div>
           <div className="text-right">
             <div className="text-[10px] text-slate-500">{t('sqm')}</div>
             <div className="text-lg font-bold text-emerald-400">{totalSqm.toFixed(2)}</div>
           </div>
         </div>
-        {parseFloat(pendingWithdrawal) > 0 && (
+        {parseFloat(effectivePending) > 0 && (
           <button onClick={handleWithdraw} disabled={txPending}
             className="mt-2 w-full py-2 rounded-xl text-xs font-bold gold-btn">
-            {txPending ? `⏳ ${t('withdrawing')}` : `💸 ${t('withdraw')}`}
+            {txPending ? `⏳ ${t('withdrawing')}` : `💸 Вывести ${effectivePending} USDT`}
           </button>
         )}
       </div>
