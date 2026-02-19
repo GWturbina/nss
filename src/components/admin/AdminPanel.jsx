@@ -27,6 +27,7 @@ export default function AdminPanel() {
     { id: 'teamlinks', icon: '🤝', label: t('teams') },
     { id: 'contracts', icon: '📜', label: t('contracts') },
     { id: 'withdraw', icon: '💰', label: t('withdrawAdmin') },
+    { id: 'funds', icon: '🏦', label: 'Фонды' },
     { id: 'matrix', icon: '🏔', label: t('business') },
     { id: 'auth', icon: '🔑', label: t('authorization') },
     { id: 'content', icon: '📢', label: t('content') },
@@ -39,6 +40,11 @@ export default function AdminPanel() {
   const [initTable, setInitTable] = useState('0')
   const [founders, setFounders] = useState(['', '', '', '', '', '', ''])
   const [tablesInit, setTablesInit] = useState({ table0: null, table1: null, table2: null })
+
+  // State for funds panel
+  const [fundsData, setFundsData] = useState(null)   // { clubFund, authorFund, ... + balances }
+  const [fundsLoading, setFundsLoading] = useState(false)
+  const [withdrawingFund, setWithdrawingFund] = useState(null)  // имя фонда который сейчас выводим
 
   // State for gems/metals editing
   const [gems, setGems] = useState(GEMS_DEFAULT)
@@ -486,6 +492,163 @@ export default function AdminPanel() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════ */}
+          {/* FUNDS PANEL                                 */}
+          {/* ═══════════════════════════════════════════ */}
+          {activeSection === 'funds' && (
+            <div className="px-3 mt-2 space-y-2">
+
+              {/* Общий баланс внутри матрицы */}
+              <div className="p-3 rounded-2xl glass border border-gold-400/15">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="text-[12px] font-black text-gold-400">🏦 Балансы фондов</div>
+                  <button
+                    onClick={async () => {
+                      setFundsLoading(true)
+                      try {
+                        const addrs = await C.getFundAddresses()
+                        if (!addrs) { addNotification('❌ Ошибка загрузки адресов'); return }
+                        const [total, clubBal, authorBal, charityBal, rotationBal, housingBal] = await Promise.all([
+                          C.getTotalPendingWithdrawals(),
+                          C.getFundBalance(addrs.clubFund),
+                          C.getFundBalance(addrs.authorFund),
+                          C.getFundBalance(addrs.charityFund),
+                          C.getFundBalance(addrs.rotationFund),
+                          C.getFundBalance(addrs.housingFund),
+                        ])
+                        setFundsData({
+                          total,
+                          funds: [
+                            { key: 'club',     name: 'ClubFund',      emoji: '🎯', addr: addrs.clubFund,     bal: clubBal },
+                            { key: 'author',   name: 'AuthorFund',    emoji: '✍️',  addr: addrs.authorFund,   bal: authorBal },
+                            { key: 'charity',  name: 'CharityFund',   emoji: '🤲', addr: addrs.charityFund,  bal: charityBal },
+                            { key: 'rotation', name: 'RotationFund',  emoji: '🔄', addr: addrs.rotationFund, bal: rotationBal },
+                            { key: 'housing',  name: 'HousingFund',   emoji: '🏠', addr: addrs.housingFund,  bal: housingBal },
+                          ]
+                        })
+                        addNotification('✅ Балансы загружены')
+                      } catch (e) {
+                        addNotification('❌ ' + (e?.message || 'Ошибка').slice(0, 60))
+                      }
+                      setFundsLoading(false)
+                    }}
+                    disabled={fundsLoading}
+                    className="px-3 py-1.5 rounded-xl text-[10px] font-bold bg-gold-400/10 border border-gold-400/20 text-gold-400 disabled:opacity-50"
+                  >
+                    {fundsLoading ? '⏳ Загрузка...' : '🔄 Обновить'}
+                  </button>
+                </div>
+
+                {!fundsData && !fundsLoading && (
+                  <div className="text-[10px] text-slate-500 text-center py-4">
+                    Нажми "Обновить" чтобы загрузить балансы
+                  </div>
+                )}
+
+                {fundsLoading && (
+                  <div className="text-[10px] text-slate-400 text-center py-4 animate-pulse">
+                    ⏳ Читаем контракт...
+                  </div>
+                )}
+
+                {fundsData && (
+                  <>
+                    {/* Итого внутри матрицы */}
+                    <div className="flex justify-between items-center p-2 rounded-xl mb-3"
+                      style={{ background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.15)' }}>
+                      <span className="text-[11px] text-slate-400">Всего внутри RealEstateMatrix:</span>
+                      <span className="text-[14px] font-black text-gold-400">${fundsData.total} USDT</span>
+                    </div>
+
+                    {/* Карточки фондов */}
+                    <div className="space-y-2">
+                      {fundsData.funds.map(fund => (
+                        <div key={fund.key} className="p-3 rounded-xl"
+                          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">{fund.emoji}</span>
+                              <div>
+                                <div className="text-[11px] font-bold text-white">{fund.name}</div>
+                                <div className="text-[9px] text-slate-600 font-mono">
+                                  {fund.addr ? fund.addr.slice(0, 10) + '...' + fund.addr.slice(-6) : '—'}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`text-[15px] font-black ${parseFloat(fund.bal) > 0 ? 'text-emerald-400' : 'text-slate-600'}`}>
+                                ${fund.bal}
+                              </div>
+                              <div className="text-[9px] text-slate-600">USDT</div>
+                            </div>
+                          </div>
+
+                          {/* Кнопка вывода — только если баланс > 0 */}
+                          {parseFloat(fund.bal) > 0 && (
+                            <div className="space-y-1">
+                              <div className="text-[9px] text-yellow-400/70 bg-yellow-400/5 rounded-lg p-1.5 text-center">
+                                ⚠️ Вывод возможен только с кошелька владельца этого адреса
+                              </div>
+                              {wallet && fund.addr &&
+                               wallet.toLowerCase() === fund.addr.toLowerCase() ? (
+                                <button
+                                  onClick={async () => {
+                                    setWithdrawingFund(fund.key)
+                                    setTxPending(true)
+                                    try {
+                                      addNotification(`⏳ Вывод ${fund.name}...`)
+                                      await C.withdrawFund()
+                                      addNotification(`✅ ${fund.name}: $${fund.bal} выведено!`)
+                                      // Обновляем баланс этого фонда
+                                      const newBal = await C.getFundBalance(fund.addr)
+                                      setFundsData(prev => ({
+                                        ...prev,
+                                        funds: prev.funds.map(f =>
+                                          f.key === fund.key ? { ...f, bal: newBal } : f
+                                        )
+                                      }))
+                                    } catch (e) {
+                                      const msg = e?.reason || e?.shortMessage || e?.message || 'Ошибка'
+                                      addNotification(`❌ ${msg.slice(0, 80)}`)
+                                    }
+                                    setTxPending(false)
+                                    setWithdrawingFund(null)
+                                  }}
+                                  disabled={txPending || withdrawingFund === fund.key}
+                                  className="w-full py-2 rounded-xl text-[11px] font-bold bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 disabled:opacity-50"
+                                >
+                                  {withdrawingFund === fund.key ? '⏳ Вывод...' : `💸 Вывести $${fund.bal}`}
+                                </button>
+                              ) : (
+                                <div className="text-[9px] text-slate-600 text-center py-1">
+                                  Подключи кошелёк <span className="font-mono text-slate-500">{fund.addr?.slice(0, 8)}...</span> для вывода
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {parseFloat(fund.bal) === 0 && (
+                            <div className="text-[9px] text-slate-700 text-center">нет средств для вывода</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Ссылка на bscscan */}
+                    <div className="mt-3 pt-3 border-t border-white/5">
+                      <a href="https://opbnb.bscscan.com/address/0xCA10A6971C9Dcbda4e8AdFC6328977261B8B82Fe#readContract"
+                        target="_blank" rel="noopener noreferrer"
+                        className="block text-center text-[10px] text-blue-400 underline">
+                        🔍 Открыть контракт на opBNB BscScan →
+                      </a>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
