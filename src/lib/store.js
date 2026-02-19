@@ -149,20 +149,25 @@ const useGameStore = create(
   }),
   updateRegistration: (isReg, id) => set({ registered: isReg, sponsorId: id }),
   updateTables: (data) => {
-    const tables = data.map(t => {
+    // sqmPerSlot для каждого стола ($50=0.05м², $250=0.25м², $1000=1м²)
+    const SQM_PER_SLOT = [0.05, 0.25, 1.0]
+
+    const tables = data.map((t, idx) => {
       if (!t) return { slots: 0, earned: '0', pending: '0', reinvests: 0, sqm: 0 }
       // getUserTableInfo возвращает: totalEarned, totalPaidOut, pending, slotsCount, sqmOwned
       const slotsCount = Number(t.slotsCount ?? t[3] ?? 0)
-      const sqmOwned = Number(t.sqmOwned ?? t[4] ?? 0) / 1e18
+      // sqmOwned из контракта; если 0 — считаем по слотам (fallback)
+      const sqmFromContract = Number(t.sqmOwned ?? t[4] ?? 0) / 1e18
+      const sqmOwned = sqmFromContract > 0 ? sqmFromContract : slotsCount * SQM_PER_SLOT[idx]
+      const pendingVal = (Number(t.pending ?? t[2] ?? 0) / 1e18).toFixed(2)
       return {
         slots: slotsCount,
         earned: (Number(t.totalEarned ?? t[0] ?? 0) / 1e18).toFixed(2),
-        pending: (Number(t.pending ?? t[2] ?? 0) / 1e18).toFixed(2),
+        pending: pendingVal,
         reinvests: Number(t._reinvests ?? 0),
         sqm: sqmOwned,
       }
     })
-    // totalSqm берём из контракта (sqmOwned в каждой таблице)
     const totalSqm = tables.reduce((s, t) => s + t.sqm, 0)
     set({ tables, totalSqm })
   },
