@@ -280,6 +280,53 @@ export async function getMyPendingWithdrawal(address) {
   return await safeRead('RealEstateMatrix', 'pendingWithdrawals', [address])
 }
 
+// ═══════════════════════════════════════════════════
+// ФОНДЫ — балансы и вывод
+// ═══════════════════════════════════════════════════
+
+/** Получить адреса всех фондов из контракта */
+export async function getFundAddresses() {
+  try {
+    const matrix = getReadContract('RealEstateMatrix')
+    if (!matrix) return null
+    const [clubFund, authorFund, charityFund, rotationFund, housingFund] = await Promise.all([
+      matrix.clubFund(),
+      matrix.authorFund(),
+      matrix.charityFund(),
+      matrix.rotationFund(),
+      matrix.housingFund().catch(() => null),
+    ])
+    return { clubFund, authorFund, charityFund, rotationFund, housingFund }
+  } catch { return null }
+}
+
+/** Получить баланс pendingWithdrawals для адреса */
+export async function getFundBalance(address) {
+  try {
+    const matrix = getReadContract('RealEstateMatrix')
+    if (!matrix || !address || address === '0x0000000000000000000000000000000000000000') return '0'
+    const bal = await matrix.pendingWithdrawals(address)
+    return (Number(bal) / 1e18).toFixed(2)
+  } catch { return '0' }
+}
+
+/** Получить общий баланс внутри матрицы */
+export async function getTotalPendingWithdrawals() {
+  try {
+    const matrix = getReadContract('RealEstateMatrix')
+    if (!matrix) return '0'
+    const total = await matrix.totalPendingWithdrawals()
+    return (Number(total) / 1e18).toFixed(2)
+  } catch { return '0' }
+}
+
+/** Вывод средств фонда — вызывается с кошелька владельца фонда */
+export async function withdrawFund() {
+  const matrix = getContract('RealEstateMatrix')
+  const tx = await matrix.withdraw()
+  return await tx.wait()
+}
+
 export async function withdrawFromMatrix() {
   const matrix = getContract('RealEstateMatrix')
   const tx = await matrix.withdraw()
