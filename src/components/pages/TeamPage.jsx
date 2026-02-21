@@ -81,10 +81,12 @@ export default function TeamTab() {
   }, [])
 
   useEffect(() => {
-    if (wallet) {
-      const id = sponsorId || wallet.slice(2, 10)
-      const link = `${typeof window !== 'undefined' ? window.location.origin : ''}/invite?ref=${id}`
+    if (wallet && sponsorId) {
+      // sponsorId = реальный odixId из GlobalWay (заполняется после регистрации)
+      const link = `${typeof window !== 'undefined' ? window.location.origin : ''}/invite?ref=${sponsorId}`
       setReferralLink(link)
+    } else {
+      setReferralLink('')
     }
   }, [wallet, sponsorId])
 
@@ -271,12 +273,26 @@ export default function TeamTab() {
       {/* ═══ КОМАНДА ═══ */}
       {section === 'team' && (
         <div className="px-3 mt-2 space-y-2">
-          {/* Реферальная ссылка — показываем ВСЕГДА */}
+          {/* Реферальная ссылка */}
           <div className="p-3 rounded-2xl glass">
             <div className="text-[12px] font-bold text-gold-400 mb-2">🔗 {t('myLink')}</div>
-            {wallet ? (
+            {!wallet ? (
+              <div className="text-center py-3">
+                <div className="text-2xl mb-1">🔐</div>
+                <div className="text-[11px] text-slate-400">{t('connectWalletForLink')}</div>
+              </div>
+            ) : !referralLink ? (
+              // Кошелёк подключён, но нет odixId — значит не зарегистрирован в GlobalWay
+              <div className="text-center py-3">
+                <div className="text-2xl mb-1">⛏</div>
+                <div className="text-[11px] text-slate-400">
+                  Купи первый уровень — получишь реферальный ID из GlobalWay
+                </div>
+              </div>
+            ) : (
               <>
                 <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-[10px] text-slate-300 break-all">{referralLink}</div>
+                <div className="text-[10px] text-slate-500 mt-1">ID: {sponsorId}</div>
                 <div className="flex gap-1.5 mt-2">
                   <button onClick={copyLink}
                     className={`flex-1 py-2 rounded-xl text-[11px] font-bold transition-all ${copied ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'gold-btn'}`}>
@@ -289,11 +305,6 @@ export default function TeamTab() {
                   <a href={shareLinks.vb} target="_blank" rel="noopener" className="flex-1 py-2 rounded-xl text-[10px] font-bold text-center bg-purple-500/10 text-purple-400 border border-purple-500/20">📞 Viber</a>
                 </div>
               </>
-            ) : (
-              <div className="text-center py-3">
-                <div className="text-2xl mb-1">🔐</div>
-                <div className="text-[11px] text-slate-400">{t('connectWalletForLink')}</div>
-              </div>
             )}
           </div>
 
@@ -322,6 +333,13 @@ export default function TeamTab() {
       {/* ═══ ЛИДЕРБОРД ═══ */}
       {section === 'leaders' && (
         <div className="px-3 mt-2 space-y-2">
+          {/* Демо-данные */}
+          <div className="px-3 py-2 rounded-xl border flex items-center gap-2" style={{background:'rgba(245,158,11,0.06)',borderColor:'rgba(245,158,11,0.2)'}}>
+            <span className="text-base">🚧</span>
+            <div className="text-[10px] leading-tight" style={{color:'rgba(251,191,36,0.7)'}}>
+              Демо-данные. Реальный лидерборд появится после старта платформы.
+            </div>
+          </div>
           {/* Топ-3 */}
           <div className="flex gap-2 items-end justify-center py-3">
             {[1, 0, 2].map(idx => {
