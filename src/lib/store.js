@@ -260,13 +260,16 @@ const useGameStore = create(
   setLevel: (lv) => set({ level: lv }),
 }),
     {
-      name: 'nss-storage-v3',   // Смени на v4, v5... при изменениях структуры — старый кеш автоматом игнорируется
-      partialize: (state) => ({ 
-        lang: state.lang, 
+      name: 'nss-storage-v4',   // v4: добавлены localNst, taps — старый кеш v3 автоматом игнорируется
+      partialize: (state) => ({
+        lang: state.lang,
         // level НЕ сохраняем — загружается из блокчейна каждый раз
         ownerWallet: state.ownerWallet,
+        // Тапалка — сохраняем чтобы накопленное не терялось при перезагрузке
+        localNst: state.localNst,
+        taps: state.taps,
       }),
-      version: 3,
+      version: 4,
       migrate: () => ({}),      // При несовпадении версии — чистый старт без ошибок
     }
   )
