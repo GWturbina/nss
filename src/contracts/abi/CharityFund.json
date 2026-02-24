@@ -1,6 +1,6 @@
 {
   "contractName": "CharityFund",
-  "address": "0x06047f659a367dDB9ea60237ba09676202A0EBF8",
+  "address": "0x837389a13B300d37395343600507F34d03AC9abd",
   "network": "opBNB",
   "chainId": 204,
   "abi": [
@@ -401,12 +401,12 @@
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "totalGifts",
+          "name": "",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "totalBNBOnPackages",
+          "name": "",
           "type": "uint256"
         }
       ],
