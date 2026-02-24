@@ -1,6 +1,6 @@
 {
   "contractName": "RealEstateMatrix",
-  "address": "0xCA10A6971C9Dcbda4e8AdFC6328977261B8B82Fe",
+  "address": "0x75B1FFD88E5935fae4b22105948818C913519AbA",
   "network": "opBNB",
   "chainId": 204,
   "abi": [
@@ -43,22 +43,32 @@
         },
         {
           "internalType": "address",
-          "name": "_charityFund",
+          "name": "_rotationFund",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_housingPool",
           "type": "address"
         },
         {
           "internalType": "address",
           "name": "_charityPool",
           "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "_rotationFund",
-          "type": "address"
         }
       ],
       "stateMutability": "nonpayable",
       "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "AlreadyInit",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AntiSpamCooldown",
+      "type": "error"
     },
     {
       "inputs": [],
@@ -68,6 +78,46 @@
     {
       "inputs": [],
       "name": "ExpectedPause",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "Inactive",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidParam",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NeedPrevTable",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NoChoice",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NoFunds",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotAuth",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotInit",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotReg",
       "type": "error"
     },
     {
@@ -109,52 +159,125 @@
       "type": "error"
     },
     {
+      "inputs": [],
+      "name": "SlotLimitReached",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAddr",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "action",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "target",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "AdminAction",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "participant",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "buyer",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "num",
+          "type": "uint8"
+        }
+      ],
+      "name": "BlagodaruEvent",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        }
+      ],
+      "name": "ChoiceAutoResolved",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "cont",
+          "type": "bool"
+        }
+      ],
+      "name": "ContinueChoice",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "enum RealEstateMatrix.TableId",
+          "name": "table",
+          "type": "uint8"
+        }
+      ],
+      "name": "FounderSlots",
+      "type": "event"
+    },
+    {
       "anonymous": false,
       "inputs": [
         {
           "indexed": true,
           "internalType": "uint8",
-          "name": "param",
+          "name": "fundType",
           "type": "uint8"
         },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "oldAddr",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "newAddr",
-          "type": "address"
-        }
-      ],
-      "name": "AdminAddressChanged",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "caller",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "authorized",
-          "type": "bool"
-        }
-      ],
-      "name": "AuthorizedCallerChanged",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
         {
           "indexed": false,
           "internalType": "uint256",
@@ -168,83 +291,7 @@
           "type": "uint8"
         }
       ],
-      "name": "CGTCapitalized",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "enum RealEstateMatrix.TableId",
-          "name": "table",
-          "type": "uint8"
-        }
-      ],
-      "name": "CharityFunded",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "continueReinvest",
-          "type": "bool"
-        }
-      ],
-      "name": "ContinueChoiceMade",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "surplus",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "totalOwed",
-          "type": "uint256"
-        }
-      ],
-      "name": "EmergencyWithdraw",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "enum RealEstateMatrix.TableId",
-          "name": "table",
-          "type": "uint8"
-        },
-        {
-          "indexed": false,
-          "internalType": "address[7]",
-          "name": "founders",
-          "type": "address[7]"
-        }
-      ],
-      "name": "FounderSlotsInitialized",
+      "name": "FundDistributed",
       "type": "event"
     },
     {
@@ -259,17 +306,17 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "repaymentAmount",
+          "name": "repay",
           "type": "uint256"
         },
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "userReceived",
+          "name": "received",
           "type": "uint256"
         }
       ],
-      "name": "HousingRepayment",
+      "name": "HousingRepay",
       "type": "event"
     },
     {
@@ -280,21 +327,9 @@
           "internalType": "enum RealEstateMatrix.TableId",
           "name": "table",
           "type": "uint8"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "oldDepth",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "newDepth",
-          "type": "uint256"
         }
       ],
-      "name": "MatrixDepthChanged",
+      "name": "MatrixAutoPaused",
       "type": "event"
     },
     {
@@ -340,45 +375,8 @@
         },
         {
           "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
           "internalType": "enum RealEstateMatrix.TableId",
           "name": "table",
-          "type": "uint8"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "reason",
-          "type": "string"
-        }
-      ],
-      "name": "PayoutToUser",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "enum RealEstateMatrix.TableId",
-          "name": "fromTable",
-          "type": "uint8"
-        },
-        {
-          "indexed": false,
-          "internalType": "enum RealEstateMatrix.TableId",
-          "name": "toTable",
           "type": "uint8"
         },
         {
@@ -395,35 +393,10 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "enum RealEstateMatrix.TableId",
-          "name": "table",
-          "type": "uint8"
-        }
-      ],
-      "name": "RotationFunded",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
           "indexed": true,
           "internalType": "enum RealEstateMatrix.TableId",
           "name": "table",
           "type": "uint8"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "slotsRemoved",
-          "type": "uint256"
         }
       ],
       "name": "RotationTriggered",
@@ -453,7 +426,7 @@
         {
           "indexed": false,
           "internalType": "enum RealEstateMatrix.SlotType",
-          "name": "slotType",
+          "name": "stype",
           "type": "uint8"
         },
         {
@@ -472,7 +445,7 @@
         {
           "indexed": true,
           "internalType": "address",
-          "name": "recipient",
+          "name": "to",
           "type": "address"
         },
         {
@@ -501,6 +474,31 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "slotId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "level",
+          "type": "uint8"
+        }
+      ],
+      "name": "SpilloverToFunds",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
           "indexed": true,
           "internalType": "address",
           "name": "sponsor",
@@ -517,84 +515,9 @@
           "internalType": "uint256",
           "name": "amount",
           "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "enum RealEstateMatrix.TableId",
-          "name": "table",
-          "type": "uint8"
         }
       ],
       "name": "SponsorPaid",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "sqmBasisPoints",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "enum RealEstateMatrix.TableId",
-          "name": "table",
-          "type": "uint8"
-        }
-      ],
-      "name": "SqmCredited",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "enum RealEstateMatrix.TableId",
-          "name": "table",
-          "type": "uint8"
-        },
-        {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "active",
-          "type": "bool"
-        }
-      ],
-      "name": "TableActiveChanged",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "enum RealEstateMatrix.TableId",
-          "name": "table",
-          "type": "uint8"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "oldPrice",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "newPrice",
-          "type": "uint256"
-        }
-      ],
-      "name": "TablePriceChanged",
       "type": "event"
     },
     {
@@ -631,20 +554,7 @@
     },
     {
       "inputs": [],
-      "name": "AUTHOR_PERCENT",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "BLAGODARU_REGISTRATION",
+      "name": "CHOICE_TIMEOUT",
       "outputs": [
         {
           "internalType": "uint256",
@@ -657,7 +567,20 @@
     },
     {
       "inputs": [],
-      "name": "BLAGODARU_REINVESTS",
+      "name": "MAX_PAID_SLOTS_PER_TABLE",
+      "outputs": [
+        {
+          "internalType": "uint32",
+          "name": "",
+          "type": "uint32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "MAX_REINVESTS_PER_TX",
       "outputs": [
         {
           "internalType": "uint8",
@@ -670,20 +593,7 @@
     },
     {
       "inputs": [],
-      "name": "CGT_PERCENT",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "CHARITY_GIFT_COST",
+      "name": "SLOT_PURCHASE_COOLDOWN",
       "outputs": [
         {
           "internalType": "uint256",
@@ -696,215 +606,7 @@
     },
     {
       "inputs": [],
-      "name": "CLUB_PERCENT",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "REMAINDER_CGT_1",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "REMAINDER_CGT_2",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "REMAINDER_CGT_3",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "REMAINDER_CUT_1",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "REMAINDER_CUT_2",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "REMAINDER_CUT_3",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "REMAINDER_DIVISOR",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "REMAINDER_FUND_1",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "REMAINDER_FUND_2",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "REMAINDER_FUND_3",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "SPILLOVER_LEVELS",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "SPILLOVER_PERCENT",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "SPONSOR_DIRECT_PERCENT",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "SPONSOR_PERCENT",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "TABLE_1_MIN_LEVEL",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "TABLE_1_PRICE",
+      "name": "T1_PRICE",
       "outputs": [
         {
           "internalType": "uint256",
@@ -917,20 +619,7 @@
     },
     {
       "inputs": [],
-      "name": "TABLE_2_MIN_LEVEL",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "TABLE_2_PRICE",
+      "name": "T2_PRICE",
       "outputs": [
         {
           "internalType": "uint256",
@@ -943,20 +632,7 @@
     },
     {
       "inputs": [],
-      "name": "TABLE_3_MIN_LEVEL",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "TABLE_3_PRICE",
+      "name": "T3_PRICE",
       "outputs": [
         {
           "internalType": "uint256",
@@ -965,6 +641,24 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "u",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "cont",
+          "type": "bool"
+        }
+      ],
+      "name": "adminForceChoice",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -1034,37 +728,13 @@
         },
         {
           "internalType": "address",
-          "name": "beneficiary",
+          "name": "ben",
           "type": "address"
         }
       ],
       "name": "buySlotFor",
       "outputs": [],
       "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        }
-      ],
-      "name": "canUserGiveGift",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "canGive",
-          "type": "bool"
-        },
-        {
-          "internalType": "uint256",
-          "name": "balance",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -1082,12 +752,12 @@
     },
     {
       "inputs": [],
-      "name": "charityFund",
+      "name": "charityGiftAmount",
       "outputs": [
         {
-          "internalType": "address",
+          "internalType": "uint256",
           "name": "",
-          "type": "address"
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -1110,7 +780,7 @@
       "inputs": [
         {
           "internalType": "bool",
-          "name": "continueChoice",
+          "name": "cont",
           "type": "bool"
         }
       ],
@@ -1146,8 +816,82 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "emergencyWithdraw",
+      "inputs": [
+        {
+          "internalType": "enum RealEstateMatrix.TableId",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "name": "currentMaxDepth",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "partner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "a",
+          "type": "uint256"
+        }
+      ],
+      "name": "emergencyForceWithdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "u",
+          "type": "address"
+        }
+      ],
+      "name": "emergencyWithdrawBuffer",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "u",
+          "type": "address"
+        }
+      ],
+      "name": "emergencyWithdrawCharity",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "u",
+          "type": "address"
+        },
+        {
+          "internalType": "enum RealEstateMatrix.TableId",
+          "name": "t",
+          "type": "uint8"
+        }
+      ],
+      "name": "emergencyWithdrawStage",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1179,10 +923,51 @@
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "getHealth",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getPendingReinvestsCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "slotId",
+          "name": "sid",
           "type": "uint256"
         }
       ],
@@ -1190,37 +975,71 @@
       "outputs": [
         {
           "internalType": "address",
-          "name": "slotOwner",
+          "name": "o",
           "type": "address"
         },
         {
           "internalType": "uint8",
-          "name": "table",
+          "name": "t",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "slotType",
+          "name": "st",
           "type": "uint8"
         },
         {
           "internalType": "uint256",
-          "name": "position",
+          "name": "pos",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "totalReceived",
+          "name": "recv",
           "type": "uint256"
         },
         {
           "internalType": "bool",
           "name": "active",
           "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "enum RealEstateMatrix.TableId",
+          "name": "t",
+          "type": "uint8"
+        }
+      ],
+      "name": "getTableStats",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "nextPos",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "depth",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "lastLineSlots",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "maxLastLine",
+          "type": "uint256"
         },
         {
           "internalType": "bool",
-          "name": "completed",
+          "name": "active",
           "type": "bool"
         }
       ],
@@ -1231,12 +1050,41 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "user",
+          "name": "u",
+          "type": "address"
+        }
+      ],
+      "name": "getUserCharityInfo",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "u",
           "type": "address"
         },
         {
           "internalType": "enum RealEstateMatrix.TableId",
-          "name": "table",
+          "name": "t",
           "type": "uint8"
         }
       ],
@@ -1249,23 +1097,43 @@
         },
         {
           "internalType": "uint256",
-          "name": "totalPaidOut",
+          "name": "pendingBalance",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "pending",
+          "name": "phaseProgress",
           "type": "uint256"
         },
         {
-          "internalType": "uint256",
+          "internalType": "uint32",
           "name": "slotsCount",
-          "type": "uint256"
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint32",
+          "name": "paidSlotsCount",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint8",
+          "name": "currentStep",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bool",
+          "name": "waitingForChoice",
+          "type": "bool"
         },
         {
           "internalType": "uint256",
-          "name": "sqmOwned",
+          "name": "choiceDeadline",
           "type": "uint256"
+        },
+        {
+          "internalType": "uint8",
+          "name": "cycleSubStep",
+          "type": "uint8"
         }
       ],
       "stateMutability": "view",
@@ -1275,7 +1143,7 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "user",
+          "name": "u",
           "type": "address"
         }
       ],
@@ -1294,22 +1162,22 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "beneficiary",
+          "name": "ben",
           "type": "address"
         },
         {
           "internalType": "bool",
-          "name": "t50",
+          "name": "t1",
           "type": "bool"
         },
         {
           "internalType": "bool",
-          "name": "t250",
+          "name": "t2",
           "type": "bool"
         },
         {
           "internalType": "bool",
-          "name": "t1000",
+          "name": "t3",
           "type": "bool"
         }
       ],
@@ -1324,6 +1192,19 @@
       "outputs": [
         {
           "internalType": "contract IHousingFund",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "housingPool",
+      "outputs": [
+        {
+          "internalType": "address",
           "name": "",
           "type": "address"
         }
@@ -1347,6 +1228,25 @@
       "name": "initializeFounderSlots",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "lastSlotPurchaseTime",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -1446,6 +1346,25 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "participantBlagodaruCount",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "pause",
       "outputs": [],
@@ -1520,12 +1439,17 @@
     {
       "inputs": [
         {
+          "internalType": "uint8",
+          "name": "id",
+          "type": "uint8"
+        },
+        {
           "internalType": "address",
-          "name": "_f",
+          "name": "a",
           "type": "address"
         }
       ],
-      "name": "setAuthorFund",
+      "name": "setAddress",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1534,12 +1458,12 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "caller",
+          "name": "c",
           "type": "address"
         },
         {
           "internalType": "bool",
-          "name": "auth",
+          "name": "v",
           "type": "bool"
         }
       ],
@@ -1551,77 +1475,12 @@
     {
       "inputs": [
         {
-          "internalType": "address",
-          "name": "_b",
-          "type": "address"
+          "internalType": "uint256",
+          "name": "a",
+          "type": "uint256"
         }
       ],
-      "name": "setBridge",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_c",
-          "type": "address"
-        }
-      ],
-      "name": "setCGTToken",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_f",
-          "type": "address"
-        }
-      ],
-      "name": "setCharityFund",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_f",
-          "type": "address"
-        }
-      ],
-      "name": "setCharityPool",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_f",
-          "type": "address"
-        }
-      ],
-      "name": "setClubFund",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_h",
-          "type": "address"
-        }
-      ],
-      "name": "setHousingFund",
+      "name": "setCharityGiftAmount",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1630,12 +1489,12 @@
       "inputs": [
         {
           "internalType": "enum RealEstateMatrix.TableId",
-          "name": "table",
+          "name": "t",
           "type": "uint8"
         },
         {
           "internalType": "uint256",
-          "name": "depth",
+          "name": "d",
           "type": "uint256"
         }
       ],
@@ -1647,74 +1506,17 @@
     {
       "inputs": [
         {
-          "internalType": "address",
-          "name": "_r",
-          "type": "address"
-        }
-      ],
-      "name": "setMatrixRegistry",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_n",
-          "type": "address"
-        }
-      ],
-      "name": "setNSSPlatform",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_f",
-          "type": "address"
-        }
-      ],
-      "name": "setRotationFund",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "enum RealEstateMatrix.TableId",
-          "name": "table",
+          "name": "t",
           "type": "uint8"
         },
         {
           "internalType": "bool",
-          "name": "active",
+          "name": "v",
           "type": "bool"
         }
       ],
       "name": "setTableActive",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "enum RealEstateMatrix.TableId",
-          "name": "table",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint256",
-          "name": "price",
-          "type": "uint256"
-        }
-      ],
-      "name": "setTablePrice",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1773,11 +1575,6 @@
       "name": "slots",
       "outputs": [
         {
-          "internalType": "uint256",
-          "name": "id",
-          "type": "uint256"
-        },
-        {
           "internalType": "address",
           "name": "owner",
           "type": "address"
@@ -1798,18 +1595,13 @@
           "type": "uint256"
         },
         {
-          "internalType": "uint256",
+          "internalType": "uint32",
           "name": "createdAt",
-          "type": "uint256"
+          "type": "uint32"
         },
         {
           "internalType": "bool",
           "name": "active",
-          "type": "bool"
-        },
-        {
-          "internalType": "bool",
-          "name": "completed",
           "type": "bool"
         }
       ],
@@ -1841,6 +1633,11 @@
           "internalType": "address",
           "name": "donor",
           "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
         }
       ],
       "name": "spendCharityBalance",
@@ -1856,22 +1653,50 @@
           "type": "uint8"
         }
       ],
-      "name": "tables",
+      "name": "tableActive",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "enum RealEstateMatrix.TableId",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "name": "tablePrice",
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "entryPrice",
+          "name": "",
           "type": "uint256"
-        },
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "enum RealEstateMatrix.TableId",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "name": "tableSqm",
+      "outputs": [
         {
           "internalType": "uint256",
-          "name": "sqmFraction",
+          "name": "",
           "type": "uint256"
-        },
-        {
-          "internalType": "bool",
-          "name": "active",
-          "type": "bool"
         }
       ],
       "stateMutability": "view",
@@ -1893,6 +1718,19 @@
     {
       "inputs": [],
       "name": "totalCharityOwed",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalHousingFunded",
       "outputs": [
         {
           "internalType": "uint256",
@@ -2032,25 +1870,6 @@
           "internalType": "address",
           "name": "",
           "type": "address"
-        }
-      ],
-      "name": "userReinvestCount",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
         },
         {
           "internalType": "enum RealEstateMatrix.TableId",
@@ -2067,18 +1886,23 @@
         },
         {
           "internalType": "uint256",
-          "name": "totalPaidOut",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
           "name": "pendingBalance",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "slotsCount",
+          "name": "phaseProgress",
           "type": "uint256"
+        },
+        {
+          "internalType": "uint32",
+          "name": "slotsCount",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint32",
+          "name": "paidSlotsCount",
+          "type": "uint32"
         },
         {
           "internalType": "uint256",
@@ -2086,8 +1910,18 @@
           "type": "uint256"
         },
         {
+          "internalType": "uint8",
+          "name": "currentStep",
+          "type": "uint8"
+        },
+        {
           "internalType": "bool",
-          "name": "enteredNextTable",
+          "name": "waitingForChoice",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "choiceMade",
           "type": "bool"
         },
         {
@@ -2096,13 +1930,13 @@
           "type": "bool"
         },
         {
-          "internalType": "bool",
-          "name": "askedContinue",
-          "type": "bool"
+          "internalType": "uint8",
+          "name": "cycleSubStep",
+          "type": "uint8"
         },
         {
           "internalType": "uint256",
-          "name": "currentStep",
+          "name": "choiceDeadline",
           "type": "uint256"
         }
       ],
@@ -2120,7 +1954,7 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "amount",
+          "name": "a",
           "type": "uint256"
         }
       ],
