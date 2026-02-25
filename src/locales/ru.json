@@ -319,8 +319,8 @@
   "unsupportedPair": "Пара не поддерживается",
   "uploadPhoto": "Загрузить своё фото",
   "removePhoto": "Удалить фото",
-  "orChooseEmoji": "или выберите аватарку"
-    "registerInNSS": "Зарегистрироваться в NSS",
+  "orChooseEmoji": "или выберите аватарку",
+  "registerInNSS": "Зарегистрироваться в NSS",
   "regModalTitle": "Регистрация в GlobalWay",
   "regModalDesc": "Регистрация привяжет твой кошелёк к экосистеме GlobalWay. Камни перестанут испаряться, откроется доступ к бизнесу и бонусам.",
   "sponsorIdLabel": "ID того, кто тебя пригласил",
