@@ -17,16 +17,18 @@ async function refreshDataForAddress(address) {
     // Сначала получаем полный статус из GlobalWayBridge — это главный источник правды
     const gwStatus = await C.getGWUserStatus(address).catch(() => null)
 
-    const [balances, tables, pending, charity, house] = await Promise.all([
+    const [balances, tables, pending, charity, house, bnbPrice] = await Promise.all([
       C.getBalances(address).catch(() => ({ bnb: '0', usdt: '0', cgt: '0', nst: '0' })),
       C.getUserAllTables(address).catch(() => [null, null, null]),
       C.getMyPendingWithdrawal(address).catch(() => 0n),
       C.canGiveGift(address).catch(() => null),
       C.getHouseInfo(address).catch(() => null),
+      C.getBNBPrice().catch(() => null),
     ])
 
     const store = useGameStore.getState()
     store.updateBalances(balances)
+    if (bnbPrice) store.setBnbPrice(bnbPrice)
 
     // Синхронизируем статус регистрации и уровень из GlobalWay
     if (gwStatus) {
@@ -156,6 +158,13 @@ export function useBlockchainInit() {
       stopRefreshCycle()
     }
   }, [wallet])
+
+  // Загружаем курс BNB при старте (даже без кошелька — для отображения цен)
+  useEffect(() => {
+    C.getBNBPrice().then(price => {
+      if (price) useGameStore.getState().setBnbPrice(price)
+    }).catch(() => {})
+  }, [])
 }
 
 /**
