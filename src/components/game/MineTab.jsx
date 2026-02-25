@@ -22,8 +22,21 @@ export default function MineTab() {
   const [showRegModal, setShowRegModal] = useState(false)
   const [sponsorInput, setSponsorInput] = useState('')
   const [registering, setRegistering] = useState(false)
+  const [refFromLink, setRefFromLink] = useState(false) // реф пришёл из ссылки?
 
   const totalNst = nst + localNst
+
+  // ═══════════════════════════════════════════════════
+  // АВТОЗАПОЛНЕНИЕ СПОНСОРА из реферальной ссылки
+  // ═══════════════════════════════════════════════════
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const savedRef = localStorage.getItem('nss_ref')
+    if (savedRef && /^\d+$/.test(savedRef)) {
+      setSponsorInput(savedRef)
+      setRefFromLink(true)
+    }
+  }, [])
 
   useEffect(() => {
     if (!evapActive || registered) return
@@ -50,58 +63,73 @@ export default function MineTab() {
   const handleTap = useCallback((e) => {
     e.preventDefault()
     const earned = doTap()
-    if (earned === null) return
+    if (!earned) return
+
     if (isInTelegram) haptic('light')
-    const rect = tapAreaRef.current.getBoundingClientRect()
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top
-    const id = Date.now() + Math.random()
-    setEffects(prev => [...prev, { id, x, y, text: `+${earned}`, type: 'number' }])
-    setTimeout(() => setEffects(prev => prev.filter(e => e.id !== id)), 700)
-    if (Math.random() < 0.3) {
-      const gid = id + 0.1
-      const gems = ['💎', '✨', '🔶', '💠']
-      setEffects(prev => [...prev, { id: gid, x: x + (Math.random() * 30 - 15), y: y + (Math.random() * 30 - 15), text: gems[Math.floor(Math.random() * 4)], type: 'gem' }])
-      setTimeout(() => setEffects(prev => prev.filter(e => e.id !== gid)), 500)
-    }
+
     tapCountRef.current++
-    if (tapCountRef.current >= 14 + Math.floor(Math.random() * 6)) {
-      tapCountRef.current = 0
+    const rect = tapAreaRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const touch = e.touches?.[0] || e
+    const x = touch.clientX - rect.left
+    const y = touch.clientY - rect.top
+
+    setEffects(prev => [...prev,
+      { id: Date.now() + Math.random(), x: `${x}px`, y: `${y - 10}px`, text: `+${earned}`, type: 'number' },
+    ])
+    setTimeout(() => setEffects(prev => prev.slice(1)), 800)
+
+    if (tapCountRef.current % 25 === 0 && lv.thought) {
       const shapes = ['thought-pill', 'thought-cloud', 'thought-crystal', 'thought-bubble']
       const shape = shapes[Math.floor(Math.random() * shapes.length)]
       showThought(lv.thought, lv.thoughtColor, lv.thoughtIcon, shape)
     }
   }, [doTap, lv, showThought, isInTelegram, haptic])
 
+  // ═══════════════════════════════════════════════════
+  // РЕГИСТРАЦИЯ — открытие модала
+  // ═══════════════════════════════════════════════════
+  const openRegModal = () => {
+    if (!wallet) return
+    // Подгружаем реф из localStorage (мог появиться после первого рендера)
+    const savedRef = typeof window !== 'undefined' ? localStorage.getItem('nss_ref') || '' : ''
+    if (savedRef && /^\d+$/.test(savedRef)) {
+      setSponsorInput(savedRef)
+      setRefFromLink(true)
+    }
+    setShowRegModal(true)
+  }
+
   // Открыть модал регистрации если НЕ зарегистрирован в GlobalWay, иначе купить уровень
   const handleBuyNextLevel = () => {
     if (!wallet || !nextLv) return
     if (!registered) {
-      // Пробуем взять реф. код из localStorage (Telegram startParam)
-      const savedRef = typeof window !== 'undefined' ? localStorage.getItem('nss_ref') || '' : ''
-      setSponsorInput(savedRef)
-      setShowRegModal(true)
+      openRegModal()
       return
     }
     // Уже зарегистрирован в GlobalWay — просто покупаем уровень
     doBuyLevel()
   }
 
-  // Регистрация в NSS+GlobalWay с проверкой sponsorId
+  // ═══════════════════════════════════════════════════
+  // РЕГИСТРАЦИЯ — отправка транзакции
+  // Идёт сразу через мост в GlobalWay — это правильно и быстро
+  // ═══════════════════════════════════════════════════
   const handleRegisterAndBuy = async () => {
     const sid = parseInt(sponsorInput)
     if (!sid || sid <= 0) {
-      addNotification('❌ Введи корректный ID спонсора (число > 0)')
+      addNotification('❌ ' + t('enterValidSponsorId'))
       return
     }
     setRegistering(true)
     setTxPending(true)
     try {
-      addNotification(`⏳ Регистрация со спонсором #${sid}...`)
-      // register() → NSSPlatform → вызывает bridge.registerUser → MatrixRegistry → GlobalWay
+      addNotification(`⏳ ${t('registering')} #${sid}...`)
+      // register() → NSSPlatform → bridge.registerUser → MatrixRegistry → GlobalWay
+      // Одна транзакция — и ты в системе!
       await C.register(sid)
       useGameStore.getState().updateRegistration(true, sid)
-      addNotification('✅ Регистрация успешна!')
+      addNotification('✅ ' + t('registrationSuccess'))
       setShowRegModal(false)
       // Небольшая пауза для подтверждения блока, затем покупаем уровень
       await new Promise(r => setTimeout(r, 1500))
@@ -110,12 +138,43 @@ export default function MineTab() {
       const msg = err?.reason || err?.shortMessage || err?.message || 'Ошибка'
       // Понятные сообщения для частых ошибок
       if (msg.includes('Already registered')) {
-        addNotification('ℹ️ Ты уже зарегистрирован! Покупаем уровень...')
+        addNotification('ℹ️ ' + t('alreadyRegistered'))
         useGameStore.getState().updateRegistration(true, sid)
         setShowRegModal(false)
         await doBuyLevel()
       } else if (msg.includes('Sponsor not found') || msg.includes('Invalid sponsor')) {
-        addNotification(`❌ Спонсор #${sid} не найден в GlobalWay. Уточни ID.`)
+        addNotification(`❌ ${t('sponsorNotFound')} #${sid}`)
+      } else {
+        addNotification(`❌ ${msg.slice(0, 100)}`)
+      }
+    }
+    setTxPending(false)
+    setRegistering(false)
+  }
+
+  // Только регистрация БЕЗ покупки уровня
+  const handleRegisterOnly = async () => {
+    const sid = parseInt(sponsorInput)
+    if (!sid || sid <= 0) {
+      addNotification('❌ ' + t('enterValidSponsorId'))
+      return
+    }
+    setRegistering(true)
+    setTxPending(true)
+    try {
+      addNotification(`⏳ ${t('registering')} #${sid}...`)
+      await C.register(sid)
+      useGameStore.getState().updateRegistration(true, sid)
+      addNotification('✅ ' + t('registrationSuccess'))
+      setShowRegModal(false)
+    } catch (err) {
+      const msg = err?.reason || err?.shortMessage || err?.message || 'Ошибка'
+      if (msg.includes('Already registered')) {
+        addNotification('ℹ️ ' + t('alreadyRegistered'))
+        useGameStore.getState().updateRegistration(true, sid)
+        setShowRegModal(false)
+      } else if (msg.includes('Sponsor not found') || msg.includes('Invalid sponsor')) {
+        addNotification(`❌ ${t('sponsorNotFound')} #${sid}`)
       } else {
         addNotification(`❌ ${msg.slice(0, 100)}`)
       }
@@ -142,8 +201,8 @@ export default function MineTab() {
     } catch (err) {
       const msg = err?.reason || err?.shortMessage || err?.message || t('error')
       if (msg.includes('Not registered')) {
-        addNotification('❌ Требуется регистрация в GlobalWay')
-        setShowRegModal(true)
+        addNotification('❌ ' + t('registrationRequired'))
+        openRegModal()
       } else {
         addNotification(`❌ ${msg.slice(0, 80)}`)
       }
@@ -186,6 +245,7 @@ export default function MineTab() {
       </div>
 
       <div className="px-3 mt-2 space-y-1.5">
+        {/* ═══ КНОПКИ ДЛЯ НЕЗАЛОГИНЕННЫХ ═══ */}
         {!wallet && taps === 0 && (
           <button onClick={connect} className="w-full p-2.5 rounded-xl text-xs font-bold text-center bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/15 transition-all">
             🚀 {t('connectSaveStones')}
@@ -196,14 +256,21 @@ export default function MineTab() {
             ⚠️ {t('stonesEvaporating')} <span className="font-display text-lg">{evapMin}:{evapSec < 10 ? '0' : ''}{evapSec}</span> 💨
           </button>
         )}
+
+        {/* ═══ КНОПКА РЕГИСТРАЦИИ (кошелёк есть, регистрации нет) ═══ */}
         {wallet && !registered && !showRegModal && (
-          <button onClick={handleBuyNextLevel}
+          <button onClick={openRegModal}
             className="w-full p-2.5 rounded-xl text-[11px] font-bold text-center bg-yellow-500/8 border border-yellow-500/25 text-yellow-400 hover:bg-yellow-500/12 transition-all">
-            🆔 Зарегистрироваться в NSS и начать
+            🆔 {t('registerInNSS')}
           </button>
         )}
 
-        {/* Модал регистрации */}
+        {/* ═══════════════════════════════════════════════════
+            МОДАЛ РЕГИСТРАЦИИ — улучшенный UX
+            • Автозаполнение спонсора из реферальной ссылки
+            • Объяснение что происходит
+            • Подсказка для Telegram-пользователей
+            ═══════════════════════════════════════════════════ */}
         {showRegModal && (
           <div className="fixed inset-0 z-50 flex items-end justify-center pb-6 px-3" style={{ background: 'rgba(0,0,0,0.7)' }}
             onClick={() => setShowRegModal(false)}>
@@ -212,36 +279,80 @@ export default function MineTab() {
               onClick={e => e.stopPropagation()}>
               <div className="text-center">
                 <div className="text-2xl mb-1">🆔</div>
-                <div className="text-sm font-black text-white">Регистрация в NSS</div>
-                <div className="text-[10px] text-slate-400 mt-1">
-                  Введи ID спонсора (odixId из GlobalWay). Это тот кто тебя пригласил.
+                <div className="text-sm font-black text-white">{t('regModalTitle')}</div>
+                <div className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                  {t('regModalDesc')}
                 </div>
               </div>
+
+              {/* Поле спонсора */}
               <div>
-                <label className="text-[10px] text-slate-500 mb-1 block">ID спонсора (число):</label>
-                <input
-                  type="number"
-                  value={sponsorInput}
-                  onChange={e => setSponsorInput(e.target.value)}
-                  placeholder="Например: 12345"
-                  className="w-full p-3 rounded-xl text-sm text-white outline-none"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,215,0,0.2)' }}
-                  autoFocus
-                />
-                {sponsorInput && parseInt(sponsorInput) <= 0 && (
-                  <div className="text-[10px] text-red-400 mt-1">❌ ID должен быть больше 0</div>
+                <label className="text-[10px] text-slate-500 mb-1 block">{t('sponsorIdLabel')}:</label>
+                {refFromLink && sponsorInput ? (
+                  // Реф из ссылки — показываем как факт, но даём изменить
+                  <div>
+                    <div className="w-full p-3 rounded-xl text-sm text-white flex items-center justify-between"
+                      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(34,197,94,0.3)' }}>
+                      <span>✅ #{sponsorInput}</span>
+                      <span className="text-[9px] text-emerald-400">{t('fromReferralLink')}</span>
+                    </div>
+                    <button onClick={() => setRefFromLink(false)}
+                      className="text-[9px] text-slate-500 mt-1 underline">
+                      {t('changeSponsor')}
+                    </button>
+                  </div>
+                ) : (
+                  // Ручной ввод
+                  <div>
+                    <input
+                      type="number"
+                      value={sponsorInput}
+                      onChange={e => setSponsorInput(e.target.value)}
+                      placeholder={t('sponsorIdPlaceholder')}
+                      className="w-full p-3 rounded-xl text-sm text-white outline-none"
+                      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,215,0,0.2)' }}
+                      autoFocus
+                    />
+                    {sponsorInput && parseInt(sponsorInput) <= 0 && (
+                      <div className="text-[10px] text-red-400 mt-1">❌ {t('invalidSponsorId')}</div>
+                    )}
+                    {!sponsorInput && (
+                      <div className="text-[9px] text-slate-500 mt-1">
+                        💡 {t('sponsorIdHint')}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
+
+              {/* Подсказка для Telegram */}
+              {isInTelegram && (
+                <div className="p-2.5 rounded-xl text-[10px] leading-relaxed"
+                  style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                  <span className="text-blue-400 font-bold">📱 Telegram:</span>{' '}
+                  <span className="text-slate-400">
+                    {t('telegramWalletHint')}
+                  </span>
+                </div>
+              )}
+
+              {/* Что даёт регистрация */}
+              <div className="p-2.5 rounded-xl text-[10px] text-slate-500 leading-relaxed"
+                style={{ background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.1)' }}>
+                ✨ {t('regBenefits')}
+              </div>
+
+              {/* Кнопки */}
               <div className="flex gap-2">
                 <button onClick={() => setShowRegModal(false)}
                   className="flex-1 py-3 rounded-2xl text-[11px] font-bold text-slate-400 border border-white/10">
-                  Отмена
+                  {t('cancel')}
                 </button>
-                <button onClick={handleRegisterAndBuy}
+                <button onClick={handleRegisterOnly}
                   disabled={registering || !sponsorInput || parseInt(sponsorInput) <= 0}
                   className="flex-1 py-3 rounded-2xl text-[11px] font-black gold-btn"
                   style={{ opacity: (!sponsorInput || parseInt(sponsorInput) <= 0 || registering) ? 0.5 : 1 }}>
-                  {registering ? '⏳ Регистрация...' : '✅ Зарегистрироваться'}
+                  {registering ? '⏳ ...' : '✅ ' + t('register')}
                 </button>
               </div>
             </div>
