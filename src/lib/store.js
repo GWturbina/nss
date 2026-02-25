@@ -86,6 +86,10 @@ const useGameStore = create(
   // Admin
   ownerWallet: null,
   isAdmin: false,
+  
+  // Курс BNB (из SwapHelper)
+  bnbPrice: 0,
+  setBnbPrice: (price) => set({ bnbPrice: price }),
 
   // Evaporation (нерегистрированные)
   evapSeconds: 1800,
