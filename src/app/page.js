@@ -31,7 +31,6 @@ export default function MainPage() {
   // ═══════════════════════════════════════════════════
   // ЗАХВАТ РЕФЕРАЛЬНОЙ ССЫЛКИ
   // ?ref=12345 из URL  ИЛИ  start_param из Telegram
-  // Сохраняем в localStorage → автоподставляется при регистрации
   // ═══════════════════════════════════════════════════
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -41,7 +40,6 @@ export default function MainPage() {
     const refFromUrl = urlParams.get('ref')
     if (refFromUrl && /^\d+$/.test(refFromUrl)) {
       localStorage.setItem('nss_ref', refFromUrl)
-      // Чистим URL чтобы ?ref= не мозолил глаза
       const cleanUrl = window.location.pathname + window.location.hash
       window.history.replaceState({}, '', cleanUrl)
     }
@@ -59,12 +57,19 @@ export default function MainPage() {
   const ActiveComponent = TAB_COMPONENTS[activeTab] || MineTab
 
   return (
-    <div className={`min-h-screen flex flex-col ${dayMode ? 'bg-amber-50 text-stone-900' : 'bg-[#1a1a2e] text-white'}`}>
-      <Header />
-      <main className="flex-1 overflow-y-auto pb-20">
-        <ActiveComponent />
-      </main>
-      <BottomNav />
+    /* ═══ МОБИЛЬНЫЙ КОНТЕЙНЕР ═══
+       max-w-[430px] — ширина iPhone Pro Max
+       На мобилке — на весь экран
+       На десктопе — по центру как телефон с тенью */
+    <div className="mx-auto w-full max-w-[430px] min-h-screen relative shadow-2xl shadow-black/50"
+      style={{ contain: 'layout' }}>
+      <div className={`min-h-screen flex flex-col ${dayMode ? 'bg-amber-50 text-stone-900' : 'bg-[#1a1a2e] text-white'}`}>
+        <Header />
+        <main className="flex-1 overflow-y-auto pb-20">
+          <ActiveComponent />
+        </main>
+        <BottomNav />
+      </div>
     </div>
   )
 }
