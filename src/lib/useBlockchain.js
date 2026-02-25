@@ -42,7 +42,7 @@ async function refreshDataForAddress(address) {
 
     store.updateTables(tables)
     if (pending) store.updatePending((Number(pending) / 1e18).toFixed(2))
-    if (charity) store.updateCharity((Number(charity[1]) / 1e18).toFixed(2), charity[0])
+    if (charity) store.updateCharity((Number(charity[1]) / 1e18).toFixed(2), charity[2])
     if (house) store.updateHouse(house)
 
     // owner для admin-проверки
