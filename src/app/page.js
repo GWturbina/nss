@@ -10,6 +10,7 @@ import { GemsTab, StakingTab, HomeTab, ExchangeTab } from '@/components/pages/Co
 import { LinksTab, VaultTab } from '@/components/pages/ExtraPages'
 import TeamTab from '@/components/pages/TeamPage'
 import AdminPanel from '@/components/admin/AdminPanel'
+
 const TAB_COMPONENTS = {
   mine: MineTab,
   gems: GemsTab,
@@ -22,11 +23,19 @@ const TAB_COMPONENTS = {
   vault: VaultTab,
   admin: AdminPanel,
 }
+
 export default function MainPage() {
   useBlockchainInit()
   const { activeTab, dayMode, level } = useGameStore()
+
+  // ═══════════════════════════════════════════════════
+  // ЗАХВАТ РЕФЕРАЛЬНОЙ ССЫЛКИ
+  // ?ref=12345 из URL  ИЛИ  start_param из Telegram
+  // ═══════════════════════════════════════════════════
   useEffect(() => {
     if (typeof window === 'undefined') return
+
+    // 1) Из URL: https://nss.globalway.app/?ref=12345
     const urlParams = new URLSearchParams(window.location.search)
     const refFromUrl = urlParams.get('ref')
     if (refFromUrl && /^\d+$/.test(refFromUrl)) {
@@ -34,6 +43,8 @@ export default function MainPage() {
       const cleanUrl = window.location.pathname + window.location.hash
       window.history.replaceState({}, '', cleanUrl)
     }
+
+    // 2) Из Telegram: bot?start=12345
     const tg = window.Telegram?.WebApp
     if (tg) {
       const startParam = tg.initDataUnsafe?.start_param
@@ -42,14 +53,23 @@ export default function MainPage() {
       }
     }
   }, [])
+
   const ActiveComponent = TAB_COMPONENTS[activeTab] || MineTab
+
   return (
-    <div className={`min-h-screen flex flex-col theme-${level} ${dayMode ? 'bg-amber-50 text-stone-900' : 'bg-[#1a1a2e] text-white'}`}>
-      <Header />
-      <main className="flex-1 overflow-y-auto pb-20">
-        <ActiveComponent />
-      </main>
-      <BottomNav />
+    /* ═══ МОБИЛЬНЫЙ КОНТЕЙНЕР ═══
+       max-w-[430px] — ширина iPhone Pro Max
+       На мобилке — на весь экран
+       На десктопе — по центру как телефон с тенью */
+    <div className="mx-auto w-full max-w-[430px] min-h-screen relative shadow-2xl shadow-black/50"
+      style={{ contain: 'layout' }}>
+      <div className={`min-h-screen flex flex-col theme-${level} ${dayMode ? 'bg-amber-50 text-stone-900' : 'bg-[#1a1a2e] text-white'}`}>
+        <Header />
+        <main className="flex-1 overflow-y-auto pb-20">
+          <ActiveComponent />
+        </main>
+        <BottomNav />
+      </div>
     </div>
   )
 }
