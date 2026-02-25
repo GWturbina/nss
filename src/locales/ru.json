@@ -336,5 +336,10 @@
   "invalidSponsorId": "ID должен быть больше 0",
   "registrationRequired": "Требуется регистрация в GlobalWay",
   "telegramWalletHint": "Для регистрации нужен Web3-кошелёк (SafePal, Trust Wallet). Telegram-кошелёк (TON) не подходит — нужна сеть opBNB.",
-  "regBenefits": "Регистрация бесплатна (только газ ~$0.01). Получишь: 50 NST + 10 CGT бонус, камни навсегда, реферальную ссылку."
+  "regBenefits": "Регистрация бесплатна (только газ ~$0.01). Получишь: 50 NST + 10 CGT бонус, камни навсегда, реферальную ссылку.",
+  "waitingConfirmation": "Ожидание подтверждения блокчейна",
+  "slowConfirmation": "Блокчейн подтверждает медленно — пробуем продолжить",
+  "insufficientBNB": "Недостаточно BNB для оплаты",
+  "afterRegBuyLevel": "После регистрации купим уровень",
+  "registerAndBuy": "Регистрация + Покупка"
 }
