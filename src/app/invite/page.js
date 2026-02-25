@@ -52,8 +52,10 @@ function InviteContent() {
   }, [registered])
 
   const handleRegister = () => {
-    const tempId = 'NSS' + Math.floor(Math.random() * 900000 + 100000)
-    setMyRef(tempId)
+    // Сохраняем реферала в localStorage — при открытии приложения он подтянется в модал регистрации
+    if (ref && ref !== '0') {
+      localStorage.setItem('nss_ref', ref)
+    }
     setRegistered(true)
     setShowExitPopup(false)
   }
@@ -120,37 +122,12 @@ function InviteContent() {
         ) : (
           <div className="p-4 rounded-2xl mb-4" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
             <div className="text-center mb-3">
-              <div className="text-[13px] text-emerald-400 font-bold">✅ Ты в системе!</div>
-              <div className="text-lg font-black text-white">Твой ID: {myRef}</div>
-              <div className="text-[11px] text-slate-400">Теперь приглашай друзей — получай 10% пожизненно</div>
+              <div className="text-[13px] text-emerald-400 font-bold">✅ Реферал сохранён!</div>
+              <div className="text-sm font-black text-white mt-1">Спонсор ID: #{ref}</div>
+              <div className="text-[11px] text-slate-400 mt-1">Подключи кошелёк в приложении — регистрация пройдёт автоматически с этим спонсором</div>
               <a href="/" className="block w-full py-3 rounded-2xl text-center text-sm font-black mt-3" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff' }}>
-                🚀 Войти в кабинет
+                🚀 Войти в приложение
               </a>
-            </div>
-            <div className="text-[11px] text-slate-400 mb-1">Стиль приглашения:</div>
-            <div className="flex gap-1 mb-3">
-              {Object.entries(TEMPLATES).map(([key, val]) => (
-                <button key={key} onClick={() => setSelTemplate(key)} className={`flex-1 py-1.5 rounded-xl text-[11px] font-bold border ${selTemplate === key ? 'border-gold-400/30 bg-gold-400/10 text-gold-400' : 'border-white/8 text-slate-500'}`}>
-                  {val.emoji} {key === 'gems' ? 'Камни' : key === 'house' ? 'Дом' : 'Доход'}
-                </button>
-              ))}
-            </div>
-            <div className="p-2 rounded-xl mb-3 text-center break-all text-[11px] font-mono" style={{ background: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.15)', color: '#ffd700' }}>
-              {myLink}
-            </div>
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <button onClick={copyLink} className="py-2 rounded-xl text-[12px] font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: copied ? '#10b981' : '#fff', border: '1px solid rgba(255,255,255,0.1)' }}>
-                {copied ? '✅ Скопировано!' : '📋 Копировать'}
-              </button>
-              <button onClick={() => navigator.share?.({ text: shareText, url: myLink })} className="py-2 rounded-xl text-[12px] font-bold" style={{ background: 'linear-gradient(135deg, #ffd700, #f5a623)', color: '#000' }}>
-                📤 Поделиться
-              </button>
-            </div>
-            <div className="grid grid-cols-4 gap-1">
-              <a href={shareLinks.tg} target="_blank" rel="noopener" className="py-2 rounded-xl text-center text-[11px] font-bold bg-[#229ED9]/15 text-[#229ED9] border border-[#229ED9]/20">✈️ TG</a>
-              <a href={shareLinks.wa} target="_blank" rel="noopener" className="py-2 rounded-xl text-center text-[11px] font-bold bg-[#25D366]/15 text-[#25D366] border border-[#25D366]/20">💬 WA</a>
-              <a href={shareLinks.vb} target="_blank" rel="noopener" className="py-2 rounded-xl text-center text-[11px] font-bold bg-[#7360F2]/15 text-[#7360F2] border border-[#7360F2]/20">📱 Vb</a>
-              <a href={shareLinks.fb} target="_blank" rel="noopener" className="py-2 rounded-xl text-center text-[11px] font-bold bg-[#1877F2]/15 text-[#1877F2] border border-[#1877F2]/20">📘 FB</a>
             </div>
           </div>
         )}
