@@ -126,17 +126,32 @@ export default function MineTab() {
     try {
       addNotification(`⏳ ${t('registering')} #${sid}...`)
       // register() → NSSPlatform → bridge.registerUser → MatrixRegistry → GlobalWay
-      // Одна транзакция — и ты в системе!
       await C.register(sid)
-      useGameStore.getState().updateRegistration(true, sid)
       addNotification('✅ ' + t('registrationSuccess'))
       setShowRegModal(false)
-      // Небольшая пауза для подтверждения блока, затем покупаем уровень
-      await new Promise(r => setTimeout(r, 1500))
-      await doBuyLevel()
+
+      // Ждём подтверждения регистрации в блокчейне (до 15 сек)
+      addNotification(`⏳ ${t('waitingConfirmation')}...`)
+      const confirmed = await C.waitForRegistration(wallet)
+      if (confirmed) {
+        // Обновляем статус из блокчейна
+        const gwStatus = await C.getGWUserStatus(wallet).catch(() => null)
+        if (gwStatus) {
+          useGameStore.getState().updateRegistration(gwStatus.isRegistered, gwStatus.odixId || sid)
+          if (gwStatus.maxPackage > 0) useGameStore.getState().setLevel(gwStatus.maxPackage)
+        } else {
+          useGameStore.getState().updateRegistration(true, sid)
+        }
+        // Регистрация подтверждена — покупаем уровень
+        await doBuyLevel()
+      } else {
+        // Регистрация прошла но bridge ещё не видит — пробуем купить
+        useGameStore.getState().updateRegistration(true, sid)
+        addNotification('⚠️ ' + t('slowConfirmation'))
+        await doBuyLevel()
+      }
     } catch (err) {
       const msg = err?.reason || err?.shortMessage || err?.message || 'Ошибка'
-      // Понятные сообщения для частых ошибок
       if (msg.includes('Already registered')) {
         addNotification('ℹ️ ' + t('alreadyRegistered'))
         useGameStore.getState().updateRegistration(true, sid)
@@ -164,9 +179,17 @@ export default function MineTab() {
     try {
       addNotification(`⏳ ${t('registering')} #${sid}...`)
       await C.register(sid)
-      useGameStore.getState().updateRegistration(true, sid)
       addNotification('✅ ' + t('registrationSuccess'))
       setShowRegModal(false)
+      // Обновляем статус из блокчейна
+      const confirmed = await C.waitForRegistration(wallet)
+      const gwStatus = await C.getGWUserStatus(wallet).catch(() => null)
+      if (gwStatus) {
+        useGameStore.getState().updateRegistration(gwStatus.isRegistered, gwStatus.odixId || sid)
+        if (gwStatus.maxPackage > 0) useGameStore.getState().setLevel(gwStatus.maxPackage)
+      } else {
+        useGameStore.getState().updateRegistration(true, sid)
+      }
     } catch (err) {
       const msg = err?.reason || err?.shortMessage || err?.message || 'Ошибка'
       if (msg.includes('Already registered')) {
@@ -190,19 +213,24 @@ export default function MineTab() {
     try {
       addNotification(`⏳ ${t('buyingLevel')} ${nextLv.name}...`)
       await C.buyLevel(nextLv.id)
-      // Обновляем уровень локально и через блокчейн
+      // Обновляем уровень локально сразу
       setLevel(nextLv.id)
-      // Рефреш через 2 сек чтобы GlobalWay подтвердил
-      setTimeout(async () => {
-        const newLevel = await C.getUserLevel(wallet).catch(() => 0)
-        if (newLevel > 0) useGameStore.getState().setLevel(newLevel)
-      }, 2000)
       addNotification(`✅ ${nextLv.name} ${t('levelActivated')}`)
+      // Подтверждаем из блокчейна через 3 сек
+      setTimeout(async () => {
+        const gwStatus = await C.getGWUserStatus(wallet).catch(() => null)
+        if (gwStatus) {
+          if (gwStatus.maxPackage > 0) useGameStore.getState().setLevel(gwStatus.maxPackage)
+          useGameStore.getState().updateRegistration(gwStatus.isRegistered, gwStatus.odixId || null)
+        }
+      }, 3000)
     } catch (err) {
       const msg = err?.reason || err?.shortMessage || err?.message || t('error')
       if (msg.includes('Not registered')) {
         addNotification('❌ ' + t('registrationRequired'))
         openRegModal()
+      } else if (msg.includes('insufficient funds') || msg.includes('INSUFFICIENT')) {
+        addNotification('❌ ' + t('insufficientBNB'))
       } else {
         addNotification(`❌ ${msg.slice(0, 80)}`)
       }
