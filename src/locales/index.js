@@ -50,7 +50,7 @@ export const translations = {
 // Список языков для переключателя
 export const languages = [
   { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+  { code: 'ru', name: 'Русский', flag: 'RU' },
   { code: 'uk', name: 'Українська', flag: '🇺🇦' },
   // Добавь новые языки здесь:
   // { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
