@@ -70,7 +70,27 @@ export const LEVELS = [
 ];
 
 // ═══════════════════════════════════════════════════
-// ПРИРОДНЫЕ КАМНИ — id совпадает с GemVault контрактом (gemId)
+// ФОНЫ ДЛЯ ЗОНЫ ТАПАНИЯ — по уровням
+// Картинки: /icons/backgrounds/levels/{filename}
+// Размер: 860×800px (2x retina), JPG, quality 80%
+// ═══════════════════════════════════════════════════
+export const LEVEL_BACKGROUNDS = [
+  { file: 'bg-hands.jpg',    overlay: 'rgba(15,15,30,0.55)',  glow: 'rgba(148,163,184,0.08)' },  // 0  Тёмная пещера
+  { file: 'bg-shovel.jpg',   overlay: 'rgba(30,20,10,0.50)',  glow: 'rgba(201,144,58,0.15)'  },  // 1  Песчаная пещера
+  { file: 'bg-sieve.jpg',    overlay: 'rgba(20,18,5,0.50)',   glow: 'rgba(184,134,11,0.15)'  },  // 2  Речное дно
+  { file: 'bg-cart.jpg',     overlay: 'rgba(25,15,8,0.45)',   glow: 'rgba(205,127,50,0.18)'  },  // 3  Каменный карьер
+  { file: 'bg-auto.jpg',     overlay: 'rgba(25,20,0,0.45)',   glow: 'rgba(229,166,0,0.20)'   },  // 4  Механический зал
+  { file: 'bg-cutting.jpg',  overlay: 'rgba(5,20,15,0.45)',   glow: 'rgba(16,185,129,0.22)'  },  // 5  Мастерская
+  { file: 'bg-jewelry.jpg',  overlay: 'rgba(25,5,10,0.40)',   glow: 'rgba(225,29,72,0.22)'   },  // 6  Золотая кузня
+  { file: 'bg-building.jpg', overlay: 'rgba(8,12,30,0.40)',   glow: 'rgba(59,130,246,0.22)'  },  // 7  Архитектурное бюро
+  { file: 'bg-earth.jpg',    overlay: 'rgba(25,12,3,0.40)',   glow: 'rgba(249,115,22,0.22)'  },  // 8  Стройплощадка
+  { file: 'bg-house.jpg',    overlay: 'rgba(15,5,25,0.40)',   glow: 'rgba(168,85,247,0.25)'  },  // 9  Земельный участок
+  { file: 'bg-village.jpg',  overlay: 'rgba(5,18,22,0.35)',   glow: 'rgba(103,232,249,0.25)' },  // 10 Панорама долины
+  { file: 'bg-resort.jpg',   overlay: 'rgba(20,5,18,0.35)',   glow: 'rgba(236,72,153,0.25)'  },  // 11 Горный курорт
+  { file: 'bg-empire.jpg',   overlay: 'rgba(20,15,0,0.30)',   glow: 'rgba(255,215,0,0.35)'   },  // 12 Тронный зал
+];
+
+// ═══════════════════════════════════════════════════
 // img: /images/gems/{img} — PNG файлы
 // Пока img нет — показывается SVG заглушка по svgType
 // ═══════════════════════════════════════════════════
