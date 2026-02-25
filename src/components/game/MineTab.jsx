@@ -7,6 +7,7 @@ import { useTelegram } from '@/lib/useTelegram'
 import * as C from '@/lib/contracts'
 
 export default function MineTab() {
+  const bnbPrice = useGameStore(s => s.bnbPrice)
   const { level, localNst, nst, energy, maxEnergy, taps, registered, wallet,
     evapActive, evapSeconds, doTap, tickEvap, news, setTab, addNotification,
     setTxPending, txPending, setLevel, t } = useGameStore()
@@ -14,6 +15,13 @@ export default function MineTab() {
   const { haptic, isInTelegram } = useTelegram()
   const lv = LEVELS[level]
   const nextLv = LEVELS[level + 1] || null
+
+  // Живой курс: BNB → $
+  const fmtUsd = (bnb) => {
+    if (!bnb || !bnbPrice) return ''
+    const usd = bnb * bnbPrice
+    return usd >= 1 ? `~$${Math.round(usd)}` : `~$${usd.toFixed(2)}`
+  }
   const tapAreaRef = useRef(null)
   const [effects, setEffects] = useState([])
   const [thoughts, setThoughts] = useState([])
@@ -405,7 +413,7 @@ export default function MineTab() {
               <>
                 <span className="text-lg">{nextLv.emoji}</span>
                 <span>{t('buy')} {nextLv.name}</span>
-                <span className="text-[11px] opacity-75">({nextLv.price})</span>
+                <span className="text-[11px] opacity-75">({nextLv.price}{bnbPrice > 0 && nextLv.bnb ? ` ${fmtUsd(nextLv.bnb)}` : ''})</span>
               </>
             )}
           </button>
