@@ -1,7 +1,7 @@
 'use client'
 import { useRef, useState, useEffect, useCallback } from 'react'
 import useGameStore from '@/lib/store'
-import { LEVELS } from '@/lib/gameData'
+import { LEVELS, LEVEL_BACKGROUNDS } from '@/lib/gameData'
 import { useBlockchain } from '@/lib/useBlockchain'
 import { useTelegram } from '@/lib/useTelegram'
 import * as C from '@/lib/contracts'
@@ -214,10 +214,12 @@ export default function MineTab() {
   const evapMin = Math.floor(evapSeconds / 60)
   const evapSec = evapSeconds % 60
   const toolSrc = `/icons/tools/${['hands','shovel','sieve','cart','auto','cutting','jewelry','building','earth','house','village','resort','empire'][level]}.png`
+  const lvBg = LEVEL_BACKGROUNDS[level] || LEVEL_BACKGROUNDS[0]
+  const bgSrc = `/icons/backgrounds/levels/${lvBg.file}`
 
   return (
     <div className="flex flex-col flex-1">
-      <div className="mx-3 mt-2 p-3 rounded-2xl border flex items-center gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+      <div className="mx-3 mt-2 p-3 rounded-2xl border flex items-center gap-3" style={{ background: 'linear-gradient(135deg, var(--bg-card), rgba(13,26,46,0.9))', borderColor: `${lv.color}25`, boxShadow: `0 2px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)` }}>
         <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl border-2 flex-shrink-0 overflow-hidden" style={{ borderColor: `${lv.color}50`, background: `${lv.color}12` }}>
           <img src={toolSrc} alt="" className="w-9 h-9 object-contain" onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }} />
           <span className="hidden text-2xl">{lv.emoji}</span>
@@ -400,13 +402,23 @@ export default function MineTab() {
       )}
 
       <div ref={tapAreaRef} onClick={handleTap} onTouchStart={handleTap}
-        className="flex-1 mx-3 my-2 rounded-2xl relative overflow-hidden flex items-center justify-center cursor-pointer select-none min-h-[200px] border border-white/5 transition-all duration-700"
-        style={{ background: `radial-gradient(circle at 50% 60%, var(--lv-bg), #10101e)`, boxShadow: `inset 0 0 50px var(--lv-glow)` }}>
-        <div className="relative z-10 active:animate-shake select-none transition-transform w-[100px] h-[100px] flex items-center justify-center">
-          <img src={toolSrc} alt={lv.name} className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }} />
+        className="flex-1 mx-3 my-2 rounded-2xl relative overflow-hidden flex items-center justify-center cursor-pointer select-none min-h-[200px] border transition-all duration-700"
+        style={{ borderColor: `${lv.color}20`, background: 'var(--lv-ambient)', boxShadow: `inset 0 0 60px ${lvBg.glow}, 0 0 20px ${lvBg.glow}` }}>
+        {/* ═══ Фоновая картинка уровня ═══ */}
+        <div className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+          style={{ backgroundImage: `url(${bgSrc})`, filter: 'brightness(0.85)' }} />
+        {/* ═══ Оверлей с цветом уровня ═══ */}
+        <div className="absolute inset-0 transition-all duration-700"
+          style={{ background: `linear-gradient(180deg, ${lvBg.overlay} 0%, ${lv.color}15 50%, ${lvBg.overlay} 100%)` }} />
+        {/* ═══ Виньетка по краям ═══ */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.5) 100%)' }} />
+
+        <div className="relative z-10 active:animate-shake select-none transition-transform w-[100px] h-[100px] flex items-center justify-center drop-shadow-lg">
+          <img src={toolSrc} alt={lv.name} className="w-full h-full object-contain drop-shadow-[0_0_12px_rgba(255,215,0,0.3)]" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }} />
           <span className="text-6xl hidden">{lv.emoji}</span>
         </div>
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 text-[11px]" style={{ color: 'var(--muted)' }}>
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 text-[11px] px-3 py-1 rounded-full"
+          style={{ color: '#eee8d5', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>
           ⛏ {t('tapHint')} • +{lv.nstPerTap} {t('nstPerTap')}
         </div>
         {effects.map(ef => (
