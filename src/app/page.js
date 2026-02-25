@@ -26,7 +26,7 @@ const TAB_COMPONENTS = {
 
 export default function MainPage() {
   useBlockchainInit()
-  const { activeTab, dayMode } = useGameStore()
+  const { activeTab, dayMode, level } = useGameStore()
 
   // ═══════════════════════════════════════════════════
   // ЗАХВАТ РЕФЕРАЛЬНОЙ ССЫЛКИ
