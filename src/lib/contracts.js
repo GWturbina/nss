@@ -1,6 +1,7 @@
 'use client'
 /**
- * NSS v2.3 — Contract Service Layer
+ * NSS v4.0 — Contract Service Layer
+ * Обновлено для RealEstateMatrix v4 + CharityFund v3
  * Все вызовы контрактов в одном месте. Компоненты импортируют отсюда.
  */
 import { ethers } from 'ethers'
@@ -248,8 +249,7 @@ export async function getUserNSSInfo(address) {
 
 export async function buySlot(tableId) {
   const matrix = getContract('RealEstateMatrix')
-  const config = await matrix.tables(tableId)
-  const price = config.entryPrice
+  const price = await matrix.tablePrice(tableId)
 
   await ensureApproval(ADDRESSES.RealEstateMatrix, price)
 
@@ -267,13 +267,8 @@ export async function getUserAllTables(address) {
     getUserTableInfo(address, 1),
     getUserTableInfo(address, 2),
   ])
-  // Дополняем данными о реинвестах из userReinvestCount
-  const reinvests = await Promise.all([
-    safeRead('RealEstateMatrix', 'userReinvestCount', [address, 0]),
-    safeRead('RealEstateMatrix', 'userReinvestCount', [address, 1]),
-    safeRead('RealEstateMatrix', 'userReinvestCount', [address, 2]),
-  ])
-  return results.map((r, i) => r ? { ...r, _reinvests: Number(reinvests[i] || 0) } : r)
+  // v4: реинвесты = slotsCount - paidSlotsCount (из getUserTableInfo)
+  return results.map((r) => r ? { ...r, _reinvests: Number(r.slotsCount || 0) - Number(r.paidSlotsCount || 0) } : r)
 }
 
 export async function getMyPendingWithdrawal(address) {
@@ -289,14 +284,14 @@ export async function getFundAddresses() {
   try {
     const matrix = getReadContract('RealEstateMatrix')
     if (!matrix) return null
-    const [clubFund, authorFund, charityFund, rotationFund, housingFund] = await Promise.all([
+    const [clubFund, authorFund, charityPool, rotationFund, housingPool] = await Promise.all([
       matrix.clubFund(),
       matrix.authorFund(),
-      matrix.charityFund(),
+      matrix.charityPool(),
       matrix.rotationFund(),
-      matrix.housingFund().catch(() => null),
+      matrix.housingPool().catch(() => null),
     ])
-    return { clubFund, authorFund, charityFund, rotationFund, housingFund }
+    return { clubFund, authorFund, charityFund: charityPool, rotationFund, housingFund: housingPool }
   } catch { return null }
 }
 
@@ -368,18 +363,14 @@ export async function getContractHealth() {
   const c = getReadContract('RealEstateMatrix')
   if (!c) return null
   try {
-    // getContractHealth удалена из контракта для оптимизации размера
-    // читаем доступные публичные переменные напрямую
-    const [totalPending, totalCharity] = await Promise.all([
-      c.totalPendingWithdrawals().catch(() => 0n),
-      c.totalCharityOwed().catch(() => 0n),
-    ])
+    // v4: getHealth() returns (balance, pending, charityOwed, reinvestCGT)
+    const [balance, totalPending, totalCharity, reinvestCGT] = await c.getHealth()
     return {
-      balance: '—',
+      balance: fmt(balance),
       owedWithdrawals: fmt(totalPending),
       owedCharity: fmt(totalCharity),
-      owedCGT: '—',
-      surplus: '—',
+      owedCGT: fmt(reinvestCGT),
+      surplus: fmt(balance - totalPending - totalCharity - reinvestCGT),
     }
   } catch { return null }
 }
@@ -456,7 +447,7 @@ export async function getHouseInfo(address) {
 // ═══════════════════════════════════════════════════
 
 export async function canGiveGift(address) {
-  return await safeRead('RealEstateMatrix', 'canUserGiveGift', [address])
+  return await safeRead('RealEstateMatrix', 'getUserCharityInfo', [address])
 }
 
 export async function giveGift(recipientAddress) {
@@ -649,8 +640,7 @@ export async function giftSlot(beneficiary, t50, t250, t1000) {
 
 export async function buySlotFor(tableId, beneficiary) {
   const matrix = getContract('RealEstateMatrix')
-  const config = await matrix.tables(tableId)
-  const price = config.entryPrice
+  const price = await matrix.tablePrice(tableId)
   await ensureApproval(ADDRESSES.RealEstateMatrix, price)
   const tx = await matrix.buySlotFor(tableId, beneficiary)
   return await tx.wait()
