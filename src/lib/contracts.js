@@ -143,6 +143,19 @@ export async function register(sponsorId = 0) {
   return await tx.wait()
 }
 
+/**
+ * После register() транзакция подтверждена, но bridge может не сразу видеть.
+ * Эта функция ждёт пока bridge подтвердит регистрацию (до 15 сек, 5 попыток).
+ */
+export async function waitForRegistration(address, maxAttempts = 5) {
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise(r => setTimeout(r, 3000))
+    const reg = await isRegistered(address).catch(() => false)
+    if (reg) return true
+  }
+  return false
+}
+
 export async function buyLevel(level) {
   const nss = getContract('NSSPlatform')
   const bridgeAddr = await nss.bridge()
@@ -151,6 +164,22 @@ export async function buyLevel(level) {
   ], readProvider)
   const price = await bridge.getLevelPrice(level)
   const tx = await nss.buyLevel(level, { value: price })
+  return await tx.wait()
+}
+
+/**
+ * Купить несколько уровней за одну транзакцию.
+ * NSSPlatform.buyMultipleLevels(fromLevel, toLevel) — payable
+ * Цена считается через bridge.getMultipleLevelsPrice()
+ */
+export async function buyMultipleLevels(fromLevel, toLevel) {
+  const nss = getContract('NSSPlatform')
+  const bridgeAddr = await nss.bridge()
+  const bridge = new ethers.Contract(bridgeAddr, [
+    'function getMultipleLevelsPrice(address,uint8,uint8) view returns (uint256)'
+  ], readProvider)
+  const price = await bridge.getMultipleLevelsPrice(web3.address, fromLevel, toLevel)
+  const tx = await nss.buyMultipleLevels(fromLevel, toLevel, { value: price })
   return await tx.wait()
 }
 
