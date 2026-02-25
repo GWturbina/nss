@@ -498,12 +498,22 @@ export async function getCharityBalance(address) {
  * Возвращает число, например 620.5
  */
 export async function getBNBPrice() {
+  // 1) Binance API — самый точный курс
+  try {
+    const r = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BNBUSDT')
+    const d = await r.json()
+    const price = parseFloat(d.price)
+    if (price > 10) return price
+  } catch {}
+  // 2) Fallback: SwapHelper (может быть неточным из-за низкой ликвидности)
   try {
     const c = getReadContract('SwapHelper')
     if (!c) return null
     const [usdtAmount] = await c.quoteBNBtoUSDT(parse('1'))
-    return parseFloat(fmt(usdtAmount))
-  } catch { return null }
+    const price = parseFloat(fmt(usdtAmount))
+    if (price > 10) return price
+  } catch {}
+  return null
 }
 
 /**
