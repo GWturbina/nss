@@ -319,8 +319,8 @@
   "unsupportedPair": "Unsupported pair",
   "uploadPhoto": "Upload your photo",
   "removePhoto": "Remove photo",
-  "orChooseEmoji": "or choose an avatar"
-    "registerInNSS": "Register in NSS",
+  "orChooseEmoji": "or choose an avatar",
+  "registerInNSS": "Register in NSS",
   "regModalTitle": "Register in GlobalWay",
   "regModalDesc": "Registration links your wallet to the GlobalWay ecosystem. Stones stop evaporating, business and bonuses become available.",
   "sponsorIdLabel": "ID of who invited you",
