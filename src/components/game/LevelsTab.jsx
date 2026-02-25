@@ -6,6 +6,7 @@ import * as C from '@/lib/contracts'
 
 export default function LevelsTab() {
   const { level, wallet, registered, setTab, addNotification, setTxPending, txPending, setLevel, t } = useGameStore()
+  const bnbPrice = useGameStore(s => s.bnbPrice)
   const [buying, setBuying] = useState(false)
   const [expandedLv, setExpandedLv] = useState(null)
 
@@ -25,6 +26,13 @@ export default function LevelsTab() {
       setRefFromLink(true)
     }
   }, [])
+
+  // Живой курс: BNB → $
+  const fmtUsd = (bnb) => {
+    if (!bnb || !bnbPrice) return ''
+    const usd = bnb * bnbPrice
+    return usd >= 1 ? `~$${Math.round(usd)}` : `~$${usd.toFixed(2)}`
+  }
 
   const handleBuy = async (lv) => {
     if (!wallet) { addNotification(`❌ ${t('connectWalletFirst')}`); return }
@@ -166,7 +174,10 @@ export default function LevelsTab() {
                   {i === 0 ? (
                     <div className="text-[11px] font-bold text-slate-500">{t('free')}</div>
                   ) : (
-                    <div className="text-[11px] font-bold" style={{ color: lv.color }}>{lv.price}</div>
+                    <div>
+                      <div className="text-[11px] font-bold" style={{ color: lv.color }}>{lv.price}</div>
+                      {bnbPrice > 0 && <div className="text-[9px] text-slate-500">{fmtUsd(lv.bnb)}</div>}
+                    </div>
                   )}
                 </div>
               </div>
@@ -195,7 +206,7 @@ export default function LevelsTab() {
                       disabled={buying || isLocked || txPending}
                       className="mt-2 w-full py-2.5 rounded-xl text-xs font-bold transition-all gold-btn"
                       style={{ opacity: (buying || txPending) ? 0.6 : 1 }}>
-                      {buying ? `⏳ ${t('buying')}` : `🛒 ${t('buy')} ${lv.name} ${t('forPrice')} ${lv.price}`}
+                      {buying ? `⏳ ${t('buying')}` : `🛒 ${t('buy')} ${lv.name} — ${lv.price}${bnbPrice > 0 ? ` (${fmtUsd(lv.bnb)})` : ''}`}
                     </button>
                   )}
                   {isOwned && !isActive && (
