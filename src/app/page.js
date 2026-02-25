@@ -63,7 +63,7 @@ export default function MainPage() {
        На десктопе — по центру как телефон с тенью */
     <div className="mx-auto w-full max-w-[430px] min-h-screen relative shadow-2xl shadow-black/50"
       style={{ contain: 'layout' }}>
-      <div className={`min-h-screen flex flex-col ${dayMode ? 'bg-amber-50 text-stone-900' : 'bg-[#1a1a2e] text-white'}`}>
+      <div className={`min-h-screen flex flex-col theme-${level} ${dayMode ? 'bg-amber-50 text-stone-900' : 'bg-[#1a1a2e] text-white'}`}>
         <Header />
         <main className="flex-1 overflow-y-auto pb-20">
           <ActiveComponent />
