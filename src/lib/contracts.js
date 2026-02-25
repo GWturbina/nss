@@ -493,6 +493,31 @@ export async function getCharityBalance(address) {
 // ОБМЕН (SwapHelper)
 // ═══════════════════════════════════════════════════
 
+/**
+ * Текущая цена 1 BNB в USDT (из SwapHelper → PancakeSwap)
+ * Возвращает число, например 620.5
+ */
+export async function getBNBPrice() {
+  try {
+    const c = getReadContract('SwapHelper')
+    if (!c) return null
+    const [usdtAmount] = await c.quoteBNBtoUSDT(parse('1'))
+    return parseFloat(fmt(usdtAmount))
+  } catch { return null }
+}
+
+/**
+ * Цена уровня в BNB (из bridge) — реальная цена контракта
+ */
+export async function getLevelPriceBNB(level) {
+  try {
+    const bridge = await getBridgeContract()
+    if (!bridge) return null
+    const price = await bridge.getLevelPrice(level)
+    return parseFloat(fmt(price))
+  } catch { return null }
+}
+
 export async function swapBNBtoUSDT(bnbAmount, minUSDTOut = 0n) {
   const swap = getContract('SwapHelper')
   const tx = await swap.swapBNBtoUSDT(minUSDTOut, { value: parse(bnbAmount) })
