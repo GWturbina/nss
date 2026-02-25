@@ -1,62 +1,69 @@
 'use client'
 import { useEffect } from 'react'
 import useGameStore from '@/lib/store'
-import { LEVELS } from '@/lib/gameData'
 import { useBlockchainInit } from '@/lib/useBlockchain'
-import { useTelegram } from '@/lib/useTelegram'
 import Header from '@/components/ui/Header'
 import BottomNav from '@/components/ui/BottomNav'
 import MineTab from '@/components/game/MineTab'
 import LevelsTab from '@/components/game/LevelsTab'
-import { GemsTab, StakingTab, ExchangeTab, HomeTab } from '@/components/pages/ContentPages'
-import TeamTab from '@/components/pages/TeamPage'
+import { GemsTab, StakingTab, HomeTab, ExchangeTab } from '@/components/pages/ContentPages'
 import { LinksTab, VaultTab } from '@/components/pages/ExtraPages'
+import TeamTab from '@/components/pages/TeamPage'
 import AdminPanel from '@/components/admin/AdminPanel'
 
-export default function Home() {
-  const { activeTab, level, dayMode } = useGameStore()
-  const themeClass = LEVELS[level]?.themeClass || 'theme-0'
+const TAB_COMPONENTS = {
+  mine: MineTab,
+  gems: GemsTab,
+  staking: StakingTab,
+  exchange: ExchangeTab,
+  home: HomeTab,
+  levels: LevelsTab,
+  team: TeamTab,
+  links: LinksTab,
+  vault: VaultTab,
+  admin: AdminPanel,
+}
 
-  // Инициализация — ОДИН РАЗ
+export default function MainPage() {
   useBlockchainInit()
+  const { activeTab, dayMode } = useGameStore()
 
-  // Авто-очистка старых версий кеша (nss-storage, nss-storage-v1, v2...)
+  // ═══════════════════════════════════════════════════
+  // ЗАХВАТ РЕФЕРАЛЬНОЙ ССЫЛКИ
+  // ?ref=12345 из URL  ИЛИ  start_param из Telegram
+  // Сохраняем в localStorage → автоподставляется при регистрации
+  // ═══════════════════════════════════════════════════
   useEffect(() => {
-    const CURRENT_KEY = 'nss-storage-v3'
-    try {
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('nss-storage') && key !== CURRENT_KEY) {
-          localStorage.removeItem(key)
-        }
-      })
-    } catch {}
-  }, [])
-  const { isInTelegram, startParam } = useTelegram()
+    if (typeof window === 'undefined') return
 
-  // Если пришли с реферальной ссылки из Telegram
-  useEffect(() => {
-    if (startParam) {
-      // Сохраняем реферальный код
-      localStorage.setItem('nss_ref', startParam)
+    // 1) Из URL: https://nss.globalway.app/?ref=12345
+    const urlParams = new URLSearchParams(window.location.search)
+    const refFromUrl = urlParams.get('ref')
+    if (refFromUrl && /^\d+$/.test(refFromUrl)) {
+      localStorage.setItem('nss_ref', refFromUrl)
+      // Чистим URL чтобы ?ref= не мозолил глаза
+      const cleanUrl = window.location.pathname + window.location.hash
+      window.history.replaceState({}, '', cleanUrl)
     }
-  }, [startParam])
+
+    // 2) Из Telegram: bot?start=12345
+    const tg = window.Telegram?.WebApp
+    if (tg) {
+      const startParam = tg.initDataUnsafe?.start_param
+      if (startParam && /^\d+$/.test(startParam)) {
+        localStorage.setItem('nss_ref', startParam)
+      }
+    }
+  }, [])
+
+  const ActiveComponent = TAB_COMPONENTS[activeTab] || MineTab
 
   return (
-    <div className={`max-w-[430px] mx-auto min-h-screen flex flex-col ${themeClass} ${dayMode ? 'day-mode' : ''}`}
-      style={{ background: dayMode ? '#e8e0c8' : '#2b2a1a', boxShadow: '0 0 60px rgba(255,215,0,0.04)' }}>
+    <div className={`min-h-screen flex flex-col ${dayMode ? 'bg-amber-50 text-stone-900' : 'bg-[#1a1a2e] text-white'}`}>
       <Header />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {activeTab === 'mine' && <MineTab />}
-        {activeTab === 'gems' && <GemsTab />}
-        {activeTab === 'staking' && <StakingTab />}
-        {activeTab === 'exchange' && <ExchangeTab />}
-        {activeTab === 'home' && <HomeTab />}
-        {activeTab === 'team' && <TeamTab />}
-        {activeTab === 'links' && <LinksTab />}
-        {activeTab === 'vault' && <VaultTab />}
-        {activeTab === 'admin' && <AdminPanel />}
-        {activeTab === 'levels' && <LevelsTab />}
-      </div>
+      <main className="flex-1 overflow-y-auto pb-20">
+        <ActiveComponent />
+      </main>
       <BottomNav />
     </div>
   )
