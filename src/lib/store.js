@@ -105,25 +105,32 @@ const useGameStore = create(
     wallet: data.address,
     chainId: data.chainId,
     walletType: data.walletType,
+    // Кошелёк подключен → испарение СТОП (даже до регистрации — токены не теряются)
+    evapActive: false,
     // Сразу проверяем isAdmin если ownerWallet уже сохранён из localStorage
     isAdmin: s.ownerWallet 
       ? data.address.toLowerCase() === s.ownerWallet.toLowerCase()
       : false,
   })),
-  clearWallet: () => set({
+
+  // *** КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ***
+  // clearWallet НЕ сбрасывает localNst и taps — они принадлежат УСТРОЙСТВУ, не кошельку
+  // Блокчейн-данные обнуляем, т.к. следующий кошелёк может быть другим
+  clearWallet: () => set((s) => ({
     // Кошелёк
     wallet: null, chainId: null, walletType: null,
     registered: false, sponsorId: null,
-    // Балансы — ОБНУЛЯЕМ полностью
+    // Блокчейн-балансы — обнуляем (загрузятся при подключении нового кошелька)
     bnb: 0, usdt: 0, cgt: 0, nst: 0, gwt: 0,
-    // Уровень сбрасываем в 0 (данные следующего пользователя должны загрузиться заново)
+    // Уровень → 0 (загружается из блокчейна каждый раз)
     level: 0,
-    localNst: 0,
-    taps: 0,
-    energy: 500,
+    // *** localNst и taps — НЕ ТРОГАЕМ ***
+    // localNst: сохраняем — это труд пользователя, он не должен пропасть
+    // taps: сохраняем — статистика тапов
+    // Испарение отключаем (включится только при первом тапе без кошелька)
     evapActive: false,
     evapSeconds: 1800,
-    // Бизнесы
+    // Бизнесы → чистим
     tables: [
       { slots: 0, earned: '0', pending: '0', reinvests: 0, sqm: 0 },
       { slots: 0, earned: '0', pending: '0', reinvests: 0, sqm: 0 },
@@ -135,7 +142,7 @@ const useGameStore = create(
     houseStatus: 'none', housePrice: 0, houseDeposit: 0, houseLoan: 0, houseRepaid: 0,
     // Благодарю
     charityBalance: '0', canGive: false,
-  }),
+  })),
   setConnecting: (v) => set({ isConnecting: v }),
 
   // ═══════════════════════════════════════════════════
@@ -210,7 +217,7 @@ const useGameStore = create(
   toggleDayMode: () => set(s => ({ dayMode: !s.dayMode })),
 
   doTap: () => {
-    const { energy, level, localNst, taps, registered, evapActive } = get()
+    const { energy, level, localNst, taps, registered, wallet, evapActive } = get()
     if (energy <= 0) return null
     const lv = LEVELS[level]
     const earned = lv.nstPerTap
@@ -219,7 +226,8 @@ const useGameStore = create(
       energy: energy - 1,
       taps: taps + 1,
     })
-    if (!registered && !evapActive && taps === 0) set({ evapActive: true })
+    // Испарение включается ТОЛЬКО если нет кошелька И нет регистрации И первый тап
+    if (!registered && !wallet && !evapActive && taps === 0) set({ evapActive: true })
     return earned
   },
 
@@ -229,8 +237,9 @@ const useGameStore = create(
   },
 
   tickEvap: () => {
-    const { evapSeconds, evapActive, registered } = get()
-    if (!evapActive || registered) return null
+    const { evapSeconds, evapActive, registered, wallet } = get()
+    // Испарение НЕ работает если: зарегистрирован ИЛИ кошелёк подключен
+    if (!evapActive || registered || wallet) return null
     if (evapSeconds <= 1) {
       set({ localNst: 0, evapActive: false, evapSeconds: 1800 })
       return 'expired'
@@ -260,17 +269,32 @@ const useGameStore = create(
   setLevel: (lv) => set({ level: lv }),
 }),
     {
-      name: 'nss-storage-v4',   // v4: добавлены localNst, taps — старый кеш v3 автоматом игнорируется
+      name: 'nss-storage-v5',   // v5: сохраняем wallet+registered — токены больше не испаряются
       partialize: (state) => ({
         lang: state.lang,
-        // level НЕ сохраняем — загружается из блокчейна каждый раз
         ownerWallet: state.ownerWallet,
-        // Тапалка — сохраняем чтобы накопленное не терялось при перезагрузке
+        // *** КЛЮЧЕВОЕ: сохраняем wallet и registered ***
+        // Без этого при перезагрузке registered=false → испарение включается → токены пропадают
+        wallet: state.wallet,
+        registered: state.registered,
+        sponsorId: state.sponsorId,
+        // Тапалка — сохраняем
         localNst: state.localNst,
         taps: state.taps,
       }),
-      version: 4,
-      migrate: () => ({}),      // При несовпадении версии — чистый старт без ошибок
+      version: 5,
+      // *** КЛЮЧЕВОЕ: миграция СОХРАНЯЕТ данные ***
+      // Раньше было migrate: () => ({}) — всё стиралось при смене версии
+      migrate: (persisted, version) => {
+        // Из v4 → v5: просто добавились новые поля, старые данные сохраняем
+        return {
+          ...persisted,
+          // Если wallet/registered не было в v4 — ставим дефолты
+          wallet: persisted.wallet ?? null,
+          registered: persisted.registered ?? false,
+          sponsorId: persisted.sponsorId ?? null,
+        }
+      },
     }
   )
 )
