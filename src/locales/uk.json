@@ -320,4 +320,21 @@
   "uploadPhoto": "Завантажити своє фото",
   "removePhoto": "Видалити фото",
   "orChooseEmoji": "або оберіть аватарку"
+  "registerInNSS": "Зареєструватися в NSS",
+  "regModalTitle": "Реєстрація в GlobalWay",
+  "regModalDesc": "Реєстрація прив'яже твій гаманець до екосистеми GlobalWay. Каміння перестане випаровуватися, відкриється доступ до бізнесу та бонусів.",
+  "sponsorIdLabel": "ID того, хто тебе запросив",
+  "sponsorIdPlaceholder": "Наприклад: 12345",
+  "sponsorIdHint": "Запитай у того, хто дав тобі посилання. Або попроси посилання у знайомого з GlobalWay.",
+  "fromReferralLink": "з реферального посилання",
+  "changeSponsor": "Змінити спонсора",
+  "enterValidSponsorId": "Введи коректний ID спонсора (число > 0)",
+  "registering": "Реєстрація зі спонсором",
+  "registrationSuccess": "Реєстрація успішна! Ласкаво просимо до GlobalWay!",
+  "alreadyRegistered": "Ти вже зареєстрований! Продовжуємо...",
+  "sponsorNotFound": "Спонсор не знайдений в GlobalWay. Уточни ID:",
+  "invalidSponsorId": "ID має бути більше 0",
+  "registrationRequired": "Потрібна реєстрація в GlobalWay",
+  "telegramWalletHint": "Для реєстрації потрібен Web3-гаманець (SafePal, Trust Wallet). Telegram-гаманець (TON) не підходить — потрібна мережа opBNB.",
+  "regBenefits": "Реєстрація безкоштовна (тільки газ ~$0.01). Отримаєш: 50 NST + 10 CGT бонус, каміння назавжди, реферальне посилання."
 }
