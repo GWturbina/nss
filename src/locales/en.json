@@ -320,4 +320,22 @@
   "uploadPhoto": "Upload your photo",
   "removePhoto": "Remove photo",
   "orChooseEmoji": "or choose an avatar"
+    "registerInNSS": "Register in NSS",
+  "regModalTitle": "Register in GlobalWay",
+  "regModalDesc": "Registration links your wallet to the GlobalWay ecosystem. Stones stop evaporating, business and bonuses become available.",
+  "sponsorIdLabel": "ID of who invited you",
+  "sponsorIdPlaceholder": "Example: 12345",
+  "sponsorIdHint": "Ask the person who shared the link with you. Or ask a friend from GlobalWay.",
+  "fromReferralLink": "from referral link",
+  "changeSponsor": "Change sponsor",
+  "enterValidSponsorId": "Enter a valid sponsor ID (number > 0)",
+  "registering": "Registering with sponsor",
+  "registrationSuccess": "Registration successful! Welcome to GlobalWay!",
+  "alreadyRegistered": "You're already registered! Continuing...",
+  "sponsorNotFound": "Sponsor not found in GlobalWay. Check ID:",
+  "invalidSponsorId": "ID must be greater than 0",
+  "registrationRequired": "GlobalWay registration required",
+  "telegramWalletHint": "Registration requires a Web3 wallet (SafePal, Trust Wallet). Telegram wallet (TON) won't work — opBNB network is needed.",
+  "regBenefits": "Registration is free (only gas ~$0.01). You get: 50 NST + 10 CGT bonus, permanent stones, referral link."
+
 }
