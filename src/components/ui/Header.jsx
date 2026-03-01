@@ -22,7 +22,7 @@ export default function Header() {
 
   const TOP_TABS = [
     { id: 'mine', icon: '⛏', label: t('tabMine') },
-    { id: 'gems', icon: '💎', label: t('tabGems') },
+    { id: 'diamond', icon: '♦️', label: t('tabDiamond') },
     { id: 'staking', icon: '🏔', label: t('tabBusiness') },
     { id: 'exchange', icon: '💱', label: t('tabExchange') },
     { id: 'home', icon: '🏠', label: t('tabHome') },
