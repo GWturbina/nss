@@ -184,7 +184,7 @@ export function calcWhitePrice(shape, clarity, color, carats, hasCert, regionId 
   const mkp = (rm[regionId] || 75) / 100
   const retail = Math.round(cost * (1 + mkp))
   const retailPC = Math.round(costPC * (1 + mkp))
-  const nstB = Math.min(nMax, Math.floor(userNst / nstPer))
+  const nstB = Math.min(nMax, Math.floor(userNst / nPer))
   const totalDisc = disc + nstB
   const club = Math.round(retail * (1 - totalDisc / 100))
 
@@ -228,7 +228,7 @@ export function calcFancyPrice(shape, fancyColor, intensityId, clarity, carats, 
   const mkp = (rm[regionId] || 75) / 100
   const retail = Math.round(cost * (1 + mkp))
   const retailPC = Math.round(costPC * (1 + mkp))
-  const nstB = Math.min(nMax, Math.floor(userNst / nstPer))
+  const nstB = Math.min(nMax, Math.floor(userNst / nPer))
   const totalDisc = disc + nstB
   const club = Math.round(retail * (1 - totalDisc / 100))
 
