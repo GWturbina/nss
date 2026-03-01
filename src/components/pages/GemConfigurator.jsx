@@ -6,30 +6,9 @@ import {
   CARAT_RANGE, calcWhitePrice, calcFancyPrice, formatUSD, gemSpecString
 } from '@/lib/gemCatalog'
 import { safeCall } from '@/lib/contracts'
+import ShapeSVG from '@/components/ui/DiamondShapes'
 
-// ═══════════════════════════════════════════════════
-// SVG ОГРАНКИ
-// ═══════════════════════════════════════════════════
-const ShapeSVG = ({ shape, size = 32, active = false }) => {
-  const c = active ? '#ffd700' : 'rgba(255,255,255,0.25)'
-  const w = active ? 1.5 : 1
-  const s = size, h = s / 2
-  const p = { stroke: c, strokeWidth: w, fill: 'none' }
-  const svg = {
-    round:    <circle cx={h} cy={h} r={h*0.75} {...p} />,
-    princess: <rect x={s*0.15} y={s*0.15} width={s*0.7} height={s*0.7} {...p} />,
-    cushion:  <rect x={s*0.12} y={s*0.12} width={s*0.76} height={s*0.76} rx={s*0.18} {...p} />,
-    oval:     <ellipse cx={h} cy={h} rx={h*0.55} ry={h*0.78} {...p} />,
-    emerald:  <rect x={s*0.18} y={s*0.1} width={s*0.64} height={s*0.8} rx={s*0.06} {...p} />,
-    radiant:  <><rect x={s*0.15} y={s*0.15} width={s*0.7} height={s*0.7} {...p} /><line x1={s*0.15} y1={h} x2={s*0.85} y2={h} {...p} strokeWidth={0.5}/></>,
-    marquise: <ellipse cx={h} cy={h} rx={h*0.4} ry={h*0.85} {...p} />,
-    pear:     <path d={`M${h} ${s*0.08}Q${s*0.85} ${s*0.35} ${s*0.75} ${s*0.65}Q${s*0.6} ${s*0.92} ${h} ${s*0.92}Q${s*0.4} ${s*0.92} ${s*0.25} ${s*0.65}Q${s*0.15} ${s*0.35} ${h} ${s*0.08}Z`} {...p} />,
-    heart:    <path d={`M${h} ${s*0.9}L${s*0.12} ${s*0.42}Q${s*0.05} ${s*0.15} ${s*0.28} ${s*0.15}Q${h} ${s*0.15} ${h} ${s*0.35}Q${h} ${s*0.15} ${s*0.72} ${s*0.15}Q${s*0.95} ${s*0.15} ${s*0.88} ${s*0.42}Z`} {...p} />,
-    asscher:  <><rect x={s*0.15} y={s*0.15} width={s*0.7} height={s*0.7} {...p} /><rect x={s*0.28} y={s*0.28} width={s*0.44} height={s*0.44} {...p} strokeWidth={0.5}/></>,
-    trillion: <polygon points={`${h},${s*0.1} ${s*0.88},${s*0.85} ${s*0.12},${s*0.85}`} {...p} />,
-  }
-  return <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>{svg[shape] || svg.round}</svg>
-}
+// ShapeSVG imported from @/components/ui/DiamondShapes
 
 // ═══════════════════════════════════════════════════
 // MAIN COMPONENT
@@ -131,12 +110,12 @@ export default function GemConfigurator() {
       {/* ФОРМА */}
       <div className="p-3 rounded-2xl glass">
         <div className="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest">{t('gcShape')}</div>
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
           {SHAPES.map(s => (
             <button key={s.id} onClick={() => setShape(s.id)}
-              className={`flex flex-col items-center py-2 rounded-xl transition-all border ${sel(shape===s.id)}`}>
-              <ShapeSVG shape={s.id} size={28} active={shape===s.id} />
-              <span className="text-[8px] mt-1 font-bold">{t(`shape_${s.id}`) || s.name}</span>
+              className={`flex flex-col items-center py-2.5 rounded-xl transition-all border ${sel(shape===s.id)}`}>
+              <ShapeSVG shape={s.id} size={48} active={shape===s.id} />
+              <span className="text-[9px] mt-1 font-bold">{t(`shape_${s.id}`) || s.name}</span>
             </button>
           ))}
         </div>
