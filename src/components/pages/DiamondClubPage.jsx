@@ -37,10 +37,10 @@ export default function DiamondClubTab() {
       </div>
 
       {/* Sub-навигация */}
-      <div className="flex gap-1 px-3 mt-1 overflow-x-auto scrollbar-hide">
+      <div className="grid grid-cols-3 gap-1 px-3 mt-1">
         {sections.map(s => (
           <button key={s.id} onClick={() => setSection(s.id)}
-            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap border transition-all ${
+            className={`py-2 rounded-xl text-[10px] font-bold border transition-all ${
               section === s.id
                 ? 'bg-gold-400/15 border-gold-400/30 text-gold-400'
                 : 'border-white/8 text-slate-500'
