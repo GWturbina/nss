@@ -9,6 +9,8 @@ import useGameStore from '@/lib/store'
 import * as DC from '@/lib/diamondContracts'
 import { safeCall } from '@/lib/contracts'
 import { shortAddress } from '@/lib/web3'
+import GemConfigurator from '@/components/pages/GemConfigurator'
+import DeliverySection from '@/components/pages/DeliverySection'
 
 // ═════════════════════════════════════════════════════════
 // MAIN: DiamondClubTab с sub-навигацией
@@ -23,6 +25,7 @@ export default function DiamondClubTab() {
     { id: 'metals',    icon: '🥇', label: t('dcMetals') },
     { id: 'insurance', icon: '🛡️', label: t('dcInsurance') },
     { id: 'boost',     icon: '🚀', label: t('dcBoost') },
+    { id: 'delivery',  icon: '📦', label: t('dcDelivery') },
   ]
 
   return (
@@ -57,10 +60,11 @@ export default function DiamondClubTab() {
       ) : (
         <>
           {section === 'dashboard' && <DashboardSection />}
-          {section === 'gems' && <GemsSection />}
+          {section === 'gems' && <GemConfigurator />}
           {section === 'metals' && <MetalsSection />}
           {section === 'insurance' && <InsuranceSection />}
           {section === 'boost' && <BoostSection />}
+          {section === 'delivery' && <DeliverySection />}
         </>
       )}
     </div>
