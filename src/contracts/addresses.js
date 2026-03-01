@@ -28,6 +28,15 @@ const ADDRESSES = {
   MatrixRegistry:    '0xD62945edFF7605dFc77A4bF607c96Da72E03cd0C',
   GWTToken:          '0x933B0Cb1f43170f3F0fcf082572CC931D6e93b5F',
 
+  // ═══ Diamond Club v10.1 ═══
+  GemVaultV2:        '0x_DEPLOY_GEMVAULT_V2',      // TODO: задеплоить
+  MetalVault:        '0x_DEPLOY_METAL_VAULT',       // TODO: задеплоить
+  InsuranceFund:     '0x_DEPLOY_INSURANCE_FUND',    // TODO: задеплоить
+  TrustScore:        '0x_DEPLOY_TRUST_SCORE',       // TODO: задеплоить
+  UserBoost:         '0x_DEPLOY_USER_BOOST',        // TODO: задеплоить
+  ReferralPool:      '0x_DEPLOY_REFERRAL_POOL',     // TODO: задеплоить
+  ShowcaseMarket:    '0x_DEPLOY_SHOWCASE_MARKET',   // TODO: задеплоить
+
   // ═══ PancakeSwap Router (opBNB) ═══
   PancakeRouter:     '0x10ED43C718714eb63d5aA57B78B54704E256024E',
 }
