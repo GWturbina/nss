@@ -125,8 +125,9 @@ const D_RG  = { cis:75, europe:120, asia:100, america:130, mena:110 }
 // LOAD / SAVE API
 // ═══════════════════════════════════════════════════
 
-function ld(k, d) { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : d } catch { return d } }
-function sv(k, v) { localStorage.setItem(k, JSON.stringify(v)) }
+const isBrowser = typeof window !== 'undefined'
+function ld(k, d) { if (!isBrowser) return d; try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : d } catch { return d } }
+function sv(k, v) { if (!isBrowser) return; localStorage.setItem(k, JSON.stringify(v)) }
 
 export const getWhiteCost     = () => ld(K.wCost, D_W)
 export const getWhiteCostCert = () => ld(K.wCostC, D_WC)
@@ -150,7 +151,7 @@ export const saveClubDiscount  = d => sv(K.disc, d)
 export const saveNstBonusMax   = d => sv(K.nstMax, d)
 export const saveNstPerPercent = d => sv(K.nstPer, d)
 
-export function resetAllPrices() { Object.values(K).forEach(k => localStorage.removeItem(k)) }
+export function resetAllPrices() { if (!isBrowser) return; Object.values(K).forEach(k => localStorage.removeItem(k)) }
 
 // ═══════════════════════════════════════════════════
 // РАСЧЁТ ЦЕНЫ — БЕЛЫЙ БРИЛЛИАНТ
