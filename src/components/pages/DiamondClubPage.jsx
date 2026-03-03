@@ -1,42 +1,49 @@
 'use client'
 /**
  * NSS Diamond Club v10.2 — Инвестиционный клуб
- * GemVaultV2 + DiamondP2P + InsuranceFund + TrustScore + UserBoost + ShowcaseMarket
- * MetalVault отключён. P2P через DiamondP2P.
- * Интегрирован в существующий NSS фронтенд как таб "diamond"
+ * Полная интеграция: GemVaultV2 + DiamondP2P + InsuranceFund + TrustScore + UserBoost + ShowcaseMarket
+ * MetalVault отключён (не задеплоен). P2P через DiamondP2P.
  */
 import { useState, useEffect, useCallback } from 'react'
 import useGameStore from '@/lib/store'
 import * as DC from '@/lib/diamondContracts'
 import { safeCall } from '@/lib/contracts'
 import { shortAddress } from '@/lib/web3'
+import ADDRESSES from '@/contracts/addresses'
 import GemConfigurator from '@/components/pages/GemConfigurator'
 import DeliverySection from '@/components/pages/DeliverySection'
 
 // ═════════════════════════════════════════════════════════
-// MAIN: DiamondClubTab с sub-навигацией
+// MAIN: DiamondClubTab
 // ═════════════════════════════════════════════════════════
 export default function DiamondClubTab() {
   const { wallet, t } = useGameStore()
   const [section, setSection] = useState('dashboard')
+  const [showHelp, setShowHelp] = useState(false)
 
   const sections = [
-    { id: 'dashboard', icon: '📊', label: t('dcDashboard') },
-    { id: 'gems',      icon: '💎', label: t('dcGems') },
-    { id: 'metals',    icon: '🥇', label: t('dcMetals') },
+    { id: 'dashboard', icon: '📊', label: t('dcDashboard') || 'Обзор' },
+    { id: 'gems',      icon: '💎', label: t('dcGems') || 'Камни' },
+    { id: 'metals',    icon: '🥇', label: t('dcMetals') || 'Металлы' },
     { id: 'showcase',  icon: '🏪', label: t('dcShowcase') || 'Витрина' },
     { id: 'p2p',       icon: '🤝', label: 'P2P' },
-    { id: 'insurance', icon: '🛡️', label: t('dcInsurance') },
-    { id: 'boost',     icon: '🚀', label: t('dcBoost') },
-    { id: 'delivery',  icon: '📦', label: t('dcDelivery') },
+    { id: 'insurance', icon: '🛡️', label: t('dcInsurance') || 'Страховка' },
+    { id: 'boost',     icon: '🚀', label: t('dcBoost') || 'Буст' },
+    { id: 'delivery',  icon: '📦', label: t('dcDelivery') || 'Доставка' },
   ]
 
   return (
     <div className="flex-1 overflow-y-auto pb-4">
-      {/* Заголовок */}
-      <div className="px-3 pt-3 pb-1">
-        <h2 className="text-lg font-black text-gold-400">♦️ {t('dcTitle')}</h2>
-        <p className="text-[11px] text-slate-500">{t('dcSubtitle')}</p>
+      {/* Заголовок + кнопка помощи */}
+      <div className="px-3 pt-3 pb-1 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-black text-gold-400">♦️ {t('dcTitle') || 'Diamond Club'}</h2>
+          <p className="text-[11px] text-slate-500">{t('dcSubtitle') || 'Инвестиционный клуб'}</p>
+        </div>
+        <button onClick={() => setShowHelp(true)}
+          className="w-9 h-9 rounded-full bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 text-lg font-bold">
+          ?
+        </button>
       </div>
 
       {/* Sub-навигация */}
@@ -57,13 +64,13 @@ export default function DiamondClubTab() {
       {!wallet ? (
         <div className="mx-3 mt-4 p-4 rounded-2xl glass text-center">
           <div className="text-3xl mb-2">🔐</div>
-          <div className="text-sm font-bold text-slate-300">{t('connectWallet')}</div>
-          <div className="text-[11px] text-slate-500 mt-1">{t('dcConnectHint')}</div>
+          <div className="text-sm font-bold text-slate-300">{t('connectWallet') || 'Подключите кошелёк'}</div>
+          <div className="text-[11px] text-slate-500 mt-1">{t('dcConnectHint') || 'SafePal для доступа к Diamond Club'}</div>
         </div>
       ) : (
         <>
           {section === 'dashboard' && <DashboardSection />}
-          {section === 'gems' && <GemConfigurator />}
+          {section === 'gems' && <GemsFullSection />}
           {section === 'metals' && <MetalsSection />}
           {section === 'showcase' && <ShowcaseSection />}
           {section === 'p2p' && <P2PSection />}
@@ -72,6 +79,237 @@ export default function DiamondClubTab() {
           {section === 'delivery' && <DeliverySection />}
         </>
       )}
+
+      {/* Модалка инструкции */}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+    </div>
+  )
+}
+
+// ═════════════════════════════════════════════════════════
+// HELP MODAL — Полная инструкция
+// ═════════════════════════════════════════════════════════
+function HelpModal({ onClose }) {
+  const [tab, setTab] = useState('overview')
+
+  const tabs = [
+    { id: 'overview',   icon: '📖', label: 'Обзор' },
+    { id: 'gems',       icon: '💎', label: 'Камни' },
+    { id: 'staking',    icon: '⏳', label: 'Стейкинг' },
+    { id: 'p2p',        icon: '🤝', label: 'P2P' },
+    { id: 'showcase',   icon: '🏪', label: 'Витрина' },
+    { id: 'insurance',  icon: '🛡️', label: 'Страховка' },
+    { id: 'boost',      icon: '🚀', label: 'Буст' },
+  ]
+
+  return (
+    <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-3" onClick={onClose}>
+      <div className="w-full max-w-md max-h-[85vh] rounded-2xl overflow-hidden flex flex-col"
+        onClick={e => e.stopPropagation()}
+        style={{ background: 'linear-gradient(180deg, #1a1a3e 0%, #0f0f2a 100%)' }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
+          <div className="text-[14px] font-black text-gold-400">📖 Инструкция Diamond Club</div>
+          <button onClick={onClose} className="text-slate-500 text-lg">✕</button>
+        </div>
+
+        {/* Tab bar */}
+        <div className="flex gap-1 px-3 py-2 overflow-x-auto border-b border-white/5" style={{ scrollbarWidth: 'none' }}>
+          {tabs.map(tb => (
+            <button key={tb.id} onClick={() => setTab(tb.id)}
+              className={`shrink-0 px-2.5 py-1.5 rounded-lg text-[9px] font-bold border transition-all ${
+                tab === tb.id
+                  ? 'bg-gold-400/15 border-gold-400/30 text-gold-400'
+                  : 'border-white/8 text-slate-500'
+              }`}>
+              {tb.icon} {tb.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-[12px] text-slate-300 leading-relaxed">
+
+          {tab === 'overview' && (<>
+            <HelpTitle emoji="♦️" text="Что такое Diamond Club?" />
+            <p>NSS Diamond Club — закрытый инвестиционный клуб, позволяющий приобретать бриллианты, драгоценные камни и ювелирные изделия по клубной цене со скидкой до 35% от рыночной стоимости.</p>
+
+            <HelpTitle emoji="🔑" text="Как начать?" />
+            <HelpSteps steps={[
+              'Подключите кошелёк SafePal к сети opBNB',
+              'Пополните баланс USDT (BEP20)',
+              'Перейдите во вкладку «Камни» и выберите камень',
+              'Выберите режим: Покупка (владение) или Актив (стейкинг)',
+              'Подтвердите транзакцию в кошельке',
+            ]} />
+
+            <HelpTitle emoji="💰" text="Способы заработка" />
+            <HelpSteps steps={[
+              'Стейкинг камней — от 50% до 75% годовых',
+              'P2P торговля — перепродажа камней другим участникам',
+              'Витрина — продажа реальных активов через агентов',
+              'Реферальная программа — бонусы за приглашённых',
+              'Буст ставки — сжигание NST для увеличения доходности',
+            ]} />
+
+            <HelpTitle emoji="🔐" text="Безопасность" />
+            <p>Все средства защищены смарт-контрактами на блокчейне opBNB. Страховой фонд покрывает риски. TrustScore отслеживает репутацию каждого участника. Вывод средств с задержкой 48 часов для дополнительной безопасности.</p>
+          </>)}
+
+          {tab === 'gems' && (<>
+            <HelpTitle emoji="💎" text="Покупка камней" />
+            <p>Раздел «Камни» содержит конфигуратор для подбора камня и список ваших покупок с управлением.</p>
+
+            <HelpTitle emoji="⚙️" text="Конфигуратор" />
+            <HelpSteps steps={[
+              'Выберите тип: Белый бриллиант или Фантазийный',
+              'Укажите форму огранки (круг, принцесса, кушон и др.)',
+              'Выберите чистоту (IF, VVS1, VS1 и т.д.)',
+              'Укажите цвет и вес в каратах (0.3 — 10.0 ct)',
+              'Выберите наличие сертификата и регион',
+              'Система рассчитает рыночную и клубную цену',
+            ]} />
+
+            <HelpTitle emoji="📦" text="Режимы покупки" />
+            <p><b className="text-blue-400">Покупка (PURCHASE)</b> — камень на вашем адресе. Можно конвертировать в Актив, продать на P2P или запросить доставку.</p>
+            <p><b className="text-emerald-400">Актив (ASSET)</b> — камень сразу в стейкинг. Через 12 месяцев забрать прибыль, камень или рестейкнуть.</p>
+
+            <HelpTitle emoji="🎯" text="Управление покупками" />
+            <HelpSteps steps={[
+              'OWNED (📦) — конвертировать в Актив или выставить на P2P',
+              'STAKING (⏳) — камень в стейкинге, видна прибыль и срок',
+              'READY (✅) — забрать USDT, физический камень или рестейк',
+              'P2P (🏪) — выставлен на продажу другим участникам',
+              'RESTAKED (🔄) — повторный стейкинг запущен',
+            ]} />
+          </>)}
+
+          {tab === 'staking' && (<>
+            <HelpTitle emoji="⏳" text="Как работает стейкинг" />
+            <p>При покупке в режиме «Актив» камень размещается на стейкинг на 12 месяцев. Базовая ставка — 50% годовых.</p>
+
+            <HelpTitle emoji="📈" text="Процентные ставки" />
+            <div className="grid grid-cols-3 gap-1 text-[10px]">
+              <div className="p-1.5 rounded bg-white/5 text-center"><b className="text-white">0 NST</b><br/>50%</div>
+              <div className="p-1.5 rounded bg-white/5 text-center"><b className="text-white">10K</b><br/>55%</div>
+              <div className="p-1.5 rounded bg-white/5 text-center"><b className="text-white">30K</b><br/>60%</div>
+              <div className="p-1.5 rounded bg-white/5 text-center"><b className="text-white">50K</b><br/>65%</div>
+              <div className="p-1.5 rounded bg-white/5 text-center"><b className="text-white">80K</b><br/>70%</div>
+              <div className="p-1.5 rounded bg-white/5 text-center"><b className="text-gold-400">100K</b><br/>75%</div>
+            </div>
+
+            <HelpTitle emoji="🏁" text="По завершении стейкинга" />
+            <HelpSteps steps={[
+              'Забрать прибыль (USDT) — камень возвращается, можно рестейк',
+              'Забрать камень физически — оформить доставку',
+              'Рестейк — продлить стейкинг на новый период',
+            ]} />
+          </>)}
+
+          {tab === 'p2p' && (<>
+            <HelpTitle emoji="🤝" text="P2P торговля" />
+            <p>DiamondP2P позволяет продавать и покупать камни напрямую между участниками клуба.</p>
+
+            <HelpTitle emoji="📤" text="Как выставить камень" />
+            <HelpSteps steps={[
+              'Перейдите в «Камни» → «Мои камни»',
+              'Найдите камень со статусом OWNED или CLAIMED',
+              'Нажмите «🏪 Продать P2P»',
+              'Укажите цену в USDT и подтвердите',
+              'Камень появится в разделе P2P для всех',
+            ]} />
+
+            <HelpTitle emoji="📥" text="Как купить" />
+            <HelpSteps steps={[
+              'Перейдите в раздел «P2P»',
+              'Нажмите «Купить» на предложении',
+              'USDT спишется автоматически, камень перейдёт вам',
+            ]} />
+
+            <HelpTitle emoji="💸" text="Комиссии" />
+            <p>Комиссия P2P зависит от TrustScore. Чем выше репутация — тем ниже комиссия. Базовая — 5%.</p>
+          </>)}
+
+          {tab === 'showcase' && (<>
+            <HelpTitle emoji="🏪" text="Витрина ShowcaseMarket" />
+            <p>Витрина для продажи реальных драгоценностей через платформу при участии сертифицированного агента.</p>
+
+            <HelpTitle emoji="🪪" text="Лицензия агента" />
+            <p>Для создания объявлений нужна лицензия агента. Агенты верифицируют товары и подтверждают сделки.</p>
+
+            <HelpTitle emoji="📝" text="Как создать объявление" />
+            <HelpSteps steps={[
+              'Получите лицензию агента',
+              'Нажмите «+ Создать» в разделе Витрина',
+              'Выберите тип актива, укажите название и описание',
+              'Добавьте фото и сертификат (IPFS/URL)',
+              'Установите цену и опубликуйте',
+            ]} />
+
+            <HelpTitle emoji="✅" text="Подтверждение продажи" />
+            <p>Когда покупатель найден, нажмите «Подтвердить продажу» и укажите адрес покупателя. USDT переводится за вычетом комиссии.</p>
+          </>)}
+
+          {tab === 'insurance' && (<>
+            <HelpTitle emoji="🛡️" text="Страховой фонд" />
+            <p>При каждой покупке 5% идёт в страховой фонд на ваш баланс.</p>
+
+            <HelpTitle emoji="💸" text="Вывод средств" />
+            <HelpSteps steps={[
+              'Укажите сумму для вывода',
+              'Нажмите «Запросить вывод»',
+              'Ожидайте 48 часов',
+              'Нажмите «Выполнить» для получения USDT',
+            ]} />
+
+            <HelpTitle emoji="📋" text="Верификация активов" />
+            <p>Периодически подтверждайте владение активами. Пропуск снижает TrustScore.</p>
+
+            <HelpTitle emoji="🆘" text="Страховая заявка" />
+            <p>При проблемах с активом подайте заявку с причиной и доказательствами (IPFS).</p>
+          </>)}
+
+          {tab === 'boost' && (<>
+            <HelpTitle emoji="🚀" text="Буст ставки" />
+            <p>Сжигание NST увеличивает ставку стейкинга. Необратимое действие — NST уничтожаются навсегда.</p>
+
+            <HelpTitle emoji="🔥" text="Как сжечь NST" />
+            <HelpSteps steps={[
+              'Перейдите в раздел «Буст»',
+              'Введите количество NST',
+              'Нажмите «Сжечь» и подтвердите',
+              'Ставка повысится после порога',
+            ]} />
+
+            <HelpTitle emoji="🎯" text="TrustScore" />
+            <p>Уровни: NONE → PROBATION → BRONZE → SILVER → GOLD. Высокий TrustScore снижает комиссии и открывает функции.</p>
+          </>)}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 py-3 border-t border-white/8">
+          <button onClick={onClose} className="w-full py-2.5 rounded-xl text-[12px] font-bold gold-btn">
+            ✅ Понятно
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function HelpTitle({ emoji, text }) {
+  return <div className="text-[13px] font-black text-gold-400 pt-1">{emoji} {text}</div>
+}
+function HelpSteps({ steps }) {
+  return (
+    <div className="space-y-1 pl-1">
+      {steps.map((s, i) => (
+        <div key={i} className="flex gap-2">
+          <span className="text-gold-400 font-bold shrink-0">{i + 1}.</span>
+          <span>{s}</span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -91,35 +329,30 @@ function DashboardSection() {
   }, [wallet])
 
   if (loading) return <Loading />
-  if (!data) return <ErrorCard text={t('dcLoadError')} />
+  if (!data) return <ErrorCard text="Ошибка загрузки" />
 
   const TIER_COLORS = { NONE: 'text-slate-500', PROBATION: 'text-red-400', BRONZE: 'text-orange-400', SILVER: 'text-slate-300', GOLD: 'text-gold-400' }
-  const STATUS_LABELS = ['OWNED', 'STAKING', 'CLAIMED', 'P2P', 'RESTAKED']
-
   const stakingGems = data.gemPurchases.filter(p => p.status === 1)
-  const totalStaking = stakingGems.length
   const totalInvested = data.gemPurchases.reduce((s, p) => s + parseFloat(p.pricePaid), 0)
 
   return (
     <div className="px-3 mt-2 space-y-2">
-      {/* Frozen warning */}
       {data.frozen && (
         <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-center">
           <div className="text-lg">🚫</div>
-          <div className="text-[12px] font-bold text-red-400">{t('dcFrozen')}</div>
-          <div className="text-[10px] text-red-300/70">{t('dcFrozenDesc')}</div>
+          <div className="text-[12px] font-bold text-red-400">Аккаунт заморожен</div>
+          <div className="text-[10px] text-red-300/70">Обратитесь в поддержку</div>
         </div>
       )}
 
-      {/* Баланс + Trust */}
       <div className="grid grid-cols-2 gap-2">
         <div className="p-3 rounded-2xl glass">
-          <div className="text-[10px] text-slate-500">{t('dcBalance')} (USDT)</div>
+          <div className="text-[10px] text-slate-500">Баланс (USDT)</div>
           <div className="text-xl font-black text-gold-400">${parseFloat(data.insuranceBalance).toFixed(2)}</div>
-          <div className="text-[9px] text-slate-500">{t('dcVia48h')}</div>
+          <div className="text-[9px] text-slate-500">Вывод через 48ч</div>
         </div>
         <div className="p-3 rounded-2xl glass">
-          <div className="text-[10px] text-slate-500">{t('dcTrustScore')}</div>
+          <div className="text-[10px] text-slate-500">TrustScore</div>
           <div className={`text-xl font-black ${TIER_COLORS[data.trustInfo?.tierName] || 'text-slate-500'}`}>
             {data.trustInfo?.score || 0}
           </div>
@@ -129,62 +362,54 @@ function DashboardSection() {
         </div>
       </div>
 
-      {/* Статистика */}
       <div className="grid grid-cols-3 gap-2">
-        <StatCard label={t('dcInvested')} value={`$${totalInvested.toFixed(0)}`} color="text-gold-400" />
-        <StatCard label={t('dcStaking')} value={totalStaking} color="text-emerald-400" />
-        <StatCard label={t('dcStakingRate')} value={`${data.boostInfo?.currentRate || 50}%`} color="text-purple-400" />
+        <StatCard label="Инвестировано" value={`$${totalInvested.toFixed(0)}`} color="text-gold-400" />
+        <StatCard label="В стейкинге" value={stakingGems.length} color="text-emerald-400" />
+        <StatCard label="Ставка" value={`${data.boostInfo?.currentRate || 50}%`} color="text-purple-400" />
       </div>
 
-      {/* Активные стейкинги */}
       {stakingGems.length > 0 && (
         <div className="p-3 rounded-2xl glass">
-          <div className="text-[12px] font-bold text-gold-400 mb-2">💎 {t('dcActiveGemStaking')} ({stakingGems.length})</div>
+          <div className="text-[12px] font-bold text-gold-400 mb-2">💎 Активный стейкинг ({stakingGems.length})</div>
           <div className="space-y-1.5">
-            {stakingGems.slice(0, 3).map(p => (
-              <StakingRow key={p.id} purchase={p} type="gem" t={t} />
-            ))}
-            {stakingGems.length > 3 && (
-              <div className="text-[9px] text-slate-500 text-center">+{stakingGems.length - 3} {t('dcMore')}</div>
-            )}
+            {stakingGems.slice(0, 3).map(p => <StakingRow key={p.id} purchase={p} />)}
+            {stakingGems.length > 3 && <div className="text-[9px] text-slate-500 text-center">+{stakingGems.length - 3} ещё</div>}
           </div>
         </div>
       )}
 
-      {/* Реферальные бонусы */}
       {parseFloat(data.referralClaimable) > 0 && (
         <div className="p-3 rounded-2xl glass border-emerald-500/15">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-[12px] font-bold text-emerald-400">🎁 {t('dcReferralBonus')}</div>
+              <div className="text-[12px] font-bold text-emerald-400">🎁 Реферальный бонус</div>
               <div className="text-lg font-black text-emerald-400">{parseFloat(data.referralClaimable).toFixed(2)} NST</div>
             </div>
-            <ClaimReferralButton t={t} />
+            <ClaimReferralButton />
           </div>
         </div>
       )}
 
-      {/* Глобальная статистика */}
       {data.gemStats && (
         <div className="p-3 rounded-2xl glass">
-          <div className="text-[12px] font-bold text-blue-400 mb-2">📈 {t('dcGlobalStats')}</div>
+          <div className="text-[12px] font-bold text-blue-400 mb-2">📈 Статистика клуба</div>
           <div className="grid grid-cols-2 gap-2 text-center">
             <div className="p-2 rounded-lg bg-white/5">
               <div className="text-[11px] font-black text-gold-400">${parseFloat(data.gemStats.totalSales).toFixed(0)}</div>
-              <div className="text-[9px] text-slate-500">{t('dcGemSales')}</div>
+              <div className="text-[9px] text-slate-500">Продажи</div>
             </div>
             <div className="p-2 rounded-lg bg-white/5">
               <div className="text-[11px] font-black text-emerald-400">${parseFloat(data.gemStats.reserve).toFixed(0)}</div>
-              <div className="text-[9px] text-slate-500">{t('dcReserve')}</div>
+              <div className="text-[9px] text-slate-500">Резерв</div>
             </div>
             <div className="p-2 rounded-lg bg-white/5">
               <div className="text-[11px] font-black text-blue-400">{data.gemStats.purchases}</div>
-              <div className="text-[9px] text-slate-500">{t('dcTotalPurchases')}</div>
+              <div className="text-[9px] text-slate-500">Покупок</div>
             </div>
             {data.p2pStats && (
               <div className="p-2 rounded-lg bg-white/5">
                 <div className="text-[11px] font-black text-purple-400">{data.p2pStats.trades}</div>
-                <div className="text-[9px] text-slate-500">P2P {t('dcTrades') || 'сделок'}</div>
+                <div className="text-[9px] text-slate-500">P2P сделок</div>
               </div>
             )}
           </div>
@@ -195,236 +420,186 @@ function DashboardSection() {
 }
 
 // ═════════════════════════════════════════════════════════
-// GEMS — Покупка камней
+// GEMS FULL — Конфигуратор + Мои покупки с управлением + P2P листинг
 // ═════════════════════════════════════════════════════════
-function GemsSection() {
-  const { wallet, addNotification, setTxPending, txPending, t } = useGameStore()
-  const [gems, setGems] = useState([])
+function GemsFullSection() {
+  const { wallet, addNotification, setTxPending, txPending } = useGameStore()
+  const [view, setView] = useState('configurator')
   const [myPurchases, setMyPurchases] = useState([])
-  const [selected, setSelected] = useState(null)
-  const [buyMode, setBuyMode] = useState(1) // 0=PURCHASE, 1=ASSET
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [p2pModal, setP2pModal] = useState(null)
+  const [p2pPrice, setP2pPrice] = useState('')
 
-  const reload = useCallback(async () => {
+  const reloadPurchases = useCallback(async () => {
+    if (!wallet) return
     setLoading(true)
-    const [g, p] = await Promise.all([
-      DC.getGemsList().catch(() => []),
-      wallet ? DC.getUserGemPurchases(wallet).catch(() => []) : [],
-    ])
-    setGems(g)
+    const p = await DC.getUserGemPurchases(wallet).catch(() => [])
     setMyPurchases(p)
     setLoading(false)
   }, [wallet])
 
-  useEffect(() => { reload() }, [reload])
-
-  const handleBuy = async (gem) => {
-    if (!wallet) return
-    setTxPending(true)
-    const result = await safeCall(() => DC.buyGemV2(gem.id, buyMode))
-    setTxPending(false)
-    if (result.ok) {
-      addNotification(`✅ 💎 ${gem.name} — ${t('dcGemBought')}!`)
-      setSelected(null)
-      reload()
-    } else {
-      addNotification(`❌ ${result.error}`)
-    }
-  }
+  useEffect(() => { reloadPurchases() }, [reloadPurchases])
 
   const handleClaim = async (purchaseId, option) => {
     setTxPending(true)
     const result = await safeCall(() => DC.claimGemStaking(purchaseId, option))
     setTxPending(false)
-    if (result.ok) {
-      addNotification(`✅ ${t('dcStakingClaimed')}!`)
-      reload()
-    } else {
-      addNotification(`❌ ${result.error}`)
-    }
+    if (result.ok) { addNotification('✅ Стейкинг получен!'); reloadPurchases() }
+    else addNotification(`❌ ${result.error}`)
   }
 
   const handleRestake = async (purchaseId) => {
     setTxPending(true)
     const result = await safeCall(() => DC.restakeGem(purchaseId))
     setTxPending(false)
-    if (result.ok) {
-      addNotification(`✅ ${t('dcRestaked')}!`)
-      reload()
-    } else {
-      addNotification(`❌ ${result.error}`)
-    }
+    if (result.ok) { addNotification('✅ Рестейк выполнен!'); reloadPurchases() }
+    else addNotification(`❌ ${result.error}`)
   }
 
   const handleConvert = async (purchaseId) => {
     setTxPending(true)
     const result = await safeCall(() => DC.convertGemToAsset(purchaseId))
     setTxPending(false)
-    if (result.ok) {
-      addNotification(`✅ ${t('dcConverted')}!`)
-      reload()
-    } else {
-      addNotification(`❌ ${result.error}`)
-    }
+    if (result.ok) { addNotification('✅ Конвертировано в Актив!'); reloadPurchases() }
+    else addNotification(`❌ ${result.error}`)
   }
 
-  if (loading) return <Loading />
+  const handleListP2P = async () => {
+    if (!p2pModal || !p2pPrice || parseFloat(p2pPrice) <= 0) return
+    setTxPending(true)
+    const vaultAddr = ADDRESSES?.GemVaultV2 || ADDRESSES?.gemVault || '0x0'
+    const result = await safeCall(() => DC.listOnP2P(vaultAddr, p2pModal.id, p2pPrice))
+    setTxPending(false)
+    if (result.ok) {
+      addNotification(`✅ 🏪 Камень #${p2pModal.id} выставлен за $${p2pPrice}`)
+      setP2pModal(null); setP2pPrice(''); reloadPurchases()
+    } else addNotification(`❌ ${result.error}`)
+  }
 
   const STATUS_EMOJI = { 0: '📦', 1: '⏳', 2: '✅', 3: '🏪', 4: '🔄' }
-  const STATUS_TEXT = { 0: t('dcOwned'), 1: t('dcStakingActive'), 2: t('dcClaimed'), 3: t('dcListedP2P'), 4: t('dcRestaked') }
+  const STATUS_TEXT = { 0: 'OWNED', 1: 'STAKING', 2: 'CLAIMED', 3: 'P2P', 4: 'RESTAKED' }
 
   return (
     <div className="px-3 mt-2 space-y-2">
-      {/* Мои покупки */}
-      {myPurchases.length > 0 && (
-        <div className="p-3 rounded-2xl glass">
-          <div className="text-[12px] font-bold text-purple-400 mb-2">🏆 {t('dcMyGems')} ({myPurchases.length})</div>
-          <div className="space-y-1.5">
-            {myPurchases.map(p => (
-              <div key={p.id} className="p-2 rounded-xl bg-white/5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-[11px] font-bold text-white">{STATUS_EMOJI[p.status]} #{p.id}</span>
-                    <span className="text-[10px] text-slate-500 ml-2">${parseFloat(p.pricePaid).toFixed(2)}</span>
-                    <span className="text-[9px] text-slate-600 ml-1">({STATUS_TEXT[p.status]})</span>
-                  </div>
-                  <div className="flex gap-1">
-                    {/* OWNED → Convert */}
-                    {p.status === 0 && (
-                      <button onClick={() => handleConvert(p.id)} disabled={txPending}
-                        className="px-2 py-1 rounded-lg text-[9px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/20">
-                        ⏳ {t('dcConvert')}
-                      </button>
-                    )}
-                    {/* STAKING + ready → Claim options */}
-                    {p.status === 1 && p.rewardReady && (
-                      <div className="flex gap-1">
-                        <button onClick={() => handleClaim(p.id, 0)} disabled={txPending}
-                          className="px-2 py-1 rounded-lg text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                          💰 {t('dcTakeProfit')}
-                        </button>
-                        <button onClick={() => handleClaim(p.id, 2)} disabled={txPending}
-                          className="px-2 py-1 rounded-lg text-[9px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/20">
-                          📦 {t('dcTakePhysical')}
-                        </button>
-                      </div>
-                    )}
-                    {/* STAKING not ready → countdown */}
-                    {p.status === 1 && !p.rewardReady && (
-                      <div className="text-[9px] text-slate-500">
-                        ⏳ {t('dcEndsAt')} {new Date(p.stakingEndsAt * 1000).toLocaleDateString()}
-                      </div>
-                    )}
-                    {/* CLAIMED → Restake */}
-                    {p.status === 2 && (
-                      <button onClick={() => handleRestake(p.id)} disabled={txPending}
-                        className="px-2 py-1 rounded-lg text-[9px] font-bold bg-gold-400/15 text-gold-400 border border-gold-400/20">
-                        🔄 {t('dcRestake')}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {p.status === 1 && (
-                  <div className="mt-1 text-[9px] text-emerald-400">
-                    {t('dcPendingReward')}: ${parseFloat(p.pendingReward).toFixed(2)} ({p.stakingRateBP / 100}%)
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Каталог камней */}
-      <div className="p-3 rounded-2xl glass">
-        <div className="text-[12px] font-bold text-gold-400 mb-2">💎 {t('dcGemCatalog')}</div>
-
-        {/* Режим покупки */}
-        <div className="flex gap-1 mb-2">
-          <button onClick={() => setBuyMode(0)}
-            className={`flex-1 py-1.5 rounded-xl text-[10px] font-bold border ${buyMode === 0 ? 'bg-blue-500/15 border-blue-500/30 text-blue-400' : 'border-white/8 text-slate-500'}`}>
-            📦 {t('dcModePurchase')}
-          </button>
-          <button onClick={() => setBuyMode(1)}
-            className={`flex-1 py-1.5 rounded-xl text-[10px] font-bold border ${buyMode === 1 ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' : 'border-white/8 text-slate-500'}`}>
-            ⏳ {t('dcModeAsset')}
-          </button>
-        </div>
-
-        {gems.length === 0 ? (
-          <div className="text-[11px] text-slate-500 text-center py-4">{t('dcNoGems')}</div>
-        ) : (
-          <div className="grid grid-cols-2 gap-2">
-            {gems.filter(g => g.available).map(gem => (
-              <div key={gem.id} onClick={() => setSelected(gem)}
-                className="p-3 rounded-xl bg-white/5 cursor-pointer hover:bg-white/8 transition-all border border-transparent hover:border-gold-400/20">
-                <div className="text-center">
-                  <div className="text-2xl mb-1">💎</div>
-                  <div className="text-[11px] font-bold text-white truncate">{gem.name}</div>
-                  <div className="text-[10px] text-slate-500 line-through">${parseFloat(gem.marketPrice).toFixed(0)}</div>
-                  <div className="text-[12px] font-black text-gold-400">${parseFloat(gem.clubPrice).toFixed(0)}</div>
-                  <div className="text-[9px] text-emerald-400">-35% {t('dcClubDiscount')}</div>
-                  {gem.fractional && (
-                    <div className="text-[8px] text-purple-400 mt-0.5">
-                      {gem.totalFractions - gem.soldFractions}/{gem.totalFractions} {t('dcFractions')}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Toggle */}
+      <div className="flex gap-1">
+        <button onClick={() => setView('configurator')}
+          className={`flex-1 py-2 rounded-xl text-[11px] font-bold border transition-all ${
+            view === 'configurator' ? 'bg-gold-400/15 border-gold-400/30 text-gold-400' : 'border-white/8 text-slate-500'
+          }`}>⚙️ Конфигуратор</button>
+        <button onClick={() => { setView('purchases'); reloadPurchases() }}
+          className={`flex-1 py-2 rounded-xl text-[11px] font-bold border transition-all ${
+            view === 'purchases' ? 'bg-purple-500/15 border-purple-500/30 text-purple-400' : 'border-white/8 text-slate-500'
+          }`}>🏆 Мои камни ({myPurchases.length})</button>
       </div>
 
-      {/* Модалка покупки */}
-      {selected && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+      {view === 'configurator' && <GemConfigurator />}
+
+      {view === 'purchases' && (<>
+        {loading ? <Loading /> : myPurchases.length === 0 ? (
+          <div className="p-6 rounded-2xl glass text-center">
+            <div className="text-3xl mb-2">💎</div>
+            <div className="text-[12px] text-slate-400">У вас пока нет покупок</div>
+            <button onClick={() => setView('configurator')}
+              className="mt-3 px-4 py-2 rounded-xl text-[11px] font-bold bg-gold-400/15 text-gold-400 border border-gold-400/20">
+              ⚙️ Перейти в конфигуратор
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {myPurchases.map(p => {
+              const daysLeft = Math.max(0, Math.ceil((p.stakingEndsAt - Date.now() / 1000) / 86400))
+              return (
+                <div key={p.id} className="p-3 rounded-xl glass">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-black text-white">{STATUS_EMOJI[p.status]} #{p.id}</span>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                        p.status===1?'bg-emerald-500/15 text-emerald-400':p.status===0?'bg-blue-500/15 text-blue-400':
+                        p.status===2?'bg-gold-400/15 text-gold-400':p.status===3?'bg-purple-500/15 text-purple-400':'bg-white/10 text-slate-400'
+                      }`}>{STATUS_TEXT[p.status]}</span>
+                    </div>
+                    <div className="text-[12px] font-black text-gold-400">${parseFloat(p.pricePaid).toFixed(2)}</div>
+                  </div>
+
+                  {p.status === 1 && (
+                    <div className="flex items-center justify-between mb-2 p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+                      <div>
+                        <div className="text-[10px] text-slate-400">Накоплено</div>
+                        <div className="text-[12px] font-black text-emerald-400">+${parseFloat(p.pendingReward).toFixed(2)}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] text-slate-400">Ставка / Осталось</div>
+                        <div className="text-[11px] font-bold text-white">{p.stakingRateBP/100}% • {daysLeft>0?`${daysLeft} дн`:'✅ Готово'}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-1">
+                    {p.status === 0 && (<>
+                      <button onClick={() => handleConvert(p.id)} disabled={txPending}
+                        className="px-2.5 py-1.5 rounded-lg text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                        ⏳ В стейкинг</button>
+                      <button onClick={() => { setP2pModal(p); setP2pPrice(parseFloat(p.marketValue||p.pricePaid).toFixed(2)) }}
+                        className="px-2.5 py-1.5 rounded-lg text-[9px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/20">
+                        🏪 Продать P2P</button>
+                    </>)}
+                    {p.status === 1 && p.rewardReady && (<>
+                      <button onClick={() => handleClaim(p.id, 0)} disabled={txPending}
+                        className="px-2.5 py-1.5 rounded-lg text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                        💰 Забрать USDT</button>
+                      <button onClick={() => handleClaim(p.id, 2)} disabled={txPending}
+                        className="px-2.5 py-1.5 rounded-lg text-[9px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                        📦 Получить камень</button>
+                      <button onClick={() => handleRestake(p.id)} disabled={txPending}
+                        className="px-2.5 py-1.5 rounded-lg text-[9px] font-bold bg-gold-400/15 text-gold-400 border border-gold-400/20">
+                        🔄 Рестейк</button>
+                    </>)}
+                    {p.status === 1 && !p.rewardReady && daysLeft > 0 && (
+                      <div className="text-[10px] text-slate-500 py-1">⏳ Завершится {new Date(p.stakingEndsAt*1000).toLocaleDateString()}</div>
+                    )}
+                    {p.status === 2 && (<>
+                      <button onClick={() => handleRestake(p.id)} disabled={txPending}
+                        className="px-2.5 py-1.5 rounded-lg text-[9px] font-bold bg-gold-400/15 text-gold-400 border border-gold-400/20">
+                        🔄 Рестейк</button>
+                      <button onClick={() => { setP2pModal(p); setP2pPrice(parseFloat(p.marketValue||p.pricePaid).toFixed(2)) }}
+                        className="px-2.5 py-1.5 rounded-lg text-[9px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/20">
+                        🏪 Продать P2P</button>
+                    </>)}
+                    {p.status === 3 && <div className="text-[10px] text-purple-400 py-1">🏪 Выставлен на P2P</div>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </>)}
+
+      {/* P2P Listing Modal */}
+      {p2pModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setP2pModal(null)}>
           <div className="w-full max-w-sm p-4 rounded-2xl glass" onClick={e => e.stopPropagation()}
             style={{ background: 'var(--bg-card, #1e1e3a)' }}>
             <div className="text-center mb-3">
-              <div className="text-4xl mb-2">💎</div>
-              <div className="text-lg font-black text-white">{selected.name}</div>
-              <div className="text-[11px] text-slate-500">{t('dcCertificate')}: {selected.certHash ? selected.certHash.slice(0, 12) + '...' : '—'}</div>
+              <div className="text-3xl mb-2">🏪</div>
+              <div className="text-[14px] font-black text-white">Выставить на P2P</div>
+              <div className="text-[11px] text-slate-500">Камень #{p2pModal.id} • ${parseFloat(p2pModal.pricePaid).toFixed(2)}</div>
             </div>
-
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <div className="p-2 rounded-xl bg-white/5 text-center">
-                <div className="text-[10px] text-slate-500">{t('dcMarketPrice')}</div>
-                <div className="text-[12px] font-bold text-slate-400 line-through">${parseFloat(selected.marketPrice).toFixed(0)}</div>
-              </div>
-              <div className="p-2 rounded-xl bg-white/5 text-center">
-                <div className="text-[10px] text-slate-500">{t('dcClubPrice')}</div>
-                <div className="text-[14px] font-black text-gold-400">${parseFloat(selected.clubPrice).toFixed(2)}</div>
+            <div className="mb-3">
+              <div className="text-[10px] text-slate-500 mb-1">Цена продажи (USDT)</div>
+              <input type="number" value={p2pPrice} onChange={e => setP2pPrice(e.target.value)} placeholder="0.00"
+                className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-lg font-bold text-white outline-none text-center" />
+              <div className="text-[9px] text-slate-500 mt-1 text-center">
+                Рыночная: ${parseFloat(p2pModal.marketValue||0).toFixed(2)}
               </div>
             </div>
-
-            <div className="p-2 rounded-xl bg-white/5 mb-3">
-              <div className="text-[10px] text-slate-500 mb-1">{t('dcBuyMode')}:</div>
-              <div className="flex gap-1">
-                <button onClick={() => setBuyMode(0)}
-                  className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold border ${buyMode === 0 ? 'bg-blue-500/15 border-blue-500/30 text-blue-400' : 'border-white/8 text-slate-500'}`}>
-                  📦 {t('dcModePurchase')}
-                </button>
-                <button onClick={() => setBuyMode(1)}
-                  className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold border ${buyMode === 1 ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' : 'border-white/8 text-slate-500'}`}>
-                  ⏳ {t('dcModeAsset')}
-                </button>
-              </div>
-              <div className="text-[9px] text-slate-500 mt-1">
-                {buyMode === 0 ? t('dcPurchaseDesc') : t('dcAssetDesc')}
-              </div>
-            </div>
-
-            <button onClick={() => handleBuy(selected)} disabled={txPending}
+            <button onClick={handleListP2P} disabled={txPending || !p2pPrice}
               className="w-full py-3 rounded-xl text-sm font-bold gold-btn"
-              style={{ opacity: txPending ? 0.5 : 1 }}>
-              {txPending ? `⏳ ${t('loading')}` : `💎 ${t('dcBuyFor')} $${parseFloat(selected.clubPrice).toFixed(2)}`}
+              style={{ opacity: (!p2pPrice||txPending) ? 0.5 : 1 }}>
+              {txPending ? '⏳ ...' : `🏪 Выставить за $${p2pPrice||'0'}`}
             </button>
-
-            <button onClick={() => setSelected(null)}
-              className="w-full mt-2 py-2 rounded-xl text-[11px] font-bold text-slate-500 border border-white/8">
-              {t('dcCancel')}
-            </button>
+            <button onClick={() => setP2pModal(null)}
+              className="w-full mt-2 py-2 rounded-xl text-[11px] font-bold text-slate-500 border border-white/8">Отмена</button>
           </div>
         </div>
       )}
@@ -433,21 +608,20 @@ function GemsSection() {
 }
 
 // ═════════════════════════════════════════════════════════
-// METALS — Драгоценные металлы (временно отключены)
+// METALS — не задеплоен
 // ═════════════════════════════════════════════════════════
 function MetalsSection() {
-  const { t } = useGameStore()
   return (
     <div className="px-3 mt-2 space-y-2">
       <div className="p-6 rounded-2xl glass text-center">
         <div className="text-4xl mb-3">🥇</div>
-        <div className="text-lg font-black text-gold-400">{t('dcMetals') || 'Драгоценные металлы'}</div>
-        <div className="text-[12px] text-slate-400 mt-2">{t('dcComingSoon') || 'Скоро'}</div>
+        <div className="text-lg font-black text-gold-400">Драгоценные металлы</div>
+        <div className="text-[12px] text-slate-400 mt-2">Скоро</div>
         <div className="text-[11px] text-slate-500 mt-3 max-w-xs mx-auto">
-          {t('dcMetalsComingDesc') || 'Раздел драгоценных металлов (золото, серебро, платина) находится в разработке и будет доступен в ближайшем обновлении.'}
+          Раздел драгоценных металлов (золото, серебро, платина) находится в разработке.
         </div>
         <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-400/10 border border-gold-400/20">
-          <span className="text-[11px] font-bold text-gold-400">🔔 {t('dcStayTuned') || 'Следите за обновлениями'}</span>
+          <span className="text-[11px] font-bold text-gold-400">🔔 Следите за обновлениями</span>
         </div>
       </div>
     </div>
@@ -455,25 +629,28 @@ function MetalsSection() {
 }
 
 // ═════════════════════════════════════════════════════════
-// INSURANCE — Страховой фонд + вывод
+// INSURANCE — баланс + вывод + верификация + заявки
 // ═════════════════════════════════════════════════════════
 function InsuranceSection() {
-  const { wallet, addNotification, setTxPending, txPending, t } = useGameStore()
+  const { wallet, addNotification, setTxPending, txPending } = useGameStore()
   const [balance, setBalance] = useState('0')
   const [requests, setRequests] = useState([])
+  const [fundStats, setFundStats] = useState(null)
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showClaimForm, setShowClaimForm] = useState(false)
+  const [claimData, setClaimData] = useState({ purchaseId: '', amount: '', reason: '', evidence: '' })
+  const [verifyId, setVerifyId] = useState('')
 
   const reload = useCallback(async () => {
     if (!wallet) return
     setLoading(true)
-    const [bal, reqs] = await Promise.all([
+    const [bal, reqs, stats] = await Promise.all([
       DC.getInsuranceUserBalance(wallet).catch(() => '0'),
       DC.getUserWithdrawRequests(wallet).catch(() => []),
+      DC.getInsuranceFundStats().catch(() => null),
     ])
-    setBalance(bal)
-    setRequests(reqs)
-    setLoading(false)
+    setBalance(bal); setRequests(reqs); setFundStats(stats); setLoading(false)
   }, [wallet])
 
   useEffect(() => { reload() }, [reload])
@@ -483,89 +660,95 @@ function InsuranceSection() {
     setTxPending(true)
     const result = await safeCall(() => DC.requestWithdraw(withdrawAmount))
     setTxPending(false)
-    if (result.ok) {
-      addNotification(`✅ ${t('dcWithdrawRequested')} $${withdrawAmount}`)
-      setWithdrawAmount('')
-      reload()
-    } else {
-      addNotification(`❌ ${result.error}`)
-    }
+    if (result.ok) { addNotification(`✅ Запрос на вывод $${withdrawAmount}`); setWithdrawAmount(''); reload() }
+    else addNotification(`❌ ${result.error}`)
   }
 
-  const handleExecuteWithdraw = async (requestId) => {
+  const handleExecuteWithdraw = async (reqId) => {
     setTxPending(true)
-    const result = await safeCall(() => DC.executeWithdraw(requestId))
+    const result = await safeCall(() => DC.executeWithdraw(reqId))
+    setTxPending(false)
+    if (result.ok) { addNotification('✅ Вывод выполнен!'); reload() }
+    else addNotification(`❌ ${result.error}`)
+  }
+
+  const handleVerifyAsset = async () => {
+    if (!verifyId) return
+    setTxPending(true)
+    const result = await safeCall(() => DC.verifyAsset(parseInt(verifyId)))
+    setTxPending(false)
+    if (result.ok) { addNotification(`✅ Актив #${verifyId} верифицирован`); setVerifyId('') }
+    else addNotification(`❌ ${result.error}`)
+  }
+
+  const handleSubmitClaim = async () => {
+    const { purchaseId, amount, reason, evidence } = claimData
+    if (!purchaseId || !amount || !reason) return
+    setTxPending(true)
+    const result = await safeCall(() => DC.submitClaim(parseInt(purchaseId), amount, reason, evidence))
     setTxPending(false)
     if (result.ok) {
-      addNotification(`✅ ${t('dcWithdrawCompleted')}!`)
-      reload()
-    } else {
-      addNotification(`❌ ${result.error}`)
-    }
+      addNotification('✅ Страховая заявка отправлена')
+      setShowClaimForm(false); setClaimData({ purchaseId: '', amount: '', reason: '', evidence: '' })
+    } else addNotification(`❌ ${result.error}`)
   }
 
   if (loading) return <Loading />
-
   const now = Math.floor(Date.now() / 1000)
-  const STATUS_LABELS = { 1: t('dcPending'), 3: t('dcFrozenStatus'), 4: t('dcCompleted') }
 
   return (
     <div className="px-3 mt-2 space-y-2">
-      {/* Баланс */}
       <div className="p-4 rounded-2xl glass text-center">
-        <div className="text-[10px] text-slate-500">{t('dcInsuranceBalance')}</div>
+        <div className="text-[10px] text-slate-500">Баланс страхового фонда</div>
         <div className="text-2xl font-black text-gold-400">${parseFloat(balance).toFixed(2)}</div>
-        <div className="text-[9px] text-slate-500">{t('dcWithdrawDelay')}</div>
+        <div className="text-[9px] text-slate-500">Вывод с задержкой 48ч</div>
       </div>
 
-      {/* Запрос вывода */}
-      {parseFloat(balance) > 0 && (
-        <div className="p-3 rounded-2xl glass">
-          <div className="text-[12px] font-bold text-emerald-400 mb-2">💸 {t('dcRequestWithdraw')}</div>
-          <div className="flex gap-2">
-            <input type="number" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)}
-              placeholder="USDT" max={balance}
-              className="flex-1 p-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none text-center" />
-            <button onClick={() => setWithdrawAmount(parseFloat(balance).toFixed(2))}
-              className="px-3 py-2 rounded-xl text-[10px] font-bold text-gold-400 border border-gold-400/20">
-              MAX
-            </button>
-          </div>
-          <button onClick={handleRequestWithdraw} disabled={txPending || !withdrawAmount}
-            className="mt-2 w-full py-2.5 rounded-xl text-xs font-bold gold-btn"
-            style={{ opacity: (!withdrawAmount || txPending) ? 0.5 : 1 }}>
-            {txPending ? `⏳ ${t('loading')}` : `💸 ${t('dcWithdraw')}`}
-          </button>
+      {fundStats && (
+        <div className="grid grid-cols-3 gap-2">
+          <StatCard label="В фонде" value={`$${parseFloat(fundStats.fundBalance).toFixed(0)}`} color="text-emerald-400" />
+          <StatCard label="Выплачено" value={`$${parseFloat(fundStats.totalPaidClaims).toFixed(0)}`} color="text-blue-400" />
+          <StatCard label="На контракте" value={`$${parseFloat(fundStats.usdtOnContract).toFixed(0)}`} color="text-gold-400" />
         </div>
       )}
 
-      {/* Запросы на вывод */}
-      {requests.length > 0 && (
+      {parseFloat(balance) > 0 && (
         <div className="p-3 rounded-2xl glass">
-          <div className="text-[12px] font-bold text-blue-400 mb-2">📋 {t('dcWithdrawHistory')}</div>
+          <div className="text-[12px] font-bold text-emerald-400 mb-2">💸 Запросить вывод</div>
+          <div className="flex gap-2">
+            <input type="number" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)}
+              placeholder="USDT" className="flex-1 p-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none text-center" />
+            <button onClick={() => setWithdrawAmount(parseFloat(balance).toFixed(2))}
+              className="px-3 py-2 rounded-xl text-[10px] font-bold text-gold-400 border border-gold-400/20">MAX</button>
+          </div>
+          <button onClick={handleRequestWithdraw} disabled={txPending || !withdrawAmount}
+            className="mt-2 w-full py-2.5 rounded-xl text-xs font-bold gold-btn"
+            style={{ opacity: (!withdrawAmount||txPending) ? 0.5 : 1 }}>
+            {txPending ? '⏳' : '💸 Запросить вывод'}</button>
+        </div>
+      )}
+
+      {requests.filter(r => r.status >= 1).length > 0 && (
+        <div className="p-3 rounded-2xl glass">
+          <div className="text-[12px] font-bold text-blue-400 mb-2">📋 Запросы на вывод</div>
           <div className="space-y-1.5">
             {requests.filter(r => r.status >= 1).map(req => {
               const isReady = req.status === 1 && now >= req.availableAt
-              const timeLeft = req.availableAt - now
-              const hoursLeft = Math.max(0, Math.ceil(timeLeft / 3600))
-
+              const hoursLeft = Math.max(0, Math.ceil((req.availableAt - now) / 3600))
               return (
                 <div key={req.id} className="p-2 rounded-xl bg-white/5">
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-[11px] font-bold text-white">${parseFloat(req.amount).toFixed(2)}</span>
-                      <span className="text-[9px] text-slate-500 ml-2">{STATUS_LABELS[req.status] || '—'}</span>
+                      <span className="text-[9px] text-slate-500 ml-2">
+                        {req.status===1?'⏳ Ожидание':req.status===3?'🚫 Заморожен':req.status===4?'✅ Выполнен':'—'}
+                      </span>
                     </div>
-                    {req.status === 1 && (
-                      isReady ? (
-                        <button onClick={() => handleExecuteWithdraw(req.id)} disabled={txPending}
-                          className="px-3 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                          ✅ {t('dcExecute')}
-                        </button>
-                      ) : (
-                        <span className="text-[9px] text-gold-400">⏳ {hoursLeft}h</span>
-                      )
-                    )}
+                    {req.status === 1 && (isReady ? (
+                      <button onClick={() => handleExecuteWithdraw(req.id)} disabled={txPending}
+                        className="px-3 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                        ✅ Выполнить</button>
+                    ) : <span className="text-[9px] text-gold-400">⏳ {hoursLeft}ч</span>)}
                   </div>
                 </div>
               )
@@ -574,29 +757,63 @@ function InsuranceSection() {
         </div>
       )}
 
-      {/* Как работает */}
+      {/* Верификация */}
       <div className="p-3 rounded-2xl glass">
-        <div className="text-[12px] font-bold text-blue-400 mb-2">📖 {t('dcHowInsuranceWorks')}</div>
-        <div className="space-y-1 text-[11px] text-slate-300">
-          <p>1. {t('dcInsStep1')}</p>
-          <p>2. {t('dcInsStep2')}</p>
-          <p>3. {t('dcInsStep3')}</p>
-          <p>4. {t('dcInsStep4')}</p>
+        <div className="text-[12px] font-bold text-purple-400 mb-2">📋 Верификация актива</div>
+        <div className="text-[10px] text-slate-400 mb-2">Подтвердите владение (ID покупки)</div>
+        <div className="flex gap-2">
+          <input type="number" value={verifyId} onChange={e => setVerifyId(e.target.value)} placeholder="ID"
+            className="flex-1 p-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none text-center" />
+          <button onClick={handleVerifyAsset} disabled={txPending || !verifyId}
+            className="px-4 py-2 rounded-xl text-[10px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/20"
+            style={{ opacity: (!verifyId||txPending)?0.5:1 }}>
+            {txPending ? '⏳' : '✅ Верифицировать'}</button>
         </div>
+      </div>
+
+      {/* Страховая заявка */}
+      <div className="p-3 rounded-2xl glass">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[12px] font-bold text-red-400">🆘 Страховая заявка</div>
+          <button onClick={() => setShowClaimForm(!showClaimForm)}
+            className="text-[10px] text-blue-400 font-bold">{showClaimForm ? '✕ Скрыть' : '+ Создать'}</button>
+        </div>
+        {showClaimForm ? (
+          <div className="space-y-2">
+            <input type="number" value={claimData.purchaseId} onChange={e => setClaimData(d => ({...d, purchaseId: e.target.value}))}
+              placeholder="ID покупки" className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none" />
+            <input type="number" value={claimData.amount} onChange={e => setClaimData(d => ({...d, amount: e.target.value}))}
+              placeholder="Сумма (USDT)" className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none" />
+            <input value={claimData.reason} onChange={e => setClaimData(d => ({...d, reason: e.target.value}))}
+              placeholder="Причина" className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none" />
+            <input value={claimData.evidence} onChange={e => setClaimData(d => ({...d, evidence: e.target.value}))}
+              placeholder="IPFS ссылка (доказательства)" className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none" />
+            <button onClick={handleSubmitClaim} disabled={txPending || !claimData.purchaseId || !claimData.amount || !claimData.reason}
+              className="w-full py-2.5 rounded-xl text-xs font-bold bg-red-500/15 text-red-400 border border-red-500/20"
+              style={{ opacity: txPending?0.5:1 }}>
+              {txPending ? '⏳' : '🆘 Отправить заявку'}</button>
+          </div>
+        ) : (
+          <div className="text-[10px] text-slate-500">При проблемах с активом создайте заявку с причиной и доказательствами.</div>
+        )}
       </div>
     </div>
   )
 }
 
 // ═════════════════════════════════════════════════════════
-// SHOWCASE — Витрина (ShowcaseMarket)
+// SHOWCASE — просмотр + создание + подтверждение продажи
 // ═════════════════════════════════════════════════════════
 function ShowcaseSection() {
-  const { wallet, addNotification, setTxPending, txPending, t } = useGameStore()
+  const { wallet, addNotification, setTxPending, txPending } = useGameStore()
   const [listings, setListings] = useState([])
   const [stats, setStats] = useState(null)
   const [isAgent, setIsAgent] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [newListing, setNewListing] = useState({ assetType: 0, title: '', description: '', imageURI: '', certURI: '', price: '' })
+  const [confirmModal, setConfirmModal] = useState(null)
+  const [buyerAddress, setBuyerAddress] = useState('')
 
   const reload = useCallback(async () => {
     if (!wallet) return
@@ -606,10 +823,7 @@ function ShowcaseSection() {
       DC.getShowcaseStats().catch(() => null),
       DC.checkIsAgent(wallet).catch(() => false),
     ])
-    setListings(l)
-    setStats(s)
-    setIsAgent(agent)
-    setLoading(false)
+    setListings(l); setStats(s); setIsAgent(agent); setLoading(false)
   }, [wallet])
 
   useEffect(() => { reload() }, [reload])
@@ -618,161 +832,219 @@ function ShowcaseSection() {
     setTxPending(true)
     const result = await safeCall(() => DC.buyAgentLicense())
     setTxPending(false)
-    if (result.ok) {
-      addNotification(`✅ 🏪 ${t('dcAgentLicenseBought') || 'Лицензия агента получена'}!`)
-      reload()
-    } else {
-      addNotification(`❌ ${result.error}`)
-    }
+    if (result.ok) { addNotification('✅ 🏪 Лицензия получена!'); reload() }
+    else addNotification(`❌ ${result.error}`)
   }
 
-  const handleCancel = async (listingId) => {
+  const handleCreateListing = async () => {
+    const { assetType, title, description, imageURI, certURI, price } = newListing
+    if (!title || !price) return
     setTxPending(true)
-    const result = await safeCall(() => DC.cancelShowcaseListing(listingId))
+    const result = await safeCall(() => DC.listOnShowcase(assetType, title, description, imageURI, certURI, price))
     setTxPending(false)
     if (result.ok) {
-      addNotification(`✅ ${t('dcListingCancelled') || 'Листинг отменён'}`)
-      reload()
-    } else {
-      addNotification(`❌ ${result.error}`)
-    }
+      addNotification(`✅ 🏪 «${title}» опубликовано!`)
+      setShowCreateForm(false); setNewListing({ assetType:0, title:'', description:'', imageURI:'', certURI:'', price:'' }); reload()
+    } else addNotification(`❌ ${result.error}`)
+  }
+
+  const handleConfirmSale = async () => {
+    if (!confirmModal || !buyerAddress) return
+    setTxPending(true)
+    const result = await safeCall(() => DC.confirmShowcaseSale(confirmModal.id, buyerAddress))
+    setTxPending(false)
+    if (result.ok) { addNotification(`✅ Продажа #${confirmModal.id} подтверждена!`); setConfirmModal(null); setBuyerAddress(''); reload() }
+    else addNotification(`❌ ${result.error}`)
+  }
+
+  const handleCancel = async (id) => {
+    setTxPending(true)
+    const result = await safeCall(() => DC.cancelShowcaseListing(id))
+    setTxPending(false)
+    if (result.ok) { addNotification('✅ Листинг отменён'); reload() }
+    else addNotification(`❌ ${result.error}`)
   }
 
   if (loading) return <Loading />
-
-  const ASSET_TYPES = ['💎 Камень', '🥇 Металл', '💍 Ювелирка', '🏠 Другое']
+  const ASSET_TYPES = ['💎 Камень', '🥇 Металл', '💍 Ювелирка', '📦 Другое']
 
   return (
     <div className="px-3 mt-2 space-y-2">
-      {/* Статистика витрины */}
       {stats && (
         <div className="grid grid-cols-3 gap-2">
-          <StatCard label={t('dcTotal') || 'Всего'} value={stats.total} color="text-blue-400" />
-          <StatCard label={t('dcSales') || 'Продаж'} value={stats.sales} color="text-emerald-400" />
-          <StatCard label={t('dcCommissions') || 'Комиссии'} value={`$${parseFloat(stats.commissions).toFixed(0)}`} color="text-gold-400" />
+          <StatCard label="Всего" value={stats.total} color="text-blue-400" />
+          <StatCard label="Продаж" value={stats.sales} color="text-emerald-400" />
+          <StatCard label="Комиссии" value={`$${parseFloat(stats.commissions).toFixed(0)}`} color="text-gold-400" />
         </div>
       )}
 
-      {/* Статус агента */}
       <div className="p-3 rounded-2xl glass">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[12px] font-bold text-purple-400">🏪 {t('dcAgentStatus') || 'Статус агента'}</div>
+            <div className="text-[12px] font-bold text-purple-400">🏪 Статус агента</div>
             <div className={`text-[11px] font-bold ${isAgent ? 'text-emerald-400' : 'text-slate-500'}`}>
-              {isAgent ? `✅ ${t('dcAgentActive') || 'Активен'}` : `❌ ${t('dcNotAgent') || 'Нет лицензии'}`}
-            </div>
+              {isAgent ? '✅ Лицензия активна' : '❌ Нет лицензии'}</div>
           </div>
-          {!isAgent && (
+          {!isAgent ? (
             <button onClick={handleBuyLicense} disabled={txPending}
               className="px-3 py-2 rounded-xl text-[10px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/20">
-              {txPending ? '⏳' : `🏪 ${t('dcBuyLicense') || 'Купить лицензию'}`}
-            </button>
+              {txPending ? '⏳' : '🏪 Купить лицензию'}</button>
+          ) : (
+            <button onClick={() => setShowCreateForm(!showCreateForm)}
+              className="px-3 py-2 rounded-xl text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+              {showCreateForm ? '✕ Скрыть' : '+ Создать'}</button>
           )}
         </div>
       </div>
 
-      {/* Активные листинги */}
+      {/* Форма создания */}
+      {showCreateForm && isAgent && (
+        <div className="p-3 rounded-2xl glass space-y-2">
+          <div className="text-[12px] font-bold text-gold-400 mb-1">📝 Новое объявление</div>
+          <div className="flex gap-1">
+            {ASSET_TYPES.map((at, i) => (
+              <button key={i} onClick={() => setNewListing(l => ({...l, assetType: i}))}
+                className={`flex-1 py-1.5 rounded-lg text-[9px] font-bold border ${
+                  newListing.assetType===i ? 'bg-gold-400/15 border-gold-400/30 text-gold-400' : 'border-white/8 text-slate-500'
+                }`}>{at}</button>
+            ))}
+          </div>
+          <input value={newListing.title} onChange={e => setNewListing(l => ({...l, title: e.target.value}))}
+            placeholder="Название" className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none" />
+          <textarea value={newListing.description} onChange={e => setNewListing(l => ({...l, description: e.target.value}))}
+            placeholder="Описание" rows={2}
+            className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none resize-none" />
+          <input value={newListing.imageURI} onChange={e => setNewListing(l => ({...l, imageURI: e.target.value}))}
+            placeholder="Фото (IPFS/URL)" className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none" />
+          <input value={newListing.certURI} onChange={e => setNewListing(l => ({...l, certURI: e.target.value}))}
+            placeholder="Сертификат (IPFS/URL)" className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none" />
+          <input type="number" value={newListing.price} onChange={e => setNewListing(l => ({...l, price: e.target.value}))}
+            placeholder="Цена (USDT)" className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none" />
+          <button onClick={handleCreateListing} disabled={txPending || !newListing.title || !newListing.price}
+            className="w-full py-2.5 rounded-xl text-xs font-bold gold-btn"
+            style={{ opacity: txPending?0.5:1 }}>
+            {txPending ? '⏳' : '🏪 Опубликовать'}</button>
+        </div>
+      )}
+
+      {/* Листинги */}
       <div className="p-3 rounded-2xl glass">
-        <div className="text-[12px] font-bold text-gold-400 mb-2">📋 {t('dcActiveListings') || 'Активные объявления'} ({listings.length})</div>
+        <div className="text-[12px] font-bold text-gold-400 mb-2">📋 Объявления ({listings.length})</div>
         {listings.length === 0 ? (
-          <div className="text-[11px] text-slate-500 text-center py-4">{t('dcNoListings') || 'Нет активных объявлений'}</div>
+          <div className="text-[11px] text-slate-500 text-center py-4">Нет активных объявлений</div>
         ) : (
           <div className="space-y-1.5">
-            {listings.map(l => (
-              <div key={l.id} className="p-2.5 rounded-xl bg-white/5">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="text-[11px] font-bold text-white">{l.title || `#${l.id}`}</div>
-                    <div className="text-[9px] text-slate-500">
-                      {ASSET_TYPES[l.assetType] || '📦'} • {shortAddress(l.seller)}
+            {listings.map(l => {
+              const isMine = l.seller.toLowerCase() === wallet?.toLowerCase()
+              return (
+                <div key={l.id} className="p-2.5 rounded-xl bg-white/5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="text-[11px] font-bold text-white">{l.title || `#${l.id}`}</div>
+                      <div className="text-[9px] text-slate-500">{ASSET_TYPES[l.assetType]||'📦'} • {shortAddress(l.seller)}</div>
                     </div>
-                  </div>
-                  <div className="text-right">
                     <div className="text-[12px] font-black text-gold-400">${parseFloat(l.price).toFixed(2)}</div>
-                    {l.seller.toLowerCase() === wallet?.toLowerCase() && (
-                      <button onClick={() => handleCancel(l.id)} disabled={txPending}
-                        className="mt-1 px-2 py-0.5 rounded-lg text-[8px] font-bold bg-red-500/15 text-red-400 border border-red-500/20">
-                        ✕ {t('cancel') || 'Отмена'}
-                      </button>
-                    )}
                   </div>
+                  {l.description && <div className="text-[9px] text-slate-400 mt-1 line-clamp-2">{l.description}</div>}
+                  {isMine && (
+                    <div className="flex gap-1 mt-2">
+                      <button onClick={() => { setConfirmModal(l); setBuyerAddress('') }}
+                        className="px-2 py-1 rounded-lg text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                        ✅ Подтвердить продажу</button>
+                      <button onClick={() => handleCancel(l.id)} disabled={txPending}
+                        className="px-2 py-1 rounded-lg text-[9px] font-bold bg-red-500/15 text-red-400 border border-red-500/20">
+                        ✕ Отменить</button>
+                    </div>
+                  )}
                 </div>
-                {l.description && (
-                  <div className="text-[9px] text-slate-400 mt-1 line-clamp-2">{l.description}</div>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
+
+      {/* Confirm Sale Modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setConfirmModal(null)}>
+          <div className="w-full max-w-sm p-4 rounded-2xl glass" onClick={e => e.stopPropagation()}
+            style={{ background: 'var(--bg-card, #1e1e3a)' }}>
+            <div className="text-center mb-3">
+              <div className="text-3xl mb-2">✅</div>
+              <div className="text-[14px] font-black text-white">Подтверждение продажи</div>
+              <div className="text-[11px] text-slate-500">#{confirmModal.id} — {confirmModal.title}</div>
+            </div>
+            <input value={buyerAddress} onChange={e => setBuyerAddress(e.target.value)}
+              placeholder="Адрес покупателя (0x...)"
+              className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none mb-3" />
+            <button onClick={handleConfirmSale} disabled={txPending || !buyerAddress}
+              className="w-full py-3 rounded-xl text-sm font-bold gold-btn"
+              style={{ opacity: (!buyerAddress||txPending)?0.5:1 }}>
+              {txPending ? '⏳' : '✅ Подтвердить'}</button>
+            <button onClick={() => setConfirmModal(null)}
+              className="w-full mt-2 py-2 rounded-xl text-[11px] font-bold text-slate-500 border border-white/8">Отмена</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 // ═════════════════════════════════════════════════════════
-// P2P — DiamondP2P торговля
+// P2P — DiamondP2P
 // ═════════════════════════════════════════════════════════
 function P2PSection() {
-  const { wallet, addNotification, setTxPending, txPending, t } = useGameStore()
+  const { wallet, addNotification, setTxPending, txPending } = useGameStore()
   const [listings, setListings] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const reload = useCallback(async () => {
     setLoading(true)
-    const [l, s] = await Promise.all([
-      DC.getP2PListings().catch(() => []),
-      DC.getP2PStats().catch(() => null),
-    ])
-    setListings(l)
-    setStats(s)
-    setLoading(false)
+    const [l, s] = await Promise.all([DC.getP2PListings().catch(() => []), DC.getP2PStats().catch(() => null)])
+    setListings(l); setStats(s); setLoading(false)
   }, [])
 
   useEffect(() => { reload() }, [reload])
 
-  const handleBuy = async (listing) => {
+  const handleBuy = async (l) => {
     setTxPending(true)
-    const result = await safeCall(() => DC.buyFromP2P(listing.id))
+    const result = await safeCall(() => DC.buyFromP2P(l.id))
     setTxPending(false)
-    if (result.ok) {
-      addNotification(`✅ 🤝 P2P ${t('dcGemBought') || 'Покупка совершена'}!`)
-      reload()
-    } else {
-      addNotification(`❌ ${result.error}`)
-    }
+    if (result.ok) { addNotification('✅ 🤝 P2P покупка!'); reload() }
+    else addNotification(`❌ ${result.error}`)
   }
 
-  const handleCancel = async (listing) => {
+  const handleCancel = async (l) => {
     setTxPending(true)
-    const result = await safeCall(() => DC.cancelP2PListing(listing.id))
+    const result = await safeCall(() => DC.cancelP2PListing(l.id))
     setTxPending(false)
-    if (result.ok) {
-      addNotification(`✅ ${t('dcP2PCancelled') || 'Листинг отменён'}`)
-      reload()
-    } else {
-      addNotification(`❌ ${result.error}`)
-    }
+    if (result.ok) { addNotification('✅ Листинг снят'); reload() }
+    else addNotification(`❌ ${result.error}`)
   }
 
   if (loading) return <Loading />
 
   return (
     <div className="px-3 mt-2 space-y-2">
-      {/* P2P статистика */}
       {stats && (
         <div className="grid grid-cols-3 gap-2">
-          <StatCard label={t('dcTrades') || 'Сделок'} value={stats.trades} color="text-blue-400" />
-          <StatCard label={t('dcVolume') || 'Оборот'} value={`$${parseFloat(stats.volume).toFixed(0)}`} color="text-emerald-400" />
-          <StatCard label={t('dcCommissions') || 'Комиссии'} value={`$${parseFloat(stats.commissions).toFixed(0)}`} color="text-gold-400" />
+          <StatCard label="Сделок" value={stats.trades} color="text-blue-400" />
+          <StatCard label="Оборот" value={`$${parseFloat(stats.volume).toFixed(0)}`} color="text-emerald-400" />
+          <StatCard label="Комиссии" value={`$${parseFloat(stats.commissions).toFixed(0)}`} color="text-gold-400" />
         </div>
       )}
 
-      {/* Активные P2P листинги */}
       <div className="p-3 rounded-2xl glass">
-        <div className="text-[12px] font-bold text-gold-400 mb-2">🤝 P2P {t('dcMarket') || 'Рынок'} ({listings.length})</div>
+        <div className="text-[12px] font-bold text-blue-400 mb-1">💡 Как продать на P2P</div>
+        <div className="text-[10px] text-slate-400">
+          «💎 Камни» → «🏆 Мои камни» → кнопка «🏪 Продать P2P» на камне OWNED/CLAIMED.
+        </div>
+      </div>
+
+      <div className="p-3 rounded-2xl glass">
+        <div className="text-[12px] font-bold text-gold-400 mb-2">🤝 P2P Рынок ({listings.length})</div>
         {listings.length === 0 ? (
-          <div className="text-[11px] text-slate-500 text-center py-4">{t('dcNoP2PListings') || 'Нет активных P2P предложений'}</div>
+          <div className="text-[11px] text-slate-500 text-center py-4">Нет P2P предложений</div>
         ) : (
           <div className="space-y-1.5">
             {listings.map(l => {
@@ -781,7 +1053,7 @@ function P2PSection() {
                 <div key={l.id} className="p-2.5 rounded-xl bg-white/5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-[11px] font-bold text-white">#{l.purchaseId}</span>
+                      <span className="text-[11px] font-bold text-white">💎 #{l.purchaseId}</span>
                       <span className="text-[9px] text-slate-500 ml-2">{shortAddress(l.seller)}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -789,13 +1061,11 @@ function P2PSection() {
                       {isMine ? (
                         <button onClick={() => handleCancel(l)} disabled={txPending}
                           className="px-2 py-1 rounded-lg text-[9px] font-bold bg-red-500/15 text-red-400 border border-red-500/20">
-                          ✕ {t('cancel') || 'Отмена'}
-                        </button>
+                          ✕ Снять</button>
                       ) : (
                         <button onClick={() => handleBuy(l)} disabled={txPending}
                           className="px-2 py-1 rounded-lg text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                          {txPending ? '⏳' : `💰 ${t('buy') || 'Купить'}`}
-                        </button>
+                          {txPending ? '⏳' : '💰 Купить'}</button>
                       )}
                     </div>
                   </div>
@@ -805,26 +1075,15 @@ function P2PSection() {
           </div>
         )}
       </div>
-
-      {/* Как выставить на P2P */}
-      <div className="p-3 rounded-2xl glass">
-        <div className="text-[12px] font-bold text-blue-400 mb-2">📖 {t('dcHowP2P') || 'Как продать на P2P'}</div>
-        <div className="space-y-1 text-[11px] text-slate-300">
-          <p>1. {t('dcP2PStep1') || 'Купите камень или актив через GemVault'}</p>
-          <p>2. {t('dcP2PStep2') || 'Перейдите в раздел "Мои покупки" → кнопка P2P'}</p>
-          <p>3. {t('dcP2PStep3') || 'Укажите цену в USDT и подтвердите листинг'}</p>
-          <p>4. {t('dcP2PStep4') || 'Покупатель оплачивает через DiamondP2P контракт'}</p>
-        </div>
-      </div>
     </div>
   )
 }
 
 // ═════════════════════════════════════════════════════════
-// BOOST — Увеличение ставки стейкинга
+// BOOST
 // ═════════════════════════════════════════════════════════
 function BoostSection() {
-  const { wallet, nst, addNotification, setTxPending, txPending, t } = useGameStore()
+  const { wallet, nst, addNotification, setTxPending, txPending } = useGameStore()
   const [boostInfo, setBoostInfo] = useState(null)
   const [trustInfo, setTrustInfo] = useState(null)
   const [burnAmount, setBurnAmount] = useState('')
@@ -837,9 +1096,7 @@ function BoostSection() {
       DC.getUserBoostInfo(wallet).catch(() => null),
       DC.getUserTrustInfo(wallet).catch(() => null),
     ])
-    setBoostInfo(boost)
-    setTrustInfo(trust)
-    setLoading(false)
+    setBoostInfo(boost); setTrustInfo(trust); setLoading(false)
   }, [wallet])
 
   useEffect(() => { reload() }, [reload])
@@ -849,81 +1106,66 @@ function BoostSection() {
     setTxPending(true)
     const result = await safeCall(() => DC.burnNSTForBoost(burnAmount))
     setTxPending(false)
-    if (result.ok) {
-      addNotification(`✅ 🔥 ${burnAmount} NST ${t('dcBurned')}!`)
-      setBurnAmount('')
-      reload()
-    } else {
-      addNotification(`❌ ${result.error}`)
-    }
+    if (result.ok) { addNotification(`✅ 🔥 ${burnAmount} NST сожжено!`); setBurnAmount(''); reload() }
+    else addNotification(`❌ ${result.error}`)
   }
 
   if (loading) return <Loading />
-
   const TIER_COLORS = { NONE: 'text-slate-500', PROBATION: 'text-red-400', BRONZE: 'text-orange-400', SILVER: 'text-slate-300', GOLD: 'text-gold-400' }
 
   return (
     <div className="px-3 mt-2 space-y-2">
-      {/* Текущая ставка */}
       <div className="p-4 rounded-2xl glass text-center">
-        <div className="text-[10px] text-slate-500">{t('dcCurrentRate')}</div>
+        <div className="text-[10px] text-slate-500">Текущая ставка</div>
         <div className="text-3xl font-black text-emerald-400">{boostInfo?.currentRate || 50}%</div>
-        <div className="text-[9px] text-slate-500">{t('dcAnnualReturn')}</div>
+        <div className="text-[9px] text-slate-500">Годовая доходность</div>
       </div>
 
-      {/* TrustScore */}
       {trustInfo && (
         <div className="p-3 rounded-2xl glass">
-          <div className="text-[12px] font-bold text-blue-400 mb-2">🛡️ {t('dcTrustScore')}</div>
+          <div className="text-[12px] font-bold text-blue-400 mb-2">🛡️ TrustScore</div>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="p-2 rounded-xl bg-white/5">
               <div className={`text-lg font-black ${TIER_COLORS[trustInfo.tierName]}`}>{trustInfo.score}</div>
-              <div className="text-[9px] text-slate-500">{t('dcScore')}</div>
+              <div className="text-[9px] text-slate-500">Баллы</div>
             </div>
             <div className="p-2 rounded-xl bg-white/5">
               <div className={`text-[12px] font-bold ${TIER_COLORS[trustInfo.tierName]}`}>{trustInfo.tierName}</div>
-              <div className="text-[9px] text-slate-500">{t('dcTier')}</div>
+              <div className="text-[9px] text-slate-500">Уровень</div>
             </div>
             <div className="p-2 rounded-xl bg-white/5">
               <div className="text-[12px] font-bold text-emerald-400">{trustInfo.canPurchase ? '✅' : '❌'}</div>
-              <div className="text-[9px] text-slate-500">{t('dcCanBuy')}</div>
+              <div className="text-[9px] text-slate-500">Покупки</div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Burn NST */}
       <div className="p-3 rounded-2xl glass">
-        <div className="text-[12px] font-bold text-orange-400 mb-2">🔥 {t('dcBurnNST')}</div>
-        <div className="text-[11px] text-slate-400 mb-2">{t('dcBurnDesc')}</div>
-
+        <div className="text-[12px] font-bold text-orange-400 mb-2">🔥 Сжечь NST</div>
+        <div className="text-[11px] text-slate-400 mb-2">Сожгите NST для увеличения ставки</div>
         <div className="grid grid-cols-3 gap-2 mb-3 text-center">
           <div className="p-2 rounded-lg bg-white/5">
-            <div className="text-[11px] font-bold text-orange-400">{parseFloat(boostInfo?.nstBurned || 0).toFixed(0)}</div>
-            <div className="text-[8px] text-slate-500">{t('dcBurned')}</div>
+            <div className="text-[11px] font-bold text-orange-400">{parseFloat(boostInfo?.nstBurned||0).toFixed(0)}</div>
+            <div className="text-[8px] text-slate-500">Сожжено</div>
           </div>
           <div className="p-2 rounded-lg bg-white/5">
-            <div className="text-[11px] font-bold text-gold-400">{nst.toFixed(0)}</div>
-            <div className="text-[8px] text-slate-500">{t('dcMyNST')}</div>
+            <div className="text-[11px] font-bold text-gold-400">{(nst||0).toFixed(0)}</div>
+            <div className="text-[8px] text-slate-500">Мои NST</div>
           </div>
           <div className="p-2 rounded-lg bg-white/5">
-            <div className="text-[11px] font-bold text-purple-400">{parseFloat(boostInfo?.nextBurnRequired || 0).toFixed(0)}</div>
-            <div className="text-[8px] text-slate-500">{t('dcNextBoost')}</div>
+            <div className="text-[11px] font-bold text-purple-400">{parseFloat(boostInfo?.nextBurnRequired||0).toFixed(0)}</div>
+            <div className="text-[8px] text-slate-500">До след.</div>
           </div>
         </div>
-
         <div className="flex gap-2">
-          <input type="number" value={burnAmount} onChange={e => setBurnAmount(e.target.value)}
-            placeholder="NST"
+          <input type="number" value={burnAmount} onChange={e => setBurnAmount(e.target.value)} placeholder="NST"
             className="flex-1 p-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none text-center" />
           <button onClick={handleBurn} disabled={txPending || !burnAmount}
             className="px-4 py-2 rounded-xl text-[11px] font-bold bg-orange-500/15 text-orange-400 border border-orange-500/20"
-            style={{ opacity: (!burnAmount || txPending) ? 0.5 : 1 }}>
-            {txPending ? '⏳' : `🔥 ${t('dcBurn')}`}
-          </button>
+            style={{ opacity: (!burnAmount||txPending)?0.5:1 }}>
+            {txPending ? '⏳' : '🔥 Сжечь'}</button>
         </div>
-
-        {/* Таблица уровней */}
         <div className="mt-3 text-[9px] text-slate-500">
           <div className="grid grid-cols-3 gap-1">
             <div className="p-1.5 rounded bg-white/5 text-center"><b className="text-white">0 NST</b><br/>50%</div>
@@ -940,17 +1182,14 @@ function BoostSection() {
 }
 
 // ═════════════════════════════════════════════════════════
-// SHARED COMPONENTS
+// SHARED
 // ═════════════════════════════════════════════════════════
-
 function Loading() {
   return <div className="flex items-center justify-center py-12"><div className="text-2xl animate-spin">💎</div></div>
 }
-
 function ErrorCard({ text }) {
   return <div className="mx-3 mt-4 p-4 rounded-2xl glass text-center text-red-400 text-[12px]">❌ {text}</div>
 }
-
 function StatCard({ label, value, color }) {
   return (
     <div className="p-2 rounded-2xl glass text-center">
@@ -959,9 +1198,8 @@ function StatCard({ label, value, color }) {
     </div>
   )
 }
-
-function StakingRow({ purchase, type, t }) {
-  const daysLeft = Math.max(0, Math.ceil((purchase.stakingEndsAt - Date.now() / 1000) / 86400))
+function StakingRow({ purchase }) {
+  const daysLeft = Math.max(0, Math.ceil((purchase.stakingEndsAt - Date.now()/1000) / 86400))
   return (
     <div className="flex items-center justify-between p-2 rounded-lg bg-white/5">
       <div>
@@ -970,25 +1208,24 @@ function StakingRow({ purchase, type, t }) {
       </div>
       <div className="text-right">
         <div className="text-[10px] font-bold text-emerald-400">+${parseFloat(purchase.pendingReward).toFixed(2)}</div>
-        <div className="text-[8px] text-slate-500">{daysLeft > 0 ? `${daysLeft} ${t('dcDays')}` : `✅ ${t('dcReady')}`}</div>
+        <div className="text-[8px] text-slate-500">{daysLeft > 0 ? `${daysLeft} дн` : '✅ Готово'}</div>
       </div>
     </div>
   )
 }
-
-function ClaimReferralButton({ t }) {
+function ClaimReferralButton() {
   const { setTxPending, txPending, addNotification } = useGameStore()
   const handleClaim = async () => {
     setTxPending(true)
     const result = await safeCall(() => DC.claimReferralBonus())
     setTxPending(false)
-    if (result.ok) addNotification(`✅ ${t('dcReferralClaimed')}!`)
+    if (result.ok) addNotification('✅ Бонус получен!')
     else addNotification(`❌ ${result.error}`)
   }
   return (
     <button onClick={handleClaim} disabled={txPending}
       className="px-3 py-2 rounded-xl text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-      {txPending ? '⏳' : `🎁 ${t('claim')}`}
+      {txPending ? '⏳' : '🎁 Забрать'}
     </button>
   )
 }
