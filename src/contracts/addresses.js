@@ -1,7 +1,7 @@
 /**
- * Адреса контрактов NSS v2.4 на opBNB
+ * Адреса контрактов NSS v2.5 на opBNB
  * ═══════════════════════════════════════
- * Обновлено: 16.02.2026
+ * Обновлено: 03.03.2026
  */
 const ADDRESSES = {
   // ═══ Внешние токены ═══
@@ -11,7 +11,7 @@ const ADDRESSES = {
   CGTToken:          '0x56F5c29096BB7859e52086118aed31Fe08Fd6659',
   NSTToken:          '0xE9a2758F4BB29C4869d3Eee8fB9c9b176Fc4816A',
   NSSPlatform:       '0xFb1ddFa8A7EAB0081EAe24ec3d24B0ED4Dd84f2B',
-  RealEstateMatrix:  '0x75B1FFD88E5935fae4b22105948818C913519AbA', // v2.4 + i18n
+  RealEstateMatrix:  '0x75B1FFD88E5935fae4b22105948818C913519AbA',
   MatrixPaymentsV2:  '0x959217Aab60f01cc582373E1a2bc36e7a076bc39',
   SwapHelper:        '0xFF0e9BFFf1cc5A6B65f689bF2442056627686Bf5',
   CharityFund:       '0x837389a13B300d37395343600507F34d03AC9abd',
@@ -28,14 +28,15 @@ const ADDRESSES = {
   MatrixRegistry:    '0xD62945edFF7605dFc77A4bF607c96Da72E03cd0C',
   GWTToken:          '0x933B0Cb1f43170f3F0fcf082572CC931D6e93b5F',
 
-  // ═══ Diamond Club v10.1 ═══
-  GemVaultV2:        '0x_DEPLOY_GEMVAULT_V2',      // TODO: задеплоить
-  MetalVault:        '0x_DEPLOY_METAL_VAULT',       // TODO: задеплоить
-  InsuranceFund:     '0x_DEPLOY_INSURANCE_FUND',    // TODO: задеплоить
-  TrustScore:        '0x_DEPLOY_TRUST_SCORE',       // TODO: задеплоить
-  UserBoost:         '0x_DEPLOY_USER_BOOST',        // TODO: задеплоить
-  ReferralPool:      '0x_DEPLOY_REFERRAL_POOL',     // TODO: задеплоить
-  ShowcaseMarket:    '0x_DEPLOY_SHOWCASE_MARKET',   // TODO: задеплоить
+  // ═══ Diamond Club v10.2 (deployed 03.03.2026) ═══
+  TrustScore:        '0xE56B5cC834dF467D5deE8B69E3C4380F261e94c9',
+  PrivateMailbox:    '0xb251919Fa79dA48b060f57D5f0A0ECD1291e37A5',
+  UserBoost:         '0x7c84D88aa6b248c36FDcC63c3cE95815812046C5',
+  InsuranceFund:     '0x3dd0fC128E9ee119F1949fa44E9a92f3f607FfdB',
+  ReferralPool:      '0xaac7577784fde3E7113c03F7e3e108cB0cF2A54F',
+  GemVaultV2:        '0xb79Fa026cE35af801FA7B369907030e911B7c53C',
+  ShowcaseMarket:    '0xc5ED131e21ceEdeD20Fd131F84E49cAc4d229f97',
+  DiamondP2P:        '0xb22DCBd3B76Bf2E071CB172Ca00d885cf7D559DA',
 
   // ═══ PancakeSwap Router (opBNB) ═══
   PancakeRouter:     '0x10ED43C718714eb63d5aA57B78B54704E256024E',
