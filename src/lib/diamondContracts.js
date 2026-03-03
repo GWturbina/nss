@@ -417,6 +417,34 @@ export async function isUserFrozen(address) {
   try { return await c.isFrozen(address) } catch { return false }
 }
 
+export async function verifyAsset(purchaseId) {
+  const c = getDC('InsuranceFund', INSURANCE_ABI)
+  const tx = await c.verifyAsset(purchaseId)
+  return await tx.wait()
+}
+
+export async function submitClaim(purchaseId, amountUSDT, reason, evidenceIPFS) {
+  const c = getDC('InsuranceFund', INSURANCE_ABI)
+  const tx = await c.submitClaim(purchaseId, parse6(amountUSDT), reason, evidenceIPFS || '')
+  return await tx.wait()
+}
+
+export async function getVerificationStatus(purchaseId) {
+  const c = getDCRead('InsuranceFund', INSURANCE_ABI)
+  if (!c) return null
+  try {
+    const v = await c.getVerificationStatus(purchaseId)
+    return {
+      owner: v.owner_,
+      lastVerified: Number(v.lastVerified),
+      nextDeadline: Number(v.nextDeadline),
+      verified: v.verified,
+      missedCount: Number(v.missedCount),
+      overdue: v.overdue,
+    }
+  } catch { return null }
+}
+
 // ═══════════════════════════════════════════════════
 // TrustScore — Репутация
 // ═══════════════════════════════════════════════════
