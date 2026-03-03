@@ -1,7 +1,8 @@
 'use client'
 /**
- * NSS Diamond Club v10.1 — Contract Service Layer
- * GemVaultV2 + MetalVault + InsuranceFund + TrustScore + UserBoost + ReferralPool + ShowcaseMarket
+ * NSS Diamond Club v10.2 — Contract Service Layer
+ * GemVaultV2 + DiamondP2P + InsuranceFund + TrustScore + UserBoost + ReferralPool + ShowcaseMarket
+ * MetalVault отключён (заглушен). P2P вынесен в DiamondP2P.
  * Все вызовы Diamond Club контрактов в одном месте.
  */
 import { ethers } from 'ethers'
@@ -28,7 +29,6 @@ const GEMVAULT_ABI = [
   'function getVaultStats() view returns (uint256 totalSales, uint256 reserve, uint256 paidOut, uint256 catCount, uint256 gemCount, uint256 purchaseCount)',
   'function gems(uint256) view returns (uint256 categoryId, string name, string certHash, uint256 marketPrice, uint256 weight, bool available, bool fractional, uint256 totalFractions, uint256 soldFractions)',
   'function categories(uint256) view returns (string name, string assetType, uint256 stakingPeriod, uint256 minInvestment, address supplier, bool active)',
-  'function p2pPrices(uint256) view returns (uint256)',
   'function clubDiscountBP() view returns (uint256)',
   'function stakingReserve() view returns (uint256)',
   // Write
@@ -36,22 +36,23 @@ const GEMVAULT_ABI = [
   'function convertToAsset(uint256 purchaseId)',
   'function claimStaking(uint256 purchaseId, uint8 option)',
   'function restake(uint256 purchaseId)',
-  'function listForP2P(uint256 purchaseId, uint256 price)',
-  'function cancelP2PListing(uint256 purchaseId)',
-  'function buyP2P(uint256 purchaseId)',
 ]
 
-const METALVAULT_ABI = [
-  'function metals(uint256) view returns (uint256 id, uint8 metalType, string name, uint256 pricePerGramUSDT, string certURI, uint256 totalSupplyGrams, uint256 soldGrams, bool active)',
-  'function getUserPurchases(address user) view returns (uint256[])',
-  'function getPurchaseInfo(uint256 id) view returns (tuple(uint256 id, uint256 metalId, address owner, uint8 mode, uint8 status, uint256 grams, uint256 totalPaidUSDT, uint256 marketValue, uint16 stakingRateBP, uint64 purchasedAt, uint64 stakingStartedAt, uint64 stakingEndsAt))',
-  'function getStakingReward(uint256 id) view returns (uint256 reward, bool ready)',
-  'function getVaultStats() view returns (uint256 totalSales, uint256 reserve, uint256 paidOut, uint256 metalCount, uint256 purchaseCount)',
-  'function buyMetal(uint256 metalId, uint256 grams, uint8 mode)',
-  'function convertToAsset(uint256 purchaseId)',
-  'function claimStaking(uint256 purchaseId, uint8 option)',
-  'function restake(uint256 purchaseId)',
+const DIAMONDP2P_ABI = [
+  // Views
+  'function getListing(uint256 id) view returns (tuple(address vault, uint256 purchaseId, address seller, uint256 price, bool active))',
+  'function getListingCount() view returns (uint256)',
+  'function getStats() view returns (uint256 trades, uint256 volume, uint256 commissions)',
+  'function isListed(address vault, uint256 purchaseId) view returns (bool)',
+  'function defaultCommissionBP() view returns (uint256)',
+  'function vaultListingId(address vault, uint256 purchaseId) view returns (uint256)',
+  // Write
+  'function list(address vault, uint256 purchaseId, uint256 price)',
+  'function buy(uint256 listingId)',
+  'function cancel(uint256 listingId)',
 ]
+
+// MetalVault ABI отключён — контракт не задеплоен
 
 const INSURANCE_ABI = [
   'function userBalance(address) view returns (uint256)',
@@ -76,8 +77,14 @@ const TRUSTSCORE_ABI = [
 
 const USERBOOST_ABI = [
   'function getStakingRate(address user) view returns (uint16)',
-  'function getUserBoost(address user) view returns (uint16 currentRate, uint256 nstBurned, uint256 nextBurnRequired)',
-  'function burnForBoost(uint256 amount)',
+  'function getUserBoostInfo(address user) view returns (uint256 totalBurned, uint16 currentBoostBP, uint16 totalStakingRateBP, uint64 lastBoostTime, uint256 nstToNextLevel, uint16 nextLevelBP)',
+  'function getBoostBP(address user) view returns (uint16)',
+  'function getBoostLevelsCount() view returns (uint256)',
+  'function boostLevels(uint256) view returns (uint256 nstThreshold, uint16 boostBP)',
+  'function baseStakingRateBP() view returns (uint16)',
+  'function maxStakingRateBP() view returns (uint16)',
+  'function totalNSTBurned() view returns (uint256)',
+  'function boost(uint256 nstAmount)',
 ]
 
 const REFERRALPOOL_ABI = [
@@ -244,25 +251,73 @@ export async function restakeGem(purchaseId) {
   return await tx.wait()
 }
 
-export async function listGemP2P(purchaseId, priceUSDT) {
-  const c = getDC('GemVaultV2', GEMVAULT_ABI)
-  const tx = await c.listForP2P(purchaseId, parse6(priceUSDT))
+// ═══════════════════════════════════════════════════
+// DiamondP2P — P2P торговля
+// ═══════════════════════════════════════════════════
+
+export async function getP2PListings() {
+  const c = getDCRead('DiamondP2P', DIAMONDP2P_ABI)
+  if (!c) return []
+  try {
+    const count = Number(await c.getListingCount())
+    const listings = []
+    for (let i = 1; i <= count && i <= 50; i++) {
+      try {
+        const l = await c.getListing(i)
+        if (l.active) {
+          listings.push({
+            id: i,
+            vault: l.vault,
+            purchaseId: Number(l.purchaseId),
+            seller: l.seller,
+            price: fmt6(l.price),
+            active: l.active,
+          })
+        }
+      } catch {}
+    }
+    return listings
+  } catch { return [] }
+}
+
+export async function getP2PStats() {
+  const c = getDCRead('DiamondP2P', DIAMONDP2P_ABI)
+  if (!c) return null
+  try {
+    const [trades, volume, commissions] = await c.getStats()
+    return {
+      trades: Number(trades),
+      volume: fmt6(volume),
+      commissions: fmt6(commissions),
+    }
+  } catch { return null }
+}
+
+export async function listOnP2P(vaultAddress, purchaseId, priceUSDT) {
+  const c = getDC('DiamondP2P', DIAMONDP2P_ABI)
+  const tx = await c.list(vaultAddress, purchaseId, parse6(priceUSDT))
   return await tx.wait()
 }
 
-export async function buyGemP2P(purchaseId) {
-  const c = getDC('GemVaultV2', GEMVAULT_ABI)
-  const cRead = getDCRead('GemVaultV2', GEMVAULT_ABI)
-  const price = await cRead.p2pPrices(purchaseId)
-  await ensureUSDTApproval(ADDRESSES.GemVaultV2, price)
-  const tx = await c.buyP2P(purchaseId)
+export async function buyFromP2P(listingId) {
+  const c = getDC('DiamondP2P', DIAMONDP2P_ABI)
+  const cRead = getDCRead('DiamondP2P', DIAMONDP2P_ABI)
+  const listing = await cRead.getListing(listingId)
+  await ensureUSDTApproval(ADDRESSES.DiamondP2P, listing.price)
+  const tx = await c.buy(listingId)
   return await tx.wait()
 }
 
-export async function cancelGemP2P(purchaseId) {
-  const c = getDC('GemVaultV2', GEMVAULT_ABI)
-  const tx = await c.cancelP2PListing(purchaseId)
+export async function cancelP2PListing(listingId) {
+  const c = getDC('DiamondP2P', DIAMONDP2P_ABI)
+  const tx = await c.cancel(listingId)
   return await tx.wait()
+}
+
+export async function isListedOnP2P(vaultAddress, purchaseId) {
+  const c = getDCRead('DiamondP2P', DIAMONDP2P_ABI)
+  if (!c) return false
+  try { return await c.isListed(vaultAddress, purchaseId) } catch { return false }
 }
 
 // ═══════════════════════════════════════════════════
@@ -270,83 +325,22 @@ export async function cancelGemP2P(purchaseId) {
 // ═══════════════════════════════════════════════════
 
 export async function getMetalVaultStats() {
-  const c = getDCRead('MetalVault', METALVAULT_ABI)
-  if (!c) return null
-  try {
-    const s = await c.getVaultStats()
-    return {
-      totalSales: fmt6(s.totalSales),
-      reserve: fmt6(s.reserve),
-      paidOut: fmt6(s.paidOut),
-      metals: Number(s.metalCount),
-      purchases: Number(s.purchaseCount),
-    }
-  } catch { return null }
+  // MetalVault отключён — возвращаем null
+  return null
 }
 
 export async function getMetalsList() {
-  const c = getDCRead('MetalVault', METALVAULT_ABI)
-  if (!c) return []
-  try {
-    const stats = await c.getVaultStats()
-    const count = Number(stats.metalCount)
-    const metals = []
-    for (let i = 0; i < count && i < 20; i++) {
-      try {
-        const m = await c.metals(i)
-        metals.push({
-          id: Number(m.id),
-          metalType: Number(m.metalType), // 0=SILVER, 1=GOLD, 2=PLATINUM
-          name: m.name,
-          pricePerGram: fmt6(m.pricePerGramUSDT),
-          totalSupply: Number(m.totalSupplyGrams),
-          soldGrams: Number(m.soldGrams),
-          active: m.active,
-        })
-      } catch { break }
-    }
-    return metals
-  } catch { return [] }
+  // MetalVault отключён
+  return []
 }
 
 export async function buyMetal(metalId, grams, mode = 1) {
-  const c = getDC('MetalVault', METALVAULT_ABI)
-  const cRead = getDCRead('MetalVault', METALVAULT_ABI)
-  const metal = await cRead.metals(metalId)
-  const clubPrice = (metal.pricePerGramUSDT * BigInt(grams) / 100n) * 6500n / 10000n
-  await ensureUSDTApproval(ADDRESSES.MetalVault, clubPrice)
-  const tx = await c.buyMetal(metalId, grams, mode)
-  return await tx.wait()
+  throw new Error('MetalVault временно отключён')
 }
 
 export async function getUserMetalPurchases(address) {
-  const c = getDCRead('MetalVault', METALVAULT_ABI)
-  if (!c) return []
-  try {
-    const ids = await c.getUserPurchases(address)
-    const purchases = []
-    for (const id of ids) {
-      try {
-        const p = await c.getPurchaseInfo(id)
-        const reward = await c.getStakingReward(id)
-        purchases.push({
-          id: Number(p.id),
-          metalId: Number(p.metalId),
-          owner: p.owner,
-          mode: Number(p.mode),
-          status: Number(p.status),
-          grams: Number(p.grams),
-          pricePaid: fmt6(p.totalPaidUSDT),
-          marketValue: fmt6(p.marketValue),
-          stakingRateBP: Number(p.stakingRateBP),
-          stakingEndsAt: Number(p.stakingEndsAt),
-          pendingReward: fmt6(reward.reward),
-          rewardReady: reward.ready,
-        })
-      } catch {}
-    }
-    return purchases
-  } catch { return [] }
+  // MetalVault отключён
+  return []
 }
 
 // ═══════════════════════════════════════════════════
@@ -452,19 +446,38 @@ export async function getUserBoostInfo(address) {
   const c = getDCRead('UserBoost', USERBOOST_ABI)
   if (!c) return null
   try {
-    const info = await c.getUserBoost(address)
+    const info = await c.getUserBoostInfo(address)
     return {
-      currentRate: Number(info.currentRate) / 100, // BP → %
-      nstBurned: fmt(info.nstBurned),
-      nextBurnRequired: fmt(info.nextBurnRequired),
+      currentRate: Number(info.totalStakingRateBP) / 100, // BP → %
+      boostBP: Number(info.currentBoostBP),
+      nstBurned: fmt(info.totalBurned),
+      nextBurnRequired: fmt(info.nstToNextLevel),
+      nextLevelBP: Number(info.nextLevelBP),
     }
   } catch { return null }
 }
 
 export async function burnNSTForBoost(amount) {
   const c = getDC('UserBoost', USERBOOST_ABI)
-  const tx = await c.burnForBoost(parse(amount))
+  const tx = await c.boost(parse(amount))
   return await tx.wait()
+}
+
+export async function getBoostLevels() {
+  const c = getDCRead('UserBoost', USERBOOST_ABI)
+  if (!c) return []
+  try {
+    const count = Number(await c.getBoostLevelsCount())
+    const levels = []
+    for (let i = 0; i < count; i++) {
+      const l = await c.boostLevels(i)
+      levels.push({
+        threshold: fmt(l.nstThreshold),
+        boostBP: Number(l.boostBP),
+      })
+    }
+    return levels
+  } catch { return [] }
 }
 
 // ═══════════════════════════════════════════════════
@@ -487,6 +500,82 @@ export async function claimReferralBonus() {
 }
 
 // ═══════════════════════════════════════════════════
+// ShowcaseMarket — Витрина
+// ═══════════════════════════════════════════════════
+
+export async function getShowcaseListings() {
+  const c = getDCRead('ShowcaseMarket', SHOWCASE_ABI)
+  if (!c) return []
+  try {
+    const ids = await c.getActiveListings()
+    const listings = []
+    for (const id of ids) {
+      try {
+        const l = await c.getListing(id)
+        listings.push({
+          id: Number(id),
+          seller: l.seller,
+          agent: l.agent,
+          assetType: Number(l.assetType),
+          title: l.title,
+          description: l.description,
+          imageURI: l.imageURI,
+          certURI: l.certURI,
+          price: fmt6(l.priceUSDT),
+          status: Number(l.status),
+          listedAt: Number(l.listedAt),
+        })
+      } catch {}
+    }
+    return listings
+  } catch { return [] }
+}
+
+export async function getShowcaseStats() {
+  const c = getDCRead('ShowcaseMarket', SHOWCASE_ABI)
+  if (!c) return null
+  try {
+    const s = await c.getMarketStats()
+    return {
+      total: Number(s.total),
+      sales: Number(s.sales),
+      burned: fmt6(s.burned),
+      commissions: fmt6(s.commissions),
+    }
+  } catch { return null }
+}
+
+export async function checkIsAgent(address) {
+  const c = getDCRead('ShowcaseMarket', SHOWCASE_ABI)
+  if (!c) return false
+  try { return await c.isAgent(address) } catch { return false }
+}
+
+export async function listOnShowcase(assetType, title, description, imageURI, certURI, priceUSDT) {
+  const c = getDC('ShowcaseMarket', SHOWCASE_ABI)
+  const tx = await c.listOnShowcase(assetType, title, description, imageURI, certURI, parse6(priceUSDT))
+  return await tx.wait()
+}
+
+export async function confirmShowcaseSale(listingId, buyerAddress) {
+  const c = getDC('ShowcaseMarket', SHOWCASE_ABI)
+  const tx = await c.confirmSale(listingId, buyerAddress)
+  return await tx.wait()
+}
+
+export async function cancelShowcaseListing(listingId) {
+  const c = getDC('ShowcaseMarket', SHOWCASE_ABI)
+  const tx = await c.cancelListing(listingId)
+  return await tx.wait()
+}
+
+export async function buyAgentLicense() {
+  const c = getDC('ShowcaseMarket', SHOWCASE_ABI)
+  const tx = await c.buyAgentLicense()
+  return await tx.wait()
+}
+
+// ═══════════════════════════════════════════════════
 // СВОДНАЯ ЗАГРУЗКА DIAMOND CLUB
 // ═══════════════════════════════════════════════════
 
@@ -497,22 +586,22 @@ export async function loadDiamondClubDashboard(address) {
     boostInfo,
     referralClaimable,
     gemPurchases,
-    metalPurchases,
     gemStats,
-    metalStats,
     insuranceStats,
     frozen,
+    p2pStats,
+    showcaseStats,
   ] = await Promise.all([
     getInsuranceUserBalance(address).catch(() => '0'),
     getUserTrustInfo(address).catch(() => null),
     getUserBoostInfo(address).catch(() => null),
     getReferralClaimable(address).catch(() => '0'),
     getUserGemPurchases(address).catch(() => []),
-    getUserMetalPurchases(address).catch(() => []),
     getGemVaultStats().catch(() => null),
-    getMetalVaultStats().catch(() => null),
     getInsuranceFundStats().catch(() => null),
     isUserFrozen(address).catch(() => false),
+    getP2PStats().catch(() => null),
+    getShowcaseStats().catch(() => null),
   ])
 
   return {
@@ -521,10 +610,12 @@ export async function loadDiamondClubDashboard(address) {
     boostInfo,
     referralClaimable,
     gemPurchases,
-    metalPurchases,
+    metalPurchases: [], // MetalVault отключён
     gemStats,
-    metalStats,
+    metalStats: null,   // MetalVault отключён
     insuranceStats,
     frozen,
+    p2pStats,
+    showcaseStats,
   }
 }
