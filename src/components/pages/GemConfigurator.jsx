@@ -114,7 +114,23 @@ export default function GemConfigurator() {
           {SHAPES.map(s => (
             <button key={s.id} onClick={() => setShape(s.id)}
               className={`flex flex-col items-center py-2.5 rounded-xl transition-all border ${sel(shape===s.id)}`}>
-              <ShapeSVG shape={s.id} size={48} active={shape===s.id} />
+              {s.img ? (
+                <div className="w-12 h-12 flex items-center justify-center transition-all duration-300"
+                  style={{
+                    filter: shape === s.id
+                      ? 'brightness(1.15) drop-shadow(0 0 8px rgba(255,215,0,0.7))'
+                      : 'brightness(0.45) grayscale(0.3)',
+                  }}>
+                  <img src={`/images/gems/${s.img}`} alt={s.name}
+                    className="w-full h-full object-contain"
+                    onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex' }} />
+                  <div className="hidden w-full h-full items-center justify-center">
+                    <ShapeSVG shape={s.id} size={48} active={shape===s.id} />
+                  </div>
+                </div>
+              ) : (
+                <ShapeSVG shape={s.id} size={48} active={shape===s.id} />
+              )}
               <span className="text-[9px] mt-1 font-bold">{t(`shape_${s.id}`) || s.name}</span>
             </button>
           ))}
