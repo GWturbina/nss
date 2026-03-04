@@ -140,11 +140,24 @@ export function VaultTab() {
 
   const handleWithdraw = async () => {
     if (!wallet) return
+    // Проверяем реально доступную сумму перед отправкой
+    const withdrawable = await C.getWithdrawableAmount(wallet).catch(() => null)
+    const withdrawableNum = withdrawable ? Number(withdrawable) / 1e18 : 0
+    if (withdrawableNum <= 0) {
+      addNotification(`⚠️ Нет средств для вывода или активен кулдаун`)
+      return
+    }
     setTxPending(true)
     const result = await C.safeCall(() => C.withdrawFromMatrix())
     setTxPending(false)
     if (result.ok) {
-      addNotification(`✅ ${t('withdrawn')} ${pendingWithdrawal} USDT!`)
+      addNotification(`✅ ${t('withdrawn')} ${withdrawableNum.toFixed(2)} USDT!`)
+      // Обновляем баланс pendingWithdrawals после вывода
+      const fresh = await C.getMyPendingWithdrawal(wallet).catch(() => null)
+      if (fresh !== null) {
+        const store = (await import('@/lib/store')).default
+        store.getState().updatePending((Number(fresh) / 1e18).toFixed(2))
+      }
     } else {
       addNotification(`❌ ${result.error}`)
     }
