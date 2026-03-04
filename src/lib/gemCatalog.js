@@ -13,17 +13,17 @@
 // ═══════════════════════════════════════════════════
 
 export const SHAPES = [
-  { id: 'round',    name: 'Круглый',     nameEn: 'Round',    nameUk: 'Круглий' },
-  { id: 'princess', name: 'Принцесса',   nameEn: 'Princess', nameUk: 'Принцеса' },
-  { id: 'cushion',  name: 'Кушон',       nameEn: 'Cushion',  nameUk: 'Кушон' },
-  { id: 'oval',     name: 'Овал',        nameEn: 'Oval',     nameUk: 'Овал' },
-  { id: 'emerald',  name: 'Изумрудная',  nameEn: 'Emerald',  nameUk: 'Смарагдова' },
-  { id: 'radiant',  name: 'Радиант',     nameEn: 'Radiant',  nameUk: 'Радіант' },
-  { id: 'marquise', name: 'Маркиз',      nameEn: 'Marquise', nameUk: 'Маркіз' },
-  { id: 'pear',     name: 'Груша',       nameEn: 'Pear',     nameUk: 'Груша' },
-  { id: 'heart',    name: 'Сердце',      nameEn: 'Heart',    nameUk: 'Серце' },
-  { id: 'asscher',  name: 'Ашер',        nameEn: 'Asscher',  nameUk: 'Ашер' },
-  { id: 'trillion', name: 'Треугольник', nameEn: 'Trillion', nameUk: 'Трикутник' },
+  { id: 'round',    name: 'Круглый',     nameEn: 'Round',    nameUk: 'Круглий',   img: 'agate.png'    },
+  { id: 'princess', name: 'Принцесса',   nameEn: 'Princess', nameUk: 'Принцеса',  img: 'citrine.png'  },
+  { id: 'cushion',  name: 'Кушон',       nameEn: 'Cushion',  nameUk: 'Кушон',     img: 'garnet.png'   },
+  { id: 'oval',     name: 'Овал',        nameEn: 'Oval',     nameUk: 'Овал',      img: 'peridot.png'  },
+  { id: 'emerald',  name: 'Изумрудная',  nameEn: 'Emerald',  nameUk: 'Смарагдова',img: 'topaz.png'    },
+  { id: 'radiant',  name: 'Радиант',     nameEn: 'Radiant',  nameUk: 'Радіант',   img: null           },
+  { id: 'marquise', name: 'Маркиз',      nameEn: 'Marquise', nameUk: 'Маркіз',    img: null           },
+  { id: 'pear',     name: 'Груша',       nameEn: 'Pear',     nameUk: 'Груша',     img: 'ruby.png'     },
+  { id: 'heart',    name: 'Сердце',      nameEn: 'Heart',    nameUk: 'Серце',     img: 'sapphire.png' },
+  { id: 'asscher',  name: 'Ашер',        nameEn: 'Asscher',  nameUk: 'Ашер',      img: 'emerald.png'  },
+  { id: 'trillion', name: 'Треугольник', nameEn: 'Trillion', nameUk: 'Трикутник', img: null           },
 ]
 
 export const CLARITIES = [
