@@ -247,16 +247,21 @@ export function StakingTab() {
 
   const handleWithdraw = async () => {
     if (!wallet) return
+    // Проверяем реально доступную сумму (getWithdrawableAmount учитывает кулдауны)
+    const withdrawable = await C.getWithdrawableAmount(wallet).catch(() => null)
+    const withdrawableNum = withdrawable ? Number(withdrawable) / 1e18 : 0
+    if (withdrawableNum <= 0) {
+      addNotification(`⚠️ Нет средств для вывода или активен кулдаун`)
+      return
+    }
     setTxPending(true)
     const result = await C.safeCall(() => C.withdrawFromMatrix())
     setTxPending(false)
     if (result.ok) {
-      addNotification(`✅ ${t('withdrawn')} ${effectivePending} USDT!`)
-      // Обновляем pending через 2 сек
-      setTimeout(async () => {
-        const fresh = await C.getMyPendingWithdrawal(wallet).catch(() => null)
-        if (fresh !== null) useGameStore.getState().updatePending((Number(fresh) / 1e18).toFixed(2))
-      }, 2000)
+      addNotification(`✅ ${t('withdrawn')} ${withdrawableNum.toFixed(2)} USDT!`)
+      // Сразу обновляем баланс
+      const fresh = await C.getMyPendingWithdrawal(wallet).catch(() => null)
+      if (fresh !== null) useGameStore.getState().updatePending((Number(fresh) / 1e18).toFixed(2))
     } else {
       addNotification(`❌ ${result.error}`)
     }
