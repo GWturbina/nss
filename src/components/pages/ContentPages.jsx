@@ -247,7 +247,7 @@ export function StakingTab() {
 
   const handleWithdraw = async () => {
     if (!wallet) return
-    // Проверяем реально доступную сумму (getWithdrawableAmount учитывает кулдауны)
+    // Проверяем реально доступную сумму
     const withdrawable = await C.getWithdrawableAmount(wallet).catch(() => null)
     const withdrawableNum = withdrawable ? Number(withdrawable) / 1e18 : 0
     if (withdrawableNum <= 0) {
@@ -259,9 +259,17 @@ export function StakingTab() {
     setTxPending(false)
     if (result.ok) {
       addNotification(`✅ ${t('withdrawn')} ${withdrawableNum.toFixed(2)} USDT!`)
-      // Сразу обновляем баланс
-      const fresh = await C.getMyPendingWithdrawal(wallet).catch(() => null)
-      if (fresh !== null) useGameStore.getState().updatePending((Number(fresh) / 1e18).toFixed(2))
+      // Сразу обнуляем в сторе — деньги выведены
+      useGameStore.getState().updatePending('0')
+      // Через 3 сек перечитываем реальный баланс и таблицы из контракта
+      setTimeout(async () => {
+        const [fresh, freshTables] = await Promise.all([
+          C.getMyPendingWithdrawal(wallet).catch(() => null),
+          C.getUserAllTables(wallet).catch(() => null),
+        ])
+        if (fresh !== null) useGameStore.getState().updatePending((Number(fresh) / 1e18).toFixed(2))
+        if (freshTables) useGameStore.getState().updateTables(freshTables)
+      }, 3000)
     } else {
       addNotification(`❌ ${result.error}`)
     }
