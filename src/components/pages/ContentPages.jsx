@@ -239,11 +239,8 @@ export function StakingTab() {
     }
   }
 
-  // Сумма к выводу: глобальный pendingWithdrawals ИЛИ сумма pendingBalance по таблицам (fallback)
-  const tablePendingSum = tables.reduce((s, t) => s + parseFloat(t.pending || 0), 0)
-  const effectivePending = parseFloat(pendingWithdrawal) > 0
-    ? pendingWithdrawal
-    : tablePendingSum > 0 ? tablePendingSum.toFixed(2) : '0'
+  // Сумма к выводу ТОЛЬКО из pendingWithdrawals контракта (единственный источник правды)
+  const effectivePending = pendingWithdrawal || '0'
 
   const handleWithdraw = async () => {
     if (!wallet) return
