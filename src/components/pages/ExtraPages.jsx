@@ -152,12 +152,13 @@ export function VaultTab() {
     setTxPending(false)
     if (result.ok) {
       addNotification(`✅ ${t('withdrawn')} ${withdrawableNum.toFixed(2)} USDT!`)
-      // Обновляем баланс pendingWithdrawals после вывода
-      const fresh = await C.getMyPendingWithdrawal(wallet).catch(() => null)
-      if (fresh !== null) {
-        const store = (await import('@/lib/store')).default
-        store.getState().updatePending((Number(fresh) / 1e18).toFixed(2))
-      }
+      // Сразу обнуляем в сторе — деньги выведены
+      useGameStore.getState().updatePending('0')
+      // Через 3 сек перечитываем реальный баланс из контракта
+      setTimeout(async () => {
+        const fresh = await C.getMyPendingWithdrawal(wallet).catch(() => null)
+        if (fresh !== null) useGameStore.getState().updatePending((Number(fresh) / 1e18).toFixed(2))
+      }, 3000)
     } else {
       addNotification(`❌ ${result.error}`)
     }
