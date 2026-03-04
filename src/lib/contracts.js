@@ -304,6 +304,11 @@ export async function getMyPendingWithdrawal(address) {
   return await safeRead('RealEstateMatrix', 'pendingWithdrawals', [address])
 }
 
+/** Реально доступная к выводу сумма (с учётом кулдаунов/блокировок контракта) */
+export async function getWithdrawableAmount(address) {
+  return await safeRead('RealEstateMatrix', 'getWithdrawableAmount', [address])
+}
+
 // ═══════════════════════════════════════════════════
 // ФОНДЫ — балансы и вывод
 // ═══════════════════════════════════════════════════
