@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import useGameStore from '@/lib/store'
 import * as C from '@/lib/contracts'
+import * as DC from '@/lib/diamondContracts'
 import ADDRESSES from '@/contracts/addresses'
 import { TeamsAdmin } from '@/components/pages/ExtraPages'
 import { GEMS as GEMS_DEFAULT, METALS as METALS_DEFAULT, GEM_ECONOMICS as GEM_ECON_DEFAULT, METAL_ECONOMICS as METAL_ECON_DEFAULT } from '@/lib/gameData'
@@ -33,6 +34,7 @@ export default function AdminPanel() {
     { id: 'content', icon: '📢', label: t('content') },
     { id: 'gems', icon: '💎', label: 'Камни' },
     { id: 'metals', icon: '🥇', label: 'Металлы' },
+    { id: 'showcase', icon: '🏪', label: 'Витрина' },
     { id: 'test', icon: '🎮', label: t('test') },
   ]
 
@@ -999,7 +1001,232 @@ export default function AdminPanel() {
               )}
             </div>
           )}
+          {activeSection === 'showcase' && <AdminShowcase wallet={wallet} addNotification={addNotification} setTxPending={setTxPending} txPending={txPending} />}
         </>
+      )}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════
+// AdminShowcase — Управление витриной
+// ═══════════════════════════════════════════════════
+function AdminShowcase({ wallet, addNotification, setTxPending, txPending }) {
+  const [listings, setListings]   = useState([])
+  const [stats, setStats]         = useState(null)
+  const [isAgent, setIsAgent]     = useState(false)
+  const [loading, setLoading]     = useState(true)
+  const [showForm, setShowForm]   = useState(false)
+  const [form, setForm]           = useState({ assetType:0, title:'', description:'', imageURI:'', certURI:'', price:'' })
+  const [confirmId, setConfirmId] = useState(null)
+  const [buyerAddr, setBuyerAddr] = useState('')
+
+  const ASSET_TYPES = ['💎 Камень','🥇 Металл','💍 Ювелирка','📦 Другое']
+
+  const reload = async () => {
+    setLoading(true)
+    const [l, s, agent] = await Promise.all([
+      DC.getShowcaseListings().catch(() => []),
+      DC.getShowcaseStats().catch(() => null),
+      wallet ? DC.checkIsAgent(wallet).catch(() => false) : false,
+    ])
+    setListings(l); setStats(s); setIsAgent(agent); setLoading(false)
+  }
+
+  useEffect(() => { reload() }, [wallet])
+
+  const handleGetLicense = async () => {
+    setTxPending(true)
+    try {
+      await DC.buyAgentLicense()
+      addNotification('✅ Лицензия агента получена!')
+      reload()
+    } catch(e) { addNotification(`❌ ${e.message}`) }
+    setTxPending(false)
+  }
+
+  const handlePublish = async () => {
+    const { assetType, title, description, imageURI, certURI, price } = form
+    if (!title || !price) { addNotification('⚠️ Заполните название и цену'); return }
+    setTxPending(true)
+    try {
+      await DC.listOnShowcase(assetType, title, description, imageURI, certURI, price)
+      addNotification(`✅ «${title}» опубликовано!`)
+      setShowForm(false)
+      setForm({ assetType:0, title:'', description:'', imageURI:'', certURI:'', price:'' })
+      reload()
+    } catch(e) { addNotification(`❌ ${e.message}`) }
+    setTxPending(false)
+  }
+
+  const handleConfirmSale = async () => {
+    if (!buyerAddr) return
+    setTxPending(true)
+    try {
+      await DC.confirmShowcaseSale(confirmId, buyerAddr)
+      addNotification(`✅ Продажа #${confirmId} подтверждена!`)
+      setConfirmId(null); setBuyerAddr(''); reload()
+    } catch(e) { addNotification(`❌ ${e.message}`) }
+    setTxPending(false)
+  }
+
+  const handleCancel = async (id) => {
+    if (!confirm(`Снять объявление #${id}?`)) return
+    setTxPending(true)
+    try {
+      await DC.cancelShowcaseListing(id)
+      addNotification(`✅ Объявление #${id} снято`)
+      reload()
+    } catch(e) { addNotification(`❌ ${e.message}`) }
+    setTxPending(false)
+  }
+
+  const inp = 'w-full p-2 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none placeholder-slate-600'
+
+  return (
+    <div className="px-3 mt-2 space-y-3">
+
+      {/* Статистика */}
+      {stats && (
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label:'Всего', value:stats.total,    color:'text-blue-400'    },
+            { label:'Продаж', value:stats.sales,   color:'text-emerald-400' },
+            { label:'Комиссий', value:`$${parseFloat(stats.commissions||0).toFixed(0)}`, color:'text-gold-400' },
+          ].map(s => (
+            <div key={s.label} className="p-2 rounded-xl glass text-center">
+              <div className={`text-[15px] font-black ${s.color}`}>{s.value}</div>
+              <div className="text-[9px] text-slate-500">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Статус агента */}
+      <div className="p-3 rounded-2xl glass flex items-center justify-between">
+        <div>
+          <div className="text-[11px] font-bold text-slate-300">Агентская лицензия</div>
+          <div className={`text-[10px] mt-0.5 ${isAgent ? 'text-emerald-400 font-bold' : 'text-slate-500'}`}>
+            {isAgent ? '✅ Активна — можно публиковать' : '❌ Нет лицензии'}
+          </div>
+        </div>
+        {!isAgent ? (
+          <button onClick={handleGetLicense} disabled={txPending}
+            className="px-3 py-2 rounded-xl text-[10px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/20 disabled:opacity-50">
+            {txPending ? '⏳' : '🏪 Получить'}
+          </button>
+        ) : (
+          <button onClick={() => setShowForm(v => !v)}
+            className={`px-3 py-2 rounded-xl text-[10px] font-bold border transition-all ${showForm ? 'border-white/10 text-slate-400' : 'bg-gold-400/10 border-gold-400/20 text-gold-400'}`}>
+            {showForm ? '✕ Закрыть' : '+ Добавить'}
+          </button>
+        )}
+      </div>
+
+      {/* Форма добавления */}
+      {showForm && isAgent && (
+        <div className="p-3 rounded-2xl space-y-2" style={{ background:'rgba(255,215,0,0.04)', border:'1px solid rgba(255,215,0,0.15)' }}>
+          <div className="text-[12px] font-black text-gold-400">📝 Новое объявление</div>
+
+          {/* Тип */}
+          <div className="grid grid-cols-2 gap-1">
+            {ASSET_TYPES.map((at, i) => (
+              <button key={i} onClick={() => setForm(f => ({...f, assetType:i}))}
+                className={`py-2 rounded-xl text-[10px] font-bold border transition-all ${form.assetType===i ? 'bg-gold-400/15 border-gold-400/30 text-gold-400' : 'border-white/8 text-slate-500'}`}>
+                {at}
+              </button>
+            ))}
+          </div>
+
+          <input value={form.title} onChange={e => setForm(f=>({...f,title:e.target.value}))}
+            placeholder="Название" className={inp} />
+          <textarea value={form.description} onChange={e => setForm(f=>({...f,description:e.target.value}))}
+            placeholder="Описание — огранка, происхождение, характеристики..."
+            rows={2} className={`${inp} resize-none`} />
+          <input value={form.imageURI} onChange={e => setForm(f=>({...f,imageURI:e.target.value}))}
+            placeholder="Фото (IPFS / URL)" className={inp} />
+          <input value={form.certURI} onChange={e => setForm(f=>({...f,certURI:e.target.value}))}
+            placeholder="Сертификат GIA/GRS (IPFS / URL)" className={inp} />
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 font-bold">$</span>
+            <input type="number" value={form.price} onChange={e => setForm(f=>({...f,price:e.target.value}))}
+              placeholder="Цена USDT" className={`${inp} pl-7`} />
+          </div>
+          <button onClick={handlePublish} disabled={txPending || !form.title || !form.price}
+            className="w-full py-2.5 rounded-xl text-[11px] font-black gold-btn disabled:opacity-40">
+            {txPending ? '⏳ Публикация...' : '🏪 Опубликовать'}
+          </button>
+        </div>
+      )}
+
+      {/* Список объявлений */}
+      <div className="p-3 rounded-2xl glass">
+        <div className="text-[11px] font-bold text-gold-400 mb-2">📋 Активные объявления ({listings.length})</div>
+        {loading ? (
+          <div className="text-center py-4 text-[11px] text-slate-500">⏳ Загрузка...</div>
+        ) : listings.length === 0 ? (
+          <div className="text-center py-6 text-[11px] text-slate-500">Витрина пуста</div>
+        ) : (
+          <div className="space-y-2">
+            {listings.map(l => (
+              <div key={l.id} className="p-2.5 rounded-xl bg-white/5 space-y-1.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] font-bold text-white truncate">#{l.id} {l.title}</div>
+                    <div className="text-[9px] text-slate-500">{ASSET_TYPES[l.assetType]} • {l.seller.slice(0,8)}...{l.seller.slice(-4)}</div>
+                  </div>
+                  <div className="text-[13px] font-black text-gold-400 shrink-0">${parseFloat(l.price).toLocaleString()}</div>
+                </div>
+                {l.description && <div className="text-[9px] text-slate-400 line-clamp-2">{l.description}</div>}
+                <div className="flex gap-1.5">
+                  {l.imageURI && (
+                    <a href={l.imageURI} target="_blank" rel="noreferrer"
+                      className="px-2 py-1 rounded-lg text-[9px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                      🖼 Фото
+                    </a>
+                  )}
+                  {l.certURI && (
+                    <a href={l.certURI} target="_blank" rel="noreferrer"
+                      className="px-2 py-1 rounded-lg text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      ✅ Сертификат
+                    </a>
+                  )}
+                  <div className="flex-1" />
+                  <button onClick={() => { setConfirmId(l.id); setBuyerAddr('') }}
+                    className="px-2 py-1 rounded-lg text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    ✅ Продать
+                  </button>
+                  <button onClick={() => handleCancel(l.id)} disabled={txPending}
+                    className="px-2 py-1 rounded-lg text-[9px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 disabled:opacity-50">
+                    ✕ Снять
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Модалка подтверждения продажи */}
+      {confirmId !== null && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setConfirmId(null)}>
+          <div className="w-full max-w-sm p-4 rounded-2xl glass space-y-3"
+            onClick={e => e.stopPropagation()}>
+            <div className="text-[13px] font-black text-white text-center">✅ Подтвердить продажу #{confirmId}</div>
+            <input value={buyerAddr} onChange={e => setBuyerAddr(e.target.value)}
+              placeholder="Адрес кошелька покупателя (0x...)"
+              className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none font-mono placeholder-slate-600" />
+            <button onClick={handleConfirmSale} disabled={txPending || !buyerAddr}
+              className="w-full py-2.5 rounded-xl text-[11px] font-black gold-btn disabled:opacity-40">
+              {txPending ? '⏳' : '✅ Подтвердить'}
+            </button>
+            <button onClick={() => setConfirmId(null)}
+              className="w-full py-2 rounded-xl text-[10px] text-slate-500 border border-white/8">
+              Отмена
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
