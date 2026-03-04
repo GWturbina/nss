@@ -462,7 +462,7 @@
     "shape_marquise": "Marquise",
     "shape_pear": "Pear",
     "shape_heart": "Heart",
-    "shape_asscher": "Asscher",
+    "shape_asscher": "Triangle",
     "shape_trillion": "Trillion",
       "gcWhiteDiamond": "White Diamond",
     "gcFancyDiamond": "Fancy Diamond",
@@ -496,6 +496,6 @@
     "shape_marquise": "Marquise",
     "shape_pear": "Pear",
     "shape_heart": "Heart",
-    "shape_asscher": "Asscher",
+    "shape_asscher": "Triangle",
     "shape_trillion": "Trillion"
 }
