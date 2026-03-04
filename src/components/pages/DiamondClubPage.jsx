@@ -806,182 +806,401 @@ function InsuranceSection() {
 // ═════════════════════════════════════════════════════════
 function ShowcaseSection() {
   const { wallet, addNotification, setTxPending, txPending } = useGameStore()
-  const [listings, setListings] = useState([])
-  const [stats, setStats] = useState(null)
-  const [isAgent, setIsAgent] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [newListing, setNewListing] = useState({ assetType: 0, title: '', description: '', imageURI: '', certURI: '', price: '' })
-  const [confirmModal, setConfirmModal] = useState(null)
-  const [buyerAddress, setBuyerAddress] = useState('')
+  const [listings, setListings]       = useState([])
+  const [stats, setStats]             = useState(null)
+  const [isAgent, setIsAgent]         = useState(false)
+  const [loading, setLoading]         = useState(true)
+  const [filter, setFilter]           = useState('all')   // all | gem | metal | jewelry | other
+  const [selectedListing, setSelectedListing] = useState(null)  // для детального просмотра
+  const [showCreateForm, setShowCreateForm]   = useState(false)
+  const [newListing, setNewListing]   = useState({ assetType:0, title:'', description:'', imageURI:'', certURI:'', price:'' })
+  const [confirmModal, setConfirmModal]       = useState(null)
+  const [buyerAddress, setBuyerAddress]       = useState('')
+
+  const ASSET_TYPES = [
+    { id:0, label:'💎 Камень',   color:'text-blue-400',    bg:'bg-blue-500/10',   border:'border-blue-500/20'   },
+    { id:1, label:'🥇 Металл',   color:'text-yellow-400',  bg:'bg-yellow-500/10', border:'border-yellow-500/20' },
+    { id:2, label:'💍 Ювелирка', color:'text-pink-400',    bg:'bg-pink-500/10',   border:'border-pink-500/20'   },
+    { id:3, label:'📦 Другое',   color:'text-slate-400',   bg:'bg-slate-500/10',  border:'border-slate-500/20'  },
+  ]
+  const FILTER_TABS = [
+    { id:'all',     label:'Все' },
+    { id:'0',       label:'💎 Камни' },
+    { id:'1',       label:'🥇 Металл' },
+    { id:'2',       label:'💍 Ювелирка' },
+    { id:'3',       label:'📦 Другое' },
+  ]
 
   const reload = useCallback(async () => {
-    if (!wallet) return
     setLoading(true)
     const [l, s, agent] = await Promise.all([
       DC.getShowcaseListings().catch(() => []),
       DC.getShowcaseStats().catch(() => null),
-      DC.checkIsAgent(wallet).catch(() => false),
+      wallet ? DC.checkIsAgent(wallet).catch(() => false) : false,
     ])
     setListings(l); setStats(s); setIsAgent(agent); setLoading(false)
   }, [wallet])
 
   useEffect(() => { reload() }, [reload])
 
+  const filtered = filter === 'all' ? listings : listings.filter(l => String(l.assetType) === filter)
+
   const handleBuyLicense = async () => {
     setTxPending(true)
-    const result = await safeCall(() => DC.buyAgentLicense())
+    const r = await safeCall(() => DC.buyAgentLicense())
     setTxPending(false)
-    if (result.ok) { addNotification('✅ 🏪 Лицензия получена!'); reload() }
-    else addNotification(`❌ ${result.error}`)
+    if (r.ok) { addNotification('✅ Лицензия агента получена!'); reload() }
+    else addNotification(`❌ ${r.error}`)
   }
 
   const handleCreateListing = async () => {
     const { assetType, title, description, imageURI, certURI, price } = newListing
     if (!title || !price) return
     setTxPending(true)
-    const result = await safeCall(() => DC.listOnShowcase(assetType, title, description, imageURI, certURI, price))
+    const r = await safeCall(() => DC.listOnShowcase(assetType, title, description, imageURI, certURI, price))
     setTxPending(false)
-    if (result.ok) {
-      addNotification(`✅ 🏪 «${title}» опубликовано!`)
-      setShowCreateForm(false); setNewListing({ assetType:0, title:'', description:'', imageURI:'', certURI:'', price:'' }); reload()
-    } else addNotification(`❌ ${result.error}`)
+    if (r.ok) {
+      addNotification(`✅ «${title}» опубликовано на витрине!`)
+      setShowCreateForm(false)
+      setNewListing({ assetType:0, title:'', description:'', imageURI:'', certURI:'', price:'' })
+      reload()
+    } else addNotification(`❌ ${r.error}`)
   }
 
   const handleConfirmSale = async () => {
     if (!confirmModal || !buyerAddress) return
     setTxPending(true)
-    const result = await safeCall(() => DC.confirmShowcaseSale(confirmModal.id, buyerAddress))
+    const r = await safeCall(() => DC.confirmShowcaseSale(confirmModal.id, buyerAddress))
     setTxPending(false)
-    if (result.ok) { addNotification(`✅ Продажа #${confirmModal.id} подтверждена!`); setConfirmModal(null); setBuyerAddress(''); reload() }
-    else addNotification(`❌ ${result.error}`)
+    if (r.ok) { addNotification(`✅ Продажа #${confirmModal.id} подтверждена!`); setConfirmModal(null); setBuyerAddress(''); reload() }
+    else addNotification(`❌ ${r.error}`)
   }
 
   const handleCancel = async (id) => {
     setTxPending(true)
-    const result = await safeCall(() => DC.cancelShowcaseListing(id))
+    const r = await safeCall(() => DC.cancelShowcaseListing(id))
     setTxPending(false)
-    if (result.ok) { addNotification('✅ Листинг отменён'); reload() }
-    else addNotification(`❌ ${result.error}`)
+    if (r.ok) { addNotification('✅ Объявление снято'); reload() }
+    else addNotification(`❌ ${r.error}`)
   }
 
   if (loading) return <Loading />
-  const ASSET_TYPES = ['💎 Камень', '🥇 Металл', '💍 Ювелирка', '📦 Другое']
 
   return (
-    <div className="px-3 mt-2 space-y-2">
+    <div className="px-3 mt-2 space-y-3">
+
+      {/* ── Статистика ── */}
       {stats && (
         <div className="grid grid-cols-3 gap-2">
-          <StatCard label="Всего" value={stats.total} color="text-blue-400" />
-          <StatCard label="Продаж" value={stats.sales} color="text-emerald-400" />
-          <StatCard label="Комиссии" value={`$${parseFloat(stats.commissions).toFixed(0)}`} color="text-gold-400" />
+          {[
+            { label:'Объявлений', value: stats.total,  icon:'🏪', color:'text-blue-400'    },
+            { label:'Продаж',     value: stats.sales,  icon:'✅', color:'text-emerald-400' },
+            { label:'Комиссий',   value:`$${parseFloat(stats.commissions||0).toFixed(0)}`, icon:'💰', color:'text-gold-400' },
+          ].map(s => (
+            <div key={s.label} className="p-2.5 rounded-2xl text-center"
+              style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)' }}>
+              <div className="text-lg">{s.icon}</div>
+              <div className={`text-[15px] font-black ${s.color}`}>{s.value}</div>
+              <div className="text-[9px] text-slate-500 mt-0.5">{s.label}</div>
+            </div>
+          ))}
         </div>
       )}
 
-      <div className="p-3 rounded-2xl glass">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-[12px] font-bold text-purple-400">🏪 Статус агента</div>
-            <div className={`text-[11px] font-bold ${isAgent ? 'text-emerald-400' : 'text-slate-500'}`}>
-              {isAgent ? '✅ Лицензия активна' : '❌ Нет лицензии'}</div>
+      {/* ── Статус агента ── */}
+      <div className="p-3 rounded-2xl flex items-center justify-between"
+        style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)' }}>
+        <div>
+          <div className="text-[11px] font-bold text-slate-300">Статус агента</div>
+          <div className={`text-[10px] font-bold mt-0.5 ${isAgent ? 'text-emerald-400' : 'text-slate-500'}`}>
+            {isAgent ? '✅ Лицензия активна — можно публиковать' : '❌ Нет лицензии'}
           </div>
-          {!isAgent ? (
-            <button onClick={handleBuyLicense} disabled={txPending}
-              className="px-3 py-2 rounded-xl text-[10px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/20">
-              {txPending ? '⏳' : '🏪 Купить лицензию'}</button>
-          ) : (
-            <button onClick={() => setShowCreateForm(!showCreateForm)}
-              className="px-3 py-2 rounded-xl text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-              {showCreateForm ? '✕ Скрыть' : '+ Создать'}</button>
-          )}
         </div>
-      </div>
-
-      {/* Форма создания */}
-      {showCreateForm && isAgent && (
-        <div className="p-3 rounded-2xl glass space-y-2">
-          <div className="text-[12px] font-bold text-gold-400 mb-1">📝 Новое объявление</div>
-          <div className="flex gap-1">
-            {ASSET_TYPES.map((at, i) => (
-              <button key={i} onClick={() => setNewListing(l => ({...l, assetType: i}))}
-                className={`flex-1 py-1.5 rounded-lg text-[9px] font-bold border ${
-                  newListing.assetType===i ? 'bg-gold-400/15 border-gold-400/30 text-gold-400' : 'border-white/8 text-slate-500'
-                }`}>{at}</button>
-            ))}
-          </div>
-          <input value={newListing.title} onChange={e => setNewListing(l => ({...l, title: e.target.value}))}
-            placeholder="Название" className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none" />
-          <textarea value={newListing.description} onChange={e => setNewListing(l => ({...l, description: e.target.value}))}
-            placeholder="Описание" rows={2}
-            className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none resize-none" />
-          <input value={newListing.imageURI} onChange={e => setNewListing(l => ({...l, imageURI: e.target.value}))}
-            placeholder="Фото (IPFS/URL)" className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none" />
-          <input value={newListing.certURI} onChange={e => setNewListing(l => ({...l, certURI: e.target.value}))}
-            placeholder="Сертификат (IPFS/URL)" className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none" />
-          <input type="number" value={newListing.price} onChange={e => setNewListing(l => ({...l, price: e.target.value}))}
-            placeholder="Цена (USDT)" className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none" />
-          <button onClick={handleCreateListing} disabled={txPending || !newListing.title || !newListing.price}
-            className="w-full py-2.5 rounded-xl text-xs font-bold gold-btn"
-            style={{ opacity: txPending?0.5:1 }}>
-            {txPending ? '⏳' : '🏪 Опубликовать'}</button>
-        </div>
-      )}
-
-      {/* Листинги */}
-      <div className="p-3 rounded-2xl glass">
-        <div className="text-[12px] font-bold text-gold-400 mb-2">📋 Объявления ({listings.length})</div>
-        {listings.length === 0 ? (
-          <div className="text-[11px] text-slate-500 text-center py-4">Нет активных объявлений</div>
+        {!isAgent ? (
+          <button onClick={handleBuyLicense} disabled={txPending}
+            className="px-3 py-2 rounded-xl text-[10px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/20 disabled:opacity-50">
+            {txPending ? '⏳' : '🏪 Купить'}
+          </button>
         ) : (
-          <div className="space-y-1.5">
-            {listings.map(l => {
-              const isMine = l.seller.toLowerCase() === wallet?.toLowerCase()
-              return (
-                <div key={l.id} className="p-2.5 rounded-xl bg-white/5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="text-[11px] font-bold text-white">{l.title || `#${l.id}`}</div>
-                      <div className="text-[9px] text-slate-500">{ASSET_TYPES[l.assetType]||'📦'} • {shortAddress(l.seller)}</div>
-                    </div>
-                    <div className="text-[12px] font-black text-gold-400">${parseFloat(l.price).toFixed(2)}</div>
-                  </div>
-                  {l.description && <div className="text-[9px] text-slate-400 mt-1 line-clamp-2">{l.description}</div>}
-                  {isMine && (
-                    <div className="flex gap-1 mt-2">
-                      <button onClick={() => { setConfirmModal(l); setBuyerAddress('') }}
-                        className="px-2 py-1 rounded-lg text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                        ✅ Подтвердить продажу</button>
-                      <button onClick={() => handleCancel(l.id)} disabled={txPending}
-                        className="px-2 py-1 rounded-lg text-[9px] font-bold bg-red-500/15 text-red-400 border border-red-500/20">
-                        ✕ Отменить</button>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+          <button onClick={() => setShowCreateForm(v => !v)}
+            className={`px-3 py-2 rounded-xl text-[10px] font-bold border transition-all ${
+              showCreateForm
+                ? 'bg-white/5 border-white/10 text-slate-400'
+                : 'bg-gold-400/10 border-gold-400/20 text-gold-400'
+            }`}>
+            {showCreateForm ? '✕ Закрыть' : '+ Разместить'}
+          </button>
         )}
       </div>
 
-      {/* Confirm Sale Modal */}
+      {/* ── Форма создания объявления ── */}
+      {showCreateForm && isAgent && (
+        <div className="p-3 rounded-2xl space-y-2.5"
+          style={{ background:'rgba(255,215,0,0.04)', border:'1px solid rgba(255,215,0,0.15)' }}>
+          <div className="text-[12px] font-black text-gold-400">📝 Новое объявление</div>
+
+          {/* Тип актива */}
+          <div className="grid grid-cols-2 gap-1.5">
+            {ASSET_TYPES.map(at => (
+              <button key={at.id} onClick={() => setNewListing(l => ({...l, assetType: at.id}))}
+                className={`py-2 rounded-xl text-[10px] font-bold border transition-all ${
+                  newListing.assetType === at.id
+                    ? `${at.bg} ${at.border} ${at.color}`
+                    : 'border-white/8 text-slate-500'
+                }`}>
+                {at.label}
+              </button>
+            ))}
+          </div>
+
+          <input value={newListing.title}
+            onChange={e => setNewListing(l => ({...l, title: e.target.value}))}
+            placeholder="Название (напр. Рубин 1.2 карат, Pigeon Blood)"
+            className="w-full p-2.5 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none placeholder-slate-600" />
+
+          <textarea value={newListing.description}
+            onChange={e => setNewListing(l => ({...l, description: e.target.value}))}
+            placeholder="Описание — огранка, происхождение, особенности..."
+            rows={2}
+            className="w-full p-2.5 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none resize-none placeholder-slate-600" />
+
+          <input value={newListing.imageURI}
+            onChange={e => setNewListing(l => ({...l, imageURI: e.target.value}))}
+            placeholder="Ссылка на фото (IPFS / URL)"
+            className="w-full p-2.5 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none placeholder-slate-600" />
+
+          <input value={newListing.certURI}
+            onChange={e => setNewListing(l => ({...l, certURI: e.target.value}))}
+            placeholder="Ссылка на сертификат GIA / GRS (IPFS / URL)"
+            className="w-full p-2.5 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none placeholder-slate-600" />
+
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 font-bold">$</span>
+            <input type="number" value={newListing.price}
+              onChange={e => setNewListing(l => ({...l, price: e.target.value}))}
+              placeholder="Цена в USDT"
+              className="w-full p-2.5 pl-7 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none placeholder-slate-600" />
+          </div>
+
+          <button onClick={handleCreateListing}
+            disabled={txPending || !newListing.title || !newListing.price}
+            className="w-full py-3 rounded-xl text-[12px] font-black gold-btn disabled:opacity-40">
+            {txPending ? '⏳ Публикация...' : '🏪 Опубликовать на витрине'}
+          </button>
+        </div>
+      )}
+
+      {/* ── Фильтры ── */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+        {FILTER_TABS.map(f => (
+          <button key={f.id} onClick={() => setFilter(f.id)}
+            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap border transition-all flex-shrink-0 ${
+              filter === f.id
+                ? 'bg-gold-400/15 border-gold-400/30 text-gold-400'
+                : 'border-white/8 text-slate-500 hover:border-white/15'
+            }`}>
+            {f.label}
+            {f.id !== 'all' && (
+              <span className="ml-1 opacity-60">
+                ({listings.filter(l => String(l.assetType) === f.id).length})
+              </span>
+            )}
+            {f.id === 'all' && <span className="ml-1 opacity-60">({listings.length})</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Карточки объявлений ── */}
+      {filtered.length === 0 ? (
+        <div className="py-12 text-center rounded-2xl"
+          style={{ background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(255,255,255,0.08)' }}>
+          <div className="text-4xl mb-3">🏪</div>
+          <div className="text-[13px] font-bold text-slate-400">Витрина пуста</div>
+          <div className="text-[11px] text-slate-600 mt-1">
+            {isAgent ? 'Разместите первый актив' : 'Получите лицензию агента чтобы публиковать'}
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          {filtered.map(l => {
+            const isMine = wallet && l.seller.toLowerCase() === wallet.toLowerCase()
+            const at = ASSET_TYPES[l.assetType] || ASSET_TYPES[3]
+            const hasImage = l.imageURI && (l.imageURI.startsWith('http') || l.imageURI.startsWith('ipfs'))
+
+            return (
+              <div key={l.id}
+                onClick={() => setSelectedListing(l)}
+                className="rounded-2xl overflow-hidden cursor-pointer transition-all active:scale-[0.97]"
+                style={{ background:'rgba(255,255,255,0.04)', border: isMine ? '1px solid rgba(255,215,0,0.25)' : '1px solid rgba(255,255,255,0.07)' }}>
+
+                {/* Фото / заглушка */}
+                <div className="relative w-full aspect-square overflow-hidden"
+                  style={{ background:'rgba(0,0,0,0.4)' }}>
+                  {hasImage ? (
+                    <img
+                      src={l.imageURI.startsWith('ipfs://')
+                        ? `https://ipfs.io/ipfs/${l.imageURI.slice(7)}`
+                        : l.imageURI}
+                      alt={l.title}
+                      className="w-full h-full object-cover"
+                      onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex' }} />
+                  ) : null}
+                  {/* Заглушка */}
+                  <div className="w-full h-full flex items-center justify-center text-4xl"
+                    style={{ display: hasImage ? 'none' : 'flex' }}>
+                    {at.id === 0 ? '💎' : at.id === 1 ? '🥇' : at.id === 2 ? '💍' : '📦'}
+                  </div>
+
+                  {/* Тип актива — бейдж */}
+                  <div className={`absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-lg text-[8px] font-bold ${at.bg} ${at.color} ${at.border} border backdrop-blur-sm`}>
+                    {at.label}
+                  </div>
+
+                  {/* Мой лот — бейдж */}
+                  {isMine && (
+                    <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-lg text-[8px] font-bold bg-gold-400/20 text-gold-400 border border-gold-400/30 backdrop-blur-sm">
+                      МОЙ
+                    </div>
+                  )}
+                </div>
+
+                {/* Инфо */}
+                <div className="p-2.5">
+                  <div className="text-[11px] font-bold text-white leading-tight line-clamp-1">{l.title || `Лот #${l.id}`}</div>
+                  {l.description && (
+                    <div className="text-[9px] text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">{l.description}</div>
+                  )}
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="text-[14px] font-black text-gold-400">${parseFloat(l.price).toLocaleString()}</div>
+                    <div className="text-[9px] text-slate-600">{shortAddress(l.seller)}</div>
+                  </div>
+                  {l.certURI && (
+                    <div className="mt-1.5 text-[9px] text-emerald-400 flex items-center gap-1">
+                      <span>✅</span> Сертификат
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ── Детальный просмотр (модалка) ── */}
+      {selectedListing && (() => {
+        const l = selectedListing
+        const isMine = wallet && l.seller.toLowerCase() === wallet.toLowerCase()
+        const at = ASSET_TYPES[l.assetType] || ASSET_TYPES[3]
+        const hasImage = l.imageURI && (l.imageURI.startsWith('http') || l.imageURI.startsWith('ipfs'))
+        const imgSrc = hasImage
+          ? (l.imageURI.startsWith('ipfs://') ? `https://ipfs.io/ipfs/${l.imageURI.slice(7)}` : l.imageURI)
+          : null
+
+        return (
+          <div className="fixed inset-0 bg-black/85 z-50 flex items-end justify-center p-0"
+            onClick={() => setSelectedListing(null)}>
+            <div className="w-full max-w-sm rounded-t-3xl overflow-hidden"
+              style={{ background:'#12122a', border:'1px solid rgba(255,255,255,0.1)' }}
+              onClick={e => e.stopPropagation()}>
+
+              {/* Фото */}
+              <div className="relative w-full" style={{ aspectRatio:'16/10', background:'rgba(0,0,0,0.6)' }}>
+                {imgSrc ? (
+                  <img src={imgSrc} alt={l.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-6xl opacity-50">
+                    {at.id === 0 ? '💎' : at.id === 1 ? '🥇' : at.id === 2 ? '💍' : '📦'}
+                  </div>
+                )}
+                {/* Закрыть */}
+                <button onClick={() => setSelectedListing(null)}
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 text-white text-lg flex items-center justify-center backdrop-blur-sm">
+                  ✕
+                </button>
+                <div className={`absolute bottom-3 left-3 px-2 py-1 rounded-xl text-[10px] font-bold ${at.bg} ${at.color} ${at.border} border backdrop-blur-sm`}>
+                  {at.label}
+                </div>
+              </div>
+
+              {/* Детали */}
+              <div className="p-4 space-y-3">
+                <div>
+                  <div className="text-[16px] font-black text-white">{l.title}</div>
+                  <div className="text-[11px] text-slate-400 mt-1 leading-relaxed">{l.description}</div>
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-t border-white/8">
+                  <div>
+                    <div className="text-[10px] text-slate-500">Цена</div>
+                    <div className="text-[22px] font-black text-gold-400">${parseFloat(l.price).toLocaleString()} <span className="text-[12px] text-slate-500">USDT</span></div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-slate-500">Продавец</div>
+                    <div className="text-[11px] text-slate-300 font-mono">{shortAddress(l.seller)}</div>
+                    {isMine && <div className="text-[9px] text-gold-400 font-bold">— это вы</div>}
+                  </div>
+                </div>
+
+                {l.certURI && (
+                  <a href={l.certURI.startsWith('ipfs://') ? `https://ipfs.io/ipfs/${l.certURI.slice(7)}` : l.certURI}
+                    target="_blank" rel="noreferrer"
+                    className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold"
+                    onClick={e => e.stopPropagation()}>
+                    ✅ <span>Просмотреть сертификат</span>
+                    <span className="ml-auto text-[10px] opacity-60">↗</span>
+                  </a>
+                )}
+
+                {/* Кнопки */}
+                {isMine ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => { setSelectedListing(null); setConfirmModal(l); setBuyerAddress('') }}
+                      className="py-3 rounded-xl text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                      ✅ Продажа
+                    </button>
+                    <button onClick={() => { setSelectedListing(null); handleCancel(l.id) }}
+                      disabled={txPending}
+                      className="py-3 rounded-xl text-[11px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 disabled:opacity-50">
+                      ✕ Снять
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-blue-500/8 border border-blue-500/15 text-[10px] text-slate-400 text-center leading-relaxed">
+                    📩 Для покупки свяжитесь с продавцом через<br/>
+                    <span className="text-blue-400 font-bold">PrivateMailbox</span> или агента
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── Модалка подтверждения продажи ── */}
       {confirmModal && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setConfirmModal(null)}>
-          <div className="w-full max-w-sm p-4 rounded-2xl glass" onClick={e => e.stopPropagation()}
-            style={{ background: 'var(--bg-card, #1e1e3a)' }}>
-            <div className="text-center mb-3">
-              <div className="text-3xl mb-2">✅</div>
-              <div className="text-[14px] font-black text-white">Подтверждение продажи</div>
-              <div className="text-[11px] text-slate-500">#{confirmModal.id} — {confirmModal.title}</div>
+        <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4"
+          onClick={() => setConfirmModal(null)}>
+          <div className="w-full max-w-sm p-5 rounded-3xl space-y-3"
+            style={{ background:'#12122a', border:'1px solid rgba(255,215,0,0.2)' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="text-center">
+              <div className="text-4xl mb-2">✅</div>
+              <div className="text-[15px] font-black text-white">Подтверждение продажи</div>
+              <div className="text-[11px] text-slate-500 mt-1">«{confirmModal.title}» — <span className="text-gold-400">${parseFloat(confirmModal.price).toLocaleString()}</span></div>
             </div>
             <input value={buyerAddress} onChange={e => setBuyerAddress(e.target.value)}
-              placeholder="Адрес покупателя (0x...)"
-              className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none mb-3" />
-            <button onClick={handleConfirmSale} disabled={txPending || !buyerAddress}
-              className="w-full py-3 rounded-xl text-sm font-bold gold-btn"
-              style={{ opacity: (!buyerAddress||txPending)?0.5:1 }}>
-              {txPending ? '⏳' : '✅ Подтвердить'}</button>
+              placeholder="Адрес кошелька покупателя (0x...)"
+              className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none font-mono placeholder-slate-600" />
+            <button onClick={handleConfirmSale}
+              disabled={txPending || !buyerAddress}
+              className="w-full py-3 rounded-xl text-[12px] font-black gold-btn disabled:opacity-40">
+              {txPending ? '⏳ Подтверждение...' : '✅ Подтвердить продажу'}
+            </button>
             <button onClick={() => setConfirmModal(null)}
-              className="w-full mt-2 py-2 rounded-xl text-[11px] font-bold text-slate-500 border border-white/8">Отмена</button>
+              className="w-full py-2.5 rounded-xl text-[11px] font-bold text-slate-500 border border-white/8">
+              Отмена
+            </button>
           </div>
         </div>
       )}
