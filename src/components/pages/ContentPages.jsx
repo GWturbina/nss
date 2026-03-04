@@ -259,9 +259,13 @@ export function StakingTab() {
     setTxPending(false)
     if (result.ok) {
       addNotification(`✅ ${t('withdrawn')} ${withdrawableNum.toFixed(2)} USDT!`)
-      // Сразу обнуляем в сторе — деньги выведены
-      useGameStore.getState().updatePending('0')
-      // Через 3 сек перечитываем реальный баланс и таблицы из контракта
+      // Сразу обнуляем оба источника суммы к выводу
+      const store = useGameStore.getState()
+      store.updatePending('0')
+      // Обнуляем pending в каждой таблице напрямую (уже обработанный формат)
+      const zeroed = (store.tables || []).map(t => t ? { ...t, pending: '0.00' } : t)
+      useGameStore.setState({ tables: zeroed })
+      // Через 3 сек перечитываем реальные данные из контракта
       setTimeout(async () => {
         const [fresh, freshTables] = await Promise.all([
           C.getMyPendingWithdrawal(wallet).catch(() => null),
