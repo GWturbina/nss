@@ -108,9 +108,9 @@ export const GEMS = [
     img:'peridot.png',       desc:'Яркий зелёный перидот. Редкий и красивый.',                  active:true },
   // === СРЕДНИЕ ($800-$3200) ===
   { id:5, name:'Аметист',   section:'gems', category:'mid',     price:800,  supplierCost:400,  carat:'5.3', origin:'Бразилия',  grade:'Deep Purple',    cert:'GIA', stakingAPR:16, svgType:'amethyst',
-    img:'amethyst.png',      desc:'Глубокий фиолетовый. Королевский камень.',                   active:true },
+    img:'amethyst.png',      desc:'Глубокий фиолетовый. Королевский камень.',                   active:false },
   { id:6, name:'Аквамарин', section:'gems', category:'mid',     price:1500, supplierCost:750,  carat:'4.2', origin:'Бразилия',  grade:'Santa Maria AA', cert:'GIA', stakingAPR:18, svgType:'aquamarine',
-    img:'aquamarine.png',    desc:'Редкий Santa Maria. Цвет океана.',                           active:true },
+    img:'aquamarine.png',    desc:'Редкий Santa Maria. Цвет океана.',                           active:false },
   { id:7, name:'Рубин',     section:'gems', category:'mid',     price:3200, supplierCost:1600, carat:'1.2', origin:'Мьянма',    grade:'Pigeon Blood',   cert:'GIA', stakingAPR:20, svgType:'ruby',
     img:'ruby.png',          desc:'Легендарный Pigeon Blood. Король камней.',                   active:true },
   // === ПРЕМИУМ ($4500+) ===
@@ -119,7 +119,7 @@ export const GEMS = [
   { id:9, name:'Изумруд',   section:'gems', category:'premium', price:5800, supplierCost:2900, carat:'2.1', origin:'Колумбия',  grade:'Vivid Green',    cert:'GRS', stakingAPR:24, svgType:'emerald',
     img:'emerald.png',       desc:'Колумбийский Vivid. Самый ценный зелёный камень.',           active:true },
   { id:10,name:'Танзанит',  section:'gems', category:'premium', price:6200, supplierCost:3100, carat:'3.0', origin:'Танзания',  grade:'AAA Vivid',      cert:'GRS', stakingAPR:24, svgType:'tanzanite',
-    img:'tanzanite.png',     desc:'Исчезающий камень. Добывается только в одном месте на Земле.',active:true },
+    img:'tanzanite.png',     desc:'Исчезающий камень. Добывается только в одном месте на Земле.',active:false },
 ];
 
 // ═══════════════════════════════════════════════════
