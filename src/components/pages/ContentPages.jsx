@@ -247,25 +247,14 @@ export function StakingTab() {
 
   const handleWithdraw = async () => {
     if (!wallet) return
-    // Проверяем реально доступную сумму
-    const withdrawable = await C.getWithdrawableAmount(wallet).catch(() => null)
-    const withdrawableNum = withdrawable ? Number(withdrawable) / 1e18 : 0
-    if (withdrawableNum <= 0) {
-      addNotification(`⚠️ Нет средств для вывода или активен кулдаун`)
-      return
-    }
     setTxPending(true)
     const result = await C.safeCall(() => C.withdrawFromMatrix())
     setTxPending(false)
     if (result.ok) {
-      addNotification(`✅ ${t('withdrawn')} ${withdrawableNum.toFixed(2)} USDT!`)
-      // Сразу обнуляем оба источника суммы к выводу
-      const store = useGameStore.getState()
-      store.updatePending('0')
-      // Обнуляем pending в каждой таблице напрямую (уже обработанный формат)
-      const zeroed = (store.tables || []).map(t => t ? { ...t, pending: '0.00' } : t)
+      addNotification(`✅ ${t('withdrawn')} ${effectivePending} USDT!`)
+      useGameStore.getState().updatePending('0')
+      const zeroed = (useGameStore.getState().tables || []).map(t => t ? { ...t, pending: '0.00' } : t)
       useGameStore.setState({ tables: zeroed })
-      // Через 3 сек перечитываем реальные данные из контракта
       setTimeout(async () => {
         const [fresh, freshTables] = await Promise.all([
           C.getMyPendingWithdrawal(wallet).catch(() => null),
