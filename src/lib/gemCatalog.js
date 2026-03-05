@@ -20,8 +20,8 @@ export const SHAPES = [
   { id: 'emerald',  name: 'Эмеральд',    nameEn: 'Emerald',  nameUk: 'Емеральд',  img: 'emerald.png'  },
   { id: 'pear',     name: 'Груша',       nameEn: 'Pear',     nameUk: 'Груша',     img: 'ruby.png'     },
   { id: 'heart',    name: 'Сердце',      nameEn: 'Heart',    nameUk: 'Серце',     img: 'sapphire.png' },
-  { id: 'trillion', name: 'Треугольник', nameEn: 'Triangle', nameUk: 'Трикутник', img: 'emerald.png' },
-  { id: 'radiant',  name: 'Радиант',     nameEn: 'Radiant',  nameUk: 'Радіант',   img: 'topaz.png'    },
+  { id: 'trillion', name: 'Треугольник', nameEn: 'Triangle', nameUk: 'Трикутник', img: 'Triangle.png' },
+  { id: 'radiant',  name: 'Радиант',     nameEn: 'Radiant',  nameUk: 'Радіант',   img: 'amethyst.png'  },
 ]
 
 export const CLARITIES = [
