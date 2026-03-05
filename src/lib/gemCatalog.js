@@ -17,7 +17,7 @@ export const SHAPES = [
   { id: 'princess', name: 'Принцесса',   nameEn: 'Princess', nameUk: 'Принцеса',  img: 'citrine.png'  },
   { id: 'cushion',  name: 'Кушон',       nameEn: 'Cushion',  nameUk: 'Кушон',     img: 'garnet.png'   },
   { id: 'oval',     name: 'Овал',        nameEn: 'Oval',     nameUk: 'Овал',      img: 'peridot.png'  },
-  { id: 'emerald',  name: 'Эмеральд',    nameEn: 'Emerald',  nameUk: 'Емеральд',  img: 'emeral.png'  },
+  { id: 'emerald',  name: 'Эмеральд',    nameEn: 'Emerald',  nameUk: 'Емеральд',  img: 'amethyst.png'  },
   { id: 'pear',     name: 'Груша',       nameEn: 'Pear',     nameUk: 'Груша',     img: 'ruby.png'     },
   { id: 'heart',    name: 'Сердце',      nameEn: 'Heart',    nameUk: 'Серце',     img: 'sapphire.png' },
   { id: 'asscher',  name: 'Треугольник', nameEn: 'Triangle', nameUk: 'Трикутник', img: 'emerald.png' },
