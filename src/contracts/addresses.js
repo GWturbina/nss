@@ -1,12 +1,11 @@
 /**
  * Адреса контрактов NSS v2.5 на opBNB
  * ═══════════════════════════════════════
- * Обновлено: 03.03.2026
+ * Обновлено: 09.03.2026
  */
 const ADDRESSES = {
   // ═══ Внешние токены ═══
   USDT: '0x9e5AAC1Ba1a2e6aEd6b32689DFcF62A509Ca96f3', // opBNB Mainnet USDT
-
   // ═══ NSS Core (13 контрактов) ═══
   CGTToken:          '0x56F5c29096BB7859e52086118aed31Fe08Fd6659',
   NSTToken:          '0xE9a2758F4BB29C4869d3Eee8fB9c9b176Fc4816A',
@@ -21,13 +20,11 @@ const ADDRESSES = {
   SafeVault:         '0x3263652D9D1f47F3bC211A7ecD1f5DEeE632Ce3f',
   AICredits:         '0xE208dc14A5033Bf30047edA0b7b54Cb87836318D',
   P2PEscrow:         '0xC0DA8bFEA02B034260939ccF5fe8cce55486e62c',
-
   // ═══ GlobalWay ═══
   GlobalWay:         '0xe8e2af46AEEec1B51B335f10C5912620B1a2707F',
   GlobalWayBridge:   '0x4489851e530924eB25e684E6b97c7C47364780F5',
   MatrixRegistry:    '0xD62945edFF7605dFc77A4bF607c96Da72E03cd0C',
   GWTToken:          '0x933B0Cb1f43170f3F0fcf082572CC931D6e93b5F',
-
   // ═══ Diamond Club v10.2 (deployed 03.03.2026) ═══
   TrustScore:        '0xE56B5cC834dF467D5deE8B69E3C4380F261e94c9',
   PrivateMailbox:    '0xb251919Fa79dA48b060f57D5f0A0ECD1291e37A5',
@@ -37,9 +34,15 @@ const ADDRESSES = {
   GemVaultV2:        '0xb79Fa026cE35af801FA7B369907030e911B7c53C',
   ShowcaseMarket:    '0xc5ED131e21ceEdeD20Fd131F84E49cAc4d229f97',
   DiamondP2P:        '0xb22DCBd3B76Bf2E071CB172Ca00d885cf7D559DA',
-
+  // ═══ DCT Diamond Club v3.2 (deployed 09.03.2026) ═══
+  DCTToken:          '0xdd5Bad7dD3506417c9Cd5D1F35372aCf051D423d',
+  DCTBridge:         '0x669c7AAc85cb69cbF70ABc3ae21f39242783F01F',
+  FractionalGem:     '0x42EF377d9BD455FCa7298a55798C2c083507E65B',
+  GemShowcase:       '0x40AF17cB6DA5795df077E71ED6ef8Fbd08f42dd8',
+  DCTExchange:       '0xeba425D4FAadA67dE66a2BBa6a2CFA789D80d70C',
+  GemFractionDEX:    '0xDBcEbf6A85857be12b91FE685685d43C64E7823a',
+  DCTHeritage:       '0x9dDCA909905afF16A76279e854856bab7164D4C8',
   // ═══ PancakeSwap Router (opBNB) ═══
   PancakeRouter:     '0x10ED43C718714eb63d5aA57B78B54704E256024E',
 }
-
 export default ADDRESSES
