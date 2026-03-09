@@ -83,7 +83,7 @@ export default function TeamTab() {
   useEffect(() => {
     if (wallet && sponsorId) {
       // sponsorId = реальный odixId из GlobalWay (заполняется после регистрации)
-      const link = `${typeof window !== 'undefined' ? window.location.origin : ''}/invite?ref=${sponsorId}`
+      const link = `${typeof window !== 'undefined' ? window.location.origin : ''}/invite/gems?ref=${sponsorId}`
       setReferralLink(link)
     } else {
       setReferralLink('')
