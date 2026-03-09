@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import useGameStore from '@/lib/store'
 import * as DC from '@/lib/diamondContracts'
+import * as DCT from '@/lib/dctContracts'
 import { safeCall } from '@/lib/contracts'
 import { shortAddress } from '@/lib/web3'
 import ADDRESSES from '@/contracts/addresses'
@@ -29,6 +30,8 @@ export default function DiamondClubTab() {
     { id: 'p2p',       icon: '🤝', label: 'P2P' },
     { id: 'insurance', icon: '🛡️', label: t('dcInsurance') || 'Страховка' },
     { id: 'boost',     icon: '🚀', label: t('dcBoost') || 'Буст' },
+    { id: 'dct',       icon: '🪙', label: 'DCT' },
+    { id: 'heritage',  icon: '📜', label: t('dcHeritage') || 'Наследство' },
     { id: 'delivery',  icon: '📦', label: t('dcDelivery') || 'Доставка' },
   ]
 
@@ -47,7 +50,7 @@ export default function DiamondClubTab() {
       </div>
 
       {/* Sub-навигация */}
-      <div className="grid grid-cols-4 gap-1 px-3 mt-1">
+      <div className="grid grid-cols-5 gap-1 px-3 mt-1">
         {sections.map(s => (
           <button key={s.id} onClick={() => setSection(s.id)}
             className={`py-2 rounded-xl text-[10px] font-bold border transition-all ${
@@ -70,12 +73,14 @@ export default function DiamondClubTab() {
       ) : (
         <>
           {section === 'dashboard' && <DashboardSection />}
-          {section === 'gems' && <GemsFullSection />}
+          {section === 'gems' && <GemsFullSection onGoToDCT={() => setSection('dct')} />}
           {section === 'metals' && <MetalsSection />}
           {section === 'showcase' && <ShowcaseSection />}
           {section === 'p2p' && <P2PSection />}
           {section === 'insurance' && <InsuranceSection />}
           {section === 'boost' && <BoostSection />}
+          {section === 'dct' && <DCTSection />}
+          {section === 'heritage' && <HeritageSection />}
           {section === 'delivery' && <DeliverySection />}
         </>
       )}
@@ -100,6 +105,8 @@ function HelpModal({ onClose }) {
     { id: 'showcase',   icon: '🏪', label: 'Витрина' },
     { id: 'insurance',  icon: '🛡️', label: 'Страховка' },
     { id: 'boost',      icon: '🚀', label: 'Буст' },
+    { id: 'dct',        icon: '🪙', label: 'DCT' },
+    { id: 'heritage',   icon: '📜', label: 'Наследство' },
   ]
 
   return (
@@ -285,6 +292,60 @@ function HelpModal({ onClose }) {
             <HelpTitle emoji="🎯" text="TrustScore" />
             <p>Уровни: NONE → PROBATION → BRONZE → SILVER → GOLD. Высокий TrustScore снижает комиссии и открывает функции.</p>
           </>)}
+
+          {tab === 'dct' && (<>
+            <HelpTitle emoji="🪙" text="Что такое DCT?" />
+            <p>DCT (Diamond Club Token) — токен, обеспеченный реальными бриллиантами. Каждый DCT имеет реальную стоимость, привязанную к стоимости камней в хранилище клуба.</p>
+
+            <HelpTitle emoji="💎" text="Как получить DCT?" />
+            <HelpSteps steps={[
+              'Купите камень в разделе «Камни»',
+              'Перейдите в раздел «DCT»',
+              'Нажмите «Получить DCT» — токены будут начислены автоматически',
+              'Часть токенов будет заморожена (привязана к камню)',
+            ]} />
+
+            <HelpTitle emoji="📊" text="Доли камней" />
+            <p>Можно купить долю дорогого камня за DCT вместо покупки целого камня. Все держатели долей получают стейкинг-доход в USDT пропорционально своей доле.</p>
+
+            <HelpTitle emoji="💰" text="Стейкинг-доход" />
+            <HelpSteps steps={[
+              'В разделе DCT видны все лоты с вашими долями',
+              'Доход начисляется в USDT',
+              'Нажмите «Забрать доход» когда он накопится',
+            ]} />
+
+            <HelpTitle emoji="🔄" text="Биржа DCT/USDT" />
+            <HelpSteps steps={[
+              'Вы можете купить DCT за USDT или продать DCT за USDT',
+              'Создайте ордер с ценой и количеством',
+              'Когда другой участник заполнит ваш ордер — сделка совершится',
+              'Комиссия биржи небольшая и идёт в фонд клуба',
+            ]} />
+          </>)}
+
+          {tab === 'heritage' && (<>
+            <HelpTitle emoji="📜" text="Наследование DCT" />
+            <p>Система наследования позволяет защитить ваши активы. Если вы не появляетесь определённое время — ваши DCT и доли камней автоматически перейдут выбранным наследникам.</p>
+
+            <HelpTitle emoji="⚙️" text="Как настроить" />
+            <HelpSteps steps={[
+              'Перейдите в раздел «Наследство»',
+              'Укажите от 1 до 5 наследников (адрес кошелька, % доли, имя)',
+              'Установите период неактивности (минимум 365 дней)',
+              'Подтвердите в кошельке',
+            ]} />
+
+            <HelpTitle emoji="🔔" text="Подтверждение активности" />
+            <HelpSteps steps={[
+              'Регулярно нажимайте «Подтвердить активность»',
+              'Это сбрасывает таймер неактивности',
+              'Если таймер истечёт — наследники смогут забрать ваши активы',
+            ]} />
+
+            <HelpTitle emoji="⚠️" text="Важно" />
+            <p>Для работы наследования нужно выдать разрешения (approve) на DCT токены и доли камней. Система попросит сделать это при настройке.</p>
+          </>)}
         </div>
 
         {/* Footer */}
@@ -422,7 +483,7 @@ function DashboardSection() {
 // ═════════════════════════════════════════════════════════
 // GEMS FULL — Конфигуратор + Мои покупки с управлением + P2P листинг
 // ═════════════════════════════════════════════════════════
-function GemsFullSection() {
+function GemsFullSection({ onGoToDCT }) {
   const { wallet, addNotification, setTxPending, txPending } = useGameStore()
   const [view, setView] = useState('configurator')
   const [myPurchases, setMyPurchases] = useState([])
@@ -574,6 +635,19 @@ function GemsFullSection() {
           </div>
         )}
       </>)}
+
+      {/* DCT карточка */}
+      <div className="p-3 rounded-2xl glass border border-gold-400/15 mt-2">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-lg">🪙</span>
+          <span className="text-[12px] font-bold text-gold-400">Ваши камни дают DCT токены</span>
+        </div>
+        <div className="text-[10px] text-slate-400 mb-2">Перейдите в раздел DCT чтобы получить токены за ваши камни.</div>
+        <button onClick={onGoToDCT}
+          className="w-full py-2 rounded-xl text-[11px] font-bold bg-gold-400/15 text-gold-400 border border-gold-400/20">
+          Перейти в DCT →
+        </button>
+      </div>
 
       {/* P2P Listing Modal */}
       {p2pModal && (
@@ -1399,6 +1473,368 @@ function BoostSection() {
     </div>
   )
 }
+
+// ═════════════════════════════════════════════════════════
+// DCT — Токен, клейм, стейкинг долей, биржа
+// ═════════════════════════════════════════════════════════
+function DCTSection() {
+  const { wallet, addNotification, setTxPending, txPending } = useGameStore()
+  const [loading, setLoading] = useState(true)
+  const [tokenInfo, setTokenInfo] = useState(null)
+  const [userInfo, setUserInfo] = useState(null)
+  const [claimable, setClaimable] = useState(null)
+  const [lots, setLots] = useState([])
+  const [userLots, setUserLots] = useState({})
+  const [prices, setPrices] = useState(null)
+  const [exStats, setExStats] = useState(null)
+  const [showBuyModal, setShowBuyModal] = useState(false)
+  const [showSellModal, setShowSellModal] = useState(false)
+  const [showFracModal, setShowFracModal] = useState(null)
+  const [orderAmount, setOrderAmount] = useState('')
+  const [orderPrice, setOrderPrice] = useState('')
+  const [fracAmount, setFracAmount] = useState('')
+
+  const reload = useCallback(async () => {
+    if (!wallet) return
+    setLoading(true)
+    try {
+      const [ti, ui, cl, pr, st] = await Promise.all([
+        DCT.getDCTTokenInfo().catch(() => null),
+        DCT.getDCTUserInfo(wallet).catch(() => null),
+        DCT.getClaimableGems(wallet).catch(() => ({ purchaseIds: [], marketValues: [], estimatedDCT: [] })),
+        DCT.getExchangeBestPrices().catch(() => ({ bestBid: '0', bestAsk: '0' })),
+        DCT.getExchangeStats().catch(() => null),
+      ])
+      setTokenInfo(ti); setUserInfo(ui); setClaimable(cl); setPrices(pr); setExStats(st)
+      const allLots = await DCT.getAllFractionalLots().catch(() => [])
+      const activeLots = allLots.filter(l => l.status >= 1 && l.status <= 4)
+      setLots(activeLots)
+      const uLots = {}
+      for (const lot of activeLots) {
+        const info = await DCT.getUserLotInfo(lot.id, wallet).catch(() => null)
+        if (info && (info.fractions > 0 || parseFloat(info.claimableStaking) > 0)) uLots[lot.id] = info
+      }
+      setUserLots(uLots)
+    } catch {}
+    setLoading(false)
+  }, [wallet])
+
+  useEffect(() => { reload() }, [reload])
+
+  const handleClaimAll = async () => {
+    setTxPending(true)
+    const result = await safeCall(() => DCT.claimAllGemDCT())
+    setTxPending(false)
+    if (result.ok) { addNotification('✅ 🪙 DCT получены!'); reload() }
+    else addNotification('❌ ' + result.error)
+  }
+
+  const handleClaimStaking = async (lotId) => {
+    setTxPending(true)
+    const result = await safeCall(() => DCT.claimFractionalStaking(lotId))
+    setTxPending(false)
+    if (result.ok) { addNotification('✅ 💰 Доход получен!'); reload() }
+    else addNotification('❌ ' + result.error)
+  }
+
+  const handleBuyFractions = async () => {
+    if (!showFracModal || !fracAmount || parseInt(fracAmount) <= 0) return
+    setTxPending(true)
+    const result = await safeCall(() => DCT.buyFractions(showFracModal, parseInt(fracAmount)))
+    setTxPending(false)
+    if (result.ok) { addNotification('✅ Доли куплены!'); setShowFracModal(null); setFracAmount(''); reload() }
+    else addNotification('❌ ' + result.error)
+  }
+
+  const handleCreateBuyOrder = async () => {
+    if (!orderAmount || !orderPrice) return
+    setTxPending(true)
+    const result = await safeCall(() => DCT.createBuyOrderDCT(orderAmount, orderPrice))
+    setTxPending(false)
+    if (result.ok) { addNotification('✅ Ордер на покупку создан!'); setShowBuyModal(false); setOrderAmount(''); setOrderPrice(''); reload() }
+    else addNotification('❌ ' + result.error)
+  }
+
+  const handleCreateSellOrder = async () => {
+    if (!orderAmount || !orderPrice) return
+    setTxPending(true)
+    const result = await safeCall(() => DCT.createSellOrderDCT(orderAmount, orderPrice))
+    setTxPending(false)
+    if (result.ok) { addNotification('✅ Ордер на продажу создан!'); setShowSellModal(false); setOrderAmount(''); setOrderPrice(''); reload() }
+    else addNotification('❌ ' + result.error)
+  }
+
+  if (loading) return <Loading />
+  const totalClaimable = claimable?.estimatedDCT?.reduce((s, v) => s + parseFloat(v), 0) || 0
+  const myLotsWithStaking = Object.entries(userLots).filter(([, info]) => parseFloat(info.claimableStaking) > 0)
+
+  return (
+    <div className="px-3 mt-2 space-y-2">
+      {tokenInfo && (
+        <div className="p-4 rounded-2xl glass text-center">
+          <div className="text-[10px] text-slate-500 mb-1">🪙 Токен DCT</div>
+          <div className="grid grid-cols-3 gap-2">
+            <div><div className="text-lg font-black text-gold-400">${parseFloat(tokenInfo.price).toFixed(4)}</div><div className="text-[9px] text-slate-500">Цена</div></div>
+            <div><div className="text-lg font-black text-blue-400">{parseFloat(tokenInfo.supply).toLocaleString('ru',{maximumFractionDigits:0})}</div><div className="text-[9px] text-slate-500">Всего</div></div>
+            <div><div className="text-lg font-black text-emerald-400">${parseFloat(tokenInfo.backing).toLocaleString('ru',{maximumFractionDigits:0})}</div><div className="text-[9px] text-slate-500">Обеспечение</div></div>
+          </div>
+        </div>
+      )}
+
+      {userInfo && (
+        <div className="p-3 rounded-2xl glass">
+          <div className="text-[12px] font-bold text-gold-400 mb-2">💰 Мой баланс</div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="p-2 rounded-xl bg-white/5"><div className="text-[12px] font-black text-white">{parseFloat(userInfo.total).toFixed(0)}</div><div className="text-[8px] text-slate-500">Всего DCT</div></div>
+            <div className="p-2 rounded-xl bg-white/5"><div className="text-[12px] font-black text-emerald-400">{parseFloat(userInfo.free).toFixed(0)}</div><div className="text-[8px] text-slate-500">Свободные</div></div>
+            <div className="p-2 rounded-xl bg-white/5"><div className="text-[12px] font-black text-orange-400">{parseFloat(userInfo.locked).toFixed(0)}</div><div className="text-[8px] text-slate-500">Заморожены</div></div>
+          </div>
+          <div className="text-center mt-1.5 text-[10px] text-slate-500">Стоимость: <span className="text-gold-400 font-bold">${parseFloat(userInfo.valueUSDT).toFixed(2)}</span></div>
+        </div>
+      )}
+
+      {claimable && claimable.purchaseIds.length > 0 && (
+        <div className="p-3 rounded-2xl glass border border-gold-400/15">
+          <div className="text-[12px] font-bold text-gold-400 mb-1">💎 Получить DCT за камни</div>
+          <div className="text-[10px] text-slate-400 mb-2">У вас {claimable.purchaseIds.length} камн{claimable.purchaseIds.length===1?'ь':claimable.purchaseIds.length<5?'я':'ей'}</div>
+          <div className="text-center mb-2"><span className="text-lg font-black text-emerald-400">~{totalClaimable.toFixed(0)} DCT</span></div>
+          <button onClick={handleClaimAll} disabled={txPending} className="w-full py-2.5 rounded-xl text-[11px] font-bold gold-btn" style={{opacity:txPending?0.5:1}}>
+            {txPending ? '⏳' : '🪙 Получить все DCT'}</button>
+        </div>
+      )}
+
+      {myLotsWithStaking.length > 0 && (
+        <div className="p-3 rounded-2xl glass">
+          <div className="text-[12px] font-bold text-emerald-400 mb-2">📊 Стейкинг-доход</div>
+          <div className="space-y-1.5">{myLotsWithStaking.map(([lotId, info]) => {
+            const lot = lots.find(l => l.id === parseInt(lotId))
+            return (<div key={lotId} className="flex items-center justify-between p-2 rounded-lg bg-white/5">
+              <div><span className="text-[11px] font-bold text-white">Лот #{lotId}</span>{lot && <span className="text-[9px] text-slate-500 ml-2">{lot.carats}ct</span>}
+                <div className="text-[10px] font-bold text-emerald-400">+${parseFloat(info.claimableStaking).toFixed(2)}</div></div>
+              <button onClick={() => handleClaimStaking(parseInt(lotId))} disabled={txPending}
+                className="px-3 py-1.5 rounded-lg text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                {txPending ? '⏳' : '💰 Забрать'}</button>
+            </div>)
+          })}</div>
+        </div>
+      )}
+
+      {lots.filter(l => l.status === 1 && l.soldFractions < l.totalFractions).length > 0 && (
+        <div className="p-3 rounded-2xl glass">
+          <div className="text-[12px] font-bold text-purple-400 mb-2">🧩 Доступные доли</div>
+          <div className="text-[10px] text-slate-400 mb-2">Купите долю за DCT — получайте доход в USDT</div>
+          <div className="space-y-1.5">{lots.filter(l => l.status===1 && l.soldFractions<l.totalFractions).map(lot => (
+            <div key={lot.id} className="p-2 rounded-lg bg-white/5">
+              <div className="flex items-center justify-between mb-1">
+                <div><span className="text-[11px] font-bold text-white">{lot.name||`Лот #${lot.id}`}</span><span className="text-[9px] text-slate-500 ml-2">{lot.carats}ct</span></div>
+                <div className="text-[10px] font-bold text-emerald-400">{lot.stakingAPR/100}% год.</div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="text-[9px] text-slate-500">{lot.soldFractions}/{lot.totalFractions} • {lot.fractionPriceDCT} DCT/доля</div>
+                <button onClick={() => { setShowFracModal(lot.id); setFracAmount('1') }}
+                  className="px-2 py-1 rounded-lg text-[9px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/20">🧩 Купить</button>
+              </div>
+            </div>
+          ))}</div>
+        </div>
+      )}
+
+      <div className="p-3 rounded-2xl glass">
+        <div className="text-[12px] font-bold text-blue-400 mb-2">🔄 Биржа DCT / USDT</div>
+        {prices && (<div className="grid grid-cols-2 gap-2 mb-2 text-center">
+          <div className="p-2 rounded-xl bg-white/5"><div className="text-[11px] font-bold text-emerald-400">${parseFloat(prices.bestBid||0).toFixed(4)}</div><div className="text-[8px] text-slate-500">Лучшая покупка</div></div>
+          <div className="p-2 rounded-xl bg-white/5"><div className="text-[11px] font-bold text-red-400">${parseFloat(prices.bestAsk||0).toFixed(4)}</div><div className="text-[8px] text-slate-500">Лучшая продажа</div></div>
+        </div>)}
+        {exStats && (<div className="grid grid-cols-3 gap-1 mb-2 text-center">
+          <div className="p-1.5 rounded-lg bg-white/5"><div className="text-[10px] font-bold text-white">{exStats.trades}</div><div className="text-[8px] text-slate-500">Сделок</div></div>
+          <div className="p-1.5 rounded-lg bg-white/5"><div className="text-[10px] font-bold text-gold-400">${parseFloat(exStats.volumeUSDT||0).toFixed(0)}</div><div className="text-[8px] text-slate-500">Оборот</div></div>
+          <div className="p-1.5 rounded-lg bg-white/5"><div className="text-[10px] font-bold text-orange-400">{parseFloat(exStats.burnedDCT||0).toFixed(0)}</div><div className="text-[8px] text-slate-500">Сожжено</div></div>
+        </div>)}
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={() => { setShowBuyModal(true); setOrderAmount(''); setOrderPrice(prices?.bestAsk||'') }}
+            className="py-2.5 rounded-xl text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">📈 Купить DCT</button>
+          <button onClick={() => { setShowSellModal(true); setOrderAmount(''); setOrderPrice(prices?.bestBid||'') }}
+            className="py-2.5 rounded-xl text-[11px] font-bold bg-red-500/15 text-red-400 border border-red-500/20">📉 Продать DCT</button>
+        </div>
+      </div>
+
+      {showBuyModal && (<div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowBuyModal(false)}>
+        <div className="w-full max-w-sm p-4 rounded-2xl glass" onClick={e => e.stopPropagation()} style={{background:'var(--bg-card,#1e1e3a)'}}>
+          <div className="text-center mb-3"><div className="text-3xl mb-2">📈</div><div className="text-[14px] font-black text-white">Купить DCT</div></div>
+          <div className="space-y-2 mb-3">
+            <div><div className="text-[10px] text-slate-500 mb-1">Количество DCT</div>
+              <input type="number" value={orderAmount} onChange={e => setOrderAmount(e.target.value)} placeholder="0" className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-lg font-bold text-white outline-none text-center" /></div>
+            <div><div className="text-[10px] text-slate-500 mb-1">Цена за 1 DCT (USDT)</div>
+              <input type="number" value={orderPrice} onChange={e => setOrderPrice(e.target.value)} placeholder="0.00" className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-lg font-bold text-white outline-none text-center" /></div>
+            {orderAmount && orderPrice && <div className="text-center text-[11px] text-slate-400">Итого: <span className="text-gold-400 font-bold">${(parseFloat(orderAmount||0)*parseFloat(orderPrice||0)).toFixed(2)} USDT</span></div>}
+          </div>
+          <button onClick={handleCreateBuyOrder} disabled={txPending||!orderAmount||!orderPrice} className="w-full py-3 rounded-xl text-sm font-bold gold-btn" style={{opacity:(!orderAmount||!orderPrice||txPending)?0.5:1}}>
+            {txPending ? '⏳' : '📈 Создать ордер'}</button>
+          <button onClick={() => setShowBuyModal(false)} className="w-full mt-2 py-2 rounded-xl text-[11px] font-bold text-slate-500 border border-white/8">Отмена</button>
+        </div>
+      </div>)}
+
+      {showSellModal && (<div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowSellModal(false)}>
+        <div className="w-full max-w-sm p-4 rounded-2xl glass" onClick={e => e.stopPropagation()} style={{background:'var(--bg-card,#1e1e3a)'}}>
+          <div className="text-center mb-3"><div className="text-3xl mb-2">📉</div><div className="text-[14px] font-black text-white">Продать DCT</div></div>
+          <div className="space-y-2 mb-3">
+            <div><div className="text-[10px] text-slate-500 mb-1">Количество DCT</div>
+              <input type="number" value={orderAmount} onChange={e => setOrderAmount(e.target.value)} placeholder="0" className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-lg font-bold text-white outline-none text-center" />
+              {userInfo && <button onClick={() => setOrderAmount(parseFloat(userInfo.free).toFixed(0))} className="mt-1 text-[9px] text-gold-400 font-bold">Макс: {parseFloat(userInfo.free).toFixed(0)} DCT</button>}</div>
+            <div><div className="text-[10px] text-slate-500 mb-1">Цена за 1 DCT (USDT)</div>
+              <input type="number" value={orderPrice} onChange={e => setOrderPrice(e.target.value)} placeholder="0.00" className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-lg font-bold text-white outline-none text-center" /></div>
+            {orderAmount && orderPrice && <div className="text-center text-[11px] text-slate-400">Получите: <span className="text-emerald-400 font-bold">${(parseFloat(orderAmount||0)*parseFloat(orderPrice||0)).toFixed(2)} USDT</span></div>}
+          </div>
+          <button onClick={handleCreateSellOrder} disabled={txPending||!orderAmount||!orderPrice} className="w-full py-3 rounded-xl text-sm font-bold bg-red-500/20 text-red-400 border border-red-500/30" style={{opacity:(!orderAmount||!orderPrice||txPending)?0.5:1}}>
+            {txPending ? '⏳' : '📉 Создать ордер'}</button>
+          <button onClick={() => setShowSellModal(false)} className="w-full mt-2 py-2 rounded-xl text-[11px] font-bold text-slate-500 border border-white/8">Отмена</button>
+        </div>
+      </div>)}
+
+      {showFracModal !== null && (() => {
+        const lot = lots.find(l => l.id === showFracModal); if (!lot) return null
+        const remaining = lot.totalFractions - lot.soldFractions
+        return (<div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowFracModal(null)}>
+          <div className="w-full max-w-sm p-4 rounded-2xl glass" onClick={e => e.stopPropagation()} style={{background:'var(--bg-card,#1e1e3a)'}}>
+            <div className="text-center mb-3"><div className="text-3xl mb-2">🧩</div><div className="text-[14px] font-black text-white">Купить доли</div>
+              <div className="text-[11px] text-slate-500">{lot.name||`Лот #${lot.id}`} • {lot.carats}ct</div></div>
+            <div className="grid grid-cols-2 gap-2 mb-3 text-center text-[9px]">
+              <div className="p-1.5 rounded-lg bg-white/5"><div className="text-[10px] font-bold text-white">{lot.fractionPriceDCT}</div><div className="text-slate-500">DCT/доля</div></div>
+              <div className="p-1.5 rounded-lg bg-white/5"><div className="text-[10px] font-bold text-emerald-400">{remaining}</div><div className="text-slate-500">Доступно</div></div>
+            </div>
+            <div className="mb-3"><div className="text-[10px] text-slate-500 mb-1">Количество долей</div>
+              <input type="number" value={fracAmount} onChange={e => setFracAmount(e.target.value)} placeholder="1" min="1" max={remaining}
+                className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-lg font-bold text-white outline-none text-center" />
+              {fracAmount && <div className="text-center mt-1 text-[10px] text-slate-400">Итого: <span className="text-gold-400 font-bold">{(parseInt(fracAmount||0)*parseFloat(lot.fractionPriceDCT)).toFixed(0)} DCT</span></div>}
+            </div>
+            <button onClick={handleBuyFractions} disabled={txPending||!fracAmount||parseInt(fracAmount)<=0} className="w-full py-3 rounded-xl text-sm font-bold gold-btn" style={{opacity:(!fracAmount||txPending)?0.5:1}}>
+              {txPending ? '⏳' : '🧩 Купить доли'}</button>
+            <button onClick={() => setShowFracModal(null)} className="w-full mt-2 py-2 rounded-xl text-[11px] font-bold text-slate-500 border border-white/8">Отмена</button>
+          </div>
+        </div>)
+      })()}
+    </div>
+  )
+}
+
+// ═════════════════════════════════════════════════════════
+// HERITAGE — Наследование DCT
+// ═════════════════════════════════════════════════════════
+function HeritageSection() {
+  const { wallet, addNotification, setTxPending, txPending } = useGameStore()
+  const [loading, setLoading] = useState(true)
+  const [heritage, setHeritage] = useState(null)
+  const [heirs, setHeirs] = useState([])
+  const [approvals, setApprovals] = useState({ dctApproved: false, fractionsApproved: false })
+  const [showSetup, setShowSetup] = useState(false)
+  const [heirRows, setHeirRows] = useState([{ wallet: '', sharePct: '', label: '' }])
+  const [inactDays, setInactDays] = useState('365')
+
+  const reload = useCallback(async () => {
+    if (!wallet) return; setLoading(true)
+    const [h, hr, ap] = await Promise.all([DCT.getHeritageInfo(wallet).catch(()=>null), DCT.getHeirs(wallet).catch(()=>[]), DCT.checkHeritageApprovals(wallet).catch(()=>({dctApproved:false,fractionsApproved:false}))])
+    setHeritage(h); setHeirs(hr); setApprovals(ap); setLoading(false)
+  }, [wallet])
+  useEffect(() => { reload() }, [reload])
+
+  const handlePing = async () => { setTxPending(true); const r = await safeCall(()=>DCT.pingHeritage()); setTxPending(false); if(r.ok){addNotification('✅ 🔔 Активность подтверждена!');reload()} else addNotification('❌ '+r.error) }
+  const handleApproveDCT = async () => { setTxPending(true); const r = await safeCall(()=>DCT.approveDCTForHeritage()); setTxPending(false); if(r.ok){addNotification('✅ DCT одобрены');reload()} else addNotification('❌ '+r.error) }
+  const handleApproveFractions = async () => { setTxPending(true); const r = await safeCall(()=>DCT.approveFractionsForHeritage()); setTxPending(false); if(r.ok){addNotification('✅ Доли одобрены');reload()} else addNotification('❌ '+r.error) }
+
+  const handleSaveHeritage = async () => {
+    const valid = heirRows.filter(r => r.wallet && r.sharePct)
+    if (!valid.length) return addNotification('❌ Укажите наследника')
+    const totalPct = valid.reduce((s,r) => s+parseInt(r.sharePct||0), 0)
+    if (totalPct !== 100) return addNotification('❌ Сумма долей: '+totalPct+'% (нужно 100%)')
+    setTxPending(true)
+    const r = await safeCall(() => DCT.configureHeritage(valid.map(r=>r.wallet), valid.map(r=>parseInt(r.sharePct)*100), valid.map(r=>r.label||''), parseInt(inactDays)||365))
+    setTxPending(false)
+    if(r.ok){addNotification('✅ 📜 Наследование настроено!');setShowSetup(false);reload()} else addNotification('❌ '+r.error)
+  }
+
+  const handleCancel = async () => { setTxPending(true); const r = await safeCall(()=>DCT.cancelHeritage()); setTxPending(false); if(r.ok){addNotification('✅ Отменено');reload()} else addNotification('❌ '+r.error) }
+
+  const addHeirRow = () => { if(heirRows.length<5) setHeirRows([...heirRows, {wallet:'',sharePct:'',label:''}]) }
+  const removeHeirRow = (i) => { if(heirRows.length>1) setHeirRows(heirRows.filter((_,idx)=>idx!==i)) }
+  const updateHeirRow = (i,f,v) => { setHeirRows(heirRows.map((r,idx)=>idx===i?{...r,[f]:v}:r)) }
+
+  if (loading) return <Loading />
+  const isActive = heritage && heritage.active && !heritage.executed
+  const nextDate = heritage ? new Date(heritage.canExecuteAt*1000).toLocaleDateString() : '—'
+
+  return (
+    <div className="px-3 mt-2 space-y-2">
+      <div className="p-3 rounded-2xl glass text-center">
+        <div className="text-lg mb-1">📜</div>
+        <div className="text-[12px] font-bold text-gold-400">Наследование DCT</div>
+        <div className="text-[10px] text-slate-400 mt-1">Если вы не появляетесь определённое время — наследники получат ваши DCT и доли камней.</div>
+      </div>
+
+      {(!approvals.dctApproved || !approvals.fractionsApproved) && (
+        <div className="p-3 rounded-2xl glass border border-orange-500/20">
+          <div className="text-[12px] font-bold text-orange-400 mb-2">⚠️ Нужны разрешения</div>
+          <div className="text-[10px] text-slate-400 mb-2">Для работы наследования одобрите доступ к активам.</div>
+          <div className="space-y-1.5">
+            {!approvals.dctApproved && <button onClick={handleApproveDCT} disabled={txPending} className="w-full py-2 rounded-xl text-[10px] font-bold bg-orange-500/15 text-orange-400 border border-orange-500/20">{txPending?'⏳':'🪙 Одобрить DCT'}</button>}
+            {!approvals.fractionsApproved && <button onClick={handleApproveFractions} disabled={txPending} className="w-full py-2 rounded-xl text-[10px] font-bold bg-orange-500/15 text-orange-400 border border-orange-500/20">{txPending?'⏳':'🧩 Одобрить доли'}</button>}
+          </div>
+        </div>
+      )}
+
+      {isActive ? (
+        <div className="p-3 rounded-2xl glass border border-emerald-500/15">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-emerald-400 font-bold text-[12px]">✅ Настроено</span>
+            <span className="text-[10px] text-slate-500">• {heritage.heirCount} наследн.</span>
+          </div>
+          <div className="text-[10px] text-slate-400 mb-2">Период: <span className="text-white font-bold">{heritage.inactivityDays} дней</span><br/>Дедлайн: <span className="text-gold-400 font-bold">{nextDate}</span></div>
+          {heirs.length > 0 && (<div className="space-y-1 mb-2">{heirs.map((h,i) => (
+            <div key={i} className="flex items-center justify-between p-1.5 rounded-lg bg-white/5">
+              <div><span className="text-[10px] font-bold text-white">{h.label||`Наследник ${i+1}`}</span><span className="text-[8px] text-slate-500 ml-2">{shortAddress(h.wallet)}</span></div>
+              <span className="text-[11px] font-black text-gold-400">{h.sharePct}%</span>
+            </div>
+          ))}</div>)}
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={handlePing} disabled={txPending} className="py-2.5 rounded-xl text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">{txPending?'⏳':'🔔 Я здесь'}</button>
+            <button onClick={() => { setShowSetup(true); if(heirs.length>0){setHeirRows(heirs.map(h=>({wallet:h.wallet,sharePct:h.sharePct,label:h.label}))); setInactDays(String(heritage.inactivityDays))} }}
+              className="py-2.5 rounded-xl text-[11px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/20">✏️ Изменить</button>
+          </div>
+          <button onClick={handleCancel} disabled={txPending} className="w-full mt-2 py-2 rounded-xl text-[10px] font-bold text-red-400/60 border border-white/5">Отменить наследование</button>
+        </div>
+      ) : (
+        <div className="p-3 rounded-2xl glass text-center">
+          <div className="text-[12px] text-slate-400 mb-2">Наследование не настроено</div>
+          <button onClick={() => setShowSetup(true)} className="px-6 py-2.5 rounded-xl text-[11px] font-bold gold-btn">⚙️ Настроить</button>
+        </div>
+      )}
+
+      {showSetup && (<div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-3" onClick={() => setShowSetup(false)}>
+        <div className="w-full max-w-md max-h-[85vh] rounded-2xl overflow-y-auto p-4 space-y-3" onClick={e => e.stopPropagation()} style={{background:'linear-gradient(180deg,#1a1a3e 0%,#0f0f2a 100%)'}}>
+          <div className="text-center mb-2"><div className="text-3xl mb-1">📜</div><div className="text-[14px] font-black text-white">Настройка наследования</div></div>
+          <div><div className="text-[10px] text-slate-500 mb-1">Период неактивности (дней, мин. 365)</div>
+            <input type="number" value={inactDays} onChange={e => setInactDays(e.target.value)} min="365" placeholder="365" className="w-full p-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white outline-none text-center" /></div>
+          <div className="text-[10px] text-slate-500">Наследники (1–5)</div>
+          {heirRows.map((row,idx) => (
+            <div key={idx} className="p-2.5 rounded-xl bg-white/5 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-300">Наследник {idx+1}</span>
+                {heirRows.length>1 && <button onClick={() => removeHeirRow(idx)} className="text-[9px] text-red-400">✕</button>}
+              </div>
+              <input value={row.label} onChange={e => updateHeirRow(idx,'label',e.target.value)} placeholder="Имя" className="w-full p-2 rounded-lg bg-white/5 border border-white/8 text-[11px] text-white outline-none" />
+              <input value={row.wallet} onChange={e => updateHeirRow(idx,'wallet',e.target.value)} placeholder="Адрес (0x...)" className="w-full p-2 rounded-lg bg-white/5 border border-white/8 text-[11px] text-white outline-none font-mono" />
+              <input type="number" value={row.sharePct} onChange={e => updateHeirRow(idx,'sharePct',e.target.value)} placeholder="Доля (%)" className="w-full p-2 rounded-lg bg-white/5 border border-white/8 text-[11px] text-white outline-none text-center" />
+            </div>
+          ))}
+          {heirRows.length<5 && <button onClick={addHeirRow} className="w-full py-2 rounded-xl text-[10px] font-bold text-blue-400 border border-blue-500/20">+ Добавить наследника</button>}
+          {(() => { const t = heirRows.reduce((s,r) => s+parseInt(r.sharePct||0), 0); return <div className={`text-center text-[11px] font-bold ${t===100?'text-emerald-400':'text-red-400'}`}>Сумма: {t}% {t===100?'✅':'(нужно 100%)'}</div> })()}
+          <button onClick={handleSaveHeritage} disabled={txPending} className="w-full py-3 rounded-xl text-sm font-bold gold-btn" style={{opacity:txPending?0.5:1}}>{txPending?'⏳':'📜 Сохранить'}</button>
+          <button onClick={() => setShowSetup(false)} className="w-full py-2 rounded-xl text-[11px] font-bold text-slate-500 border border-white/8">Отмена</button>
+        </div>
+      </div>)}
+    </div>
+  )
+}
+
 
 // ═════════════════════════════════════════════════════════
 // SHARED
