@@ -78,27 +78,67 @@ export default function GemConfigurator() {
 
   useEffect(() => { loadOrders() }, [loadOrders])
 
-  // Привязка каратов к ближайшей доступной позиции для цены
-  const snapCarat = (ct) => {
+  // Расчёт цены интерполяцией между опорными точками из контракта
+  const calcPrice = (ct, cert) => {
     if (availableCarats.length === 0) return null
     const x100 = Math.round(ct * 100)
+
     // Точное совпадение
-    if (contractPrices[x100]) return x100
-    // Ближайшее
-    let best = availableCarats[0]
-    for (const a of availableCarats) { if (Math.abs(a - x100) < Math.abs(best - x100)) best = a }
-    return best
+    if (contractPrices[x100]) {
+      const p = cert ? contractPrices[x100].cert : contractPrices[x100].noCert
+      return p
+    }
+
+    // Найти две ближайшие точки (ниже и выше)
+    let lower = null, upper = null
+    for (const a of availableCarats) {
+      if (a <= x100) lower = a
+      if (a >= x100 && upper === null) upper = a
+    }
+
+    // Если ниже минимума — экстраполяция по первой точке (цена за карат)
+    if (!lower && upper) {
+      const p = cert ? contractPrices[upper].cert : contractPrices[upper].noCert
+      const perCarat = p.club / (upper / 100)
+      const club = perCarat * ct
+      const market = (p.market / (upper / 100)) * ct
+      return { cost: 0, club, market }
+    }
+
+    // Если выше максимума — экстраполяция по последней точке
+    if (lower && !upper) {
+      const p = cert ? contractPrices[lower].cert : contractPrices[lower].noCert
+      const perCarat = p.club / (lower / 100)
+      const club = perCarat * ct
+      const market = (p.market / (lower / 100)) * ct
+      return { cost: 0, club, market }
+    }
+
+    // Интерполяция между двумя точками
+    if (lower && upper && lower !== upper) {
+      const pL = cert ? contractPrices[lower].cert : contractPrices[lower].noCert
+      const pU = cert ? contractPrices[upper].cert : contractPrices[upper].noCert
+      const t = (x100 - lower) / (upper - lower) // 0..1
+      const club = pL.club + (pU.club - pL.club) * t
+      const market = pL.market + (pU.market - pL.market) * t
+      return { cost: 0, club, market }
+    }
+
+    // lower === upper (точное совпадение, уже обработано выше)
+    if (lower) {
+      const p = cert ? contractPrices[lower].cert : contractPrices[lower].noCert
+      return p
+    }
+    return null
   }
 
-  const snapped = snapCarat(carats)
-  const priceData = snapped ? contractPrices[snapped] : null
-  const currentPrice = priceData ? (hasCert ? priceData.cert : priceData.noCert) : null
+  const currentPrice = calcPrice(carats, hasCert)
 
   const price = currentPrice ? {
-    clubPrice: currentPrice.club,
-    retailPrice: currentPrice.market,
-    clubPerCarat: Math.round(currentPrice.club / (snapped / 100)),
-    retailPerCarat: Math.round(currentPrice.market / (snapped / 100)),
+    clubPrice: Math.round(currentPrice.club),
+    retailPrice: Math.round(currentPrice.market),
+    clubPerCarat: Math.round(currentPrice.club / carats),
+    retailPerCarat: Math.round(currentPrice.market / carats),
     savings: Math.round(currentPrice.market - currentPrice.club),
     discountPct: currentPrice.market > 0 ? Math.round((1 - currentPrice.club / currentPrice.market) * 100) : 0,
   } : null
@@ -113,7 +153,7 @@ export default function GemConfigurator() {
       color: gemType === 'white' ? color : undefined,
       fancyColor: gemType === 'fancy' ? fancyColor : undefined,
       intensity: gemType === 'fancy' ? intensity : undefined,
-      carats: snapped / 100, hasCert, region
+      carats, hasCert, region
     })
     setConfirmOrder({
       buyFrac, fracCount: buyFrac ? fractions : 0, totalFrac: buyFrac ? totalFractions : 0,
@@ -132,7 +172,7 @@ export default function GemConfigurator() {
       color: gemType === 'white' ? color : null,
       fancyColor: gemType === 'fancy' ? fancyColor : null,
       intensity: gemType === 'fancy' ? intensity : null,
-      carats: snapped / 100, hasCert, region, buyMode,
+      carats, hasCert, region, buyMode,
       isFraction: confirmOrder.buyFrac, fractionCount: confirmOrder.fracCount,
       totalFractions: confirmOrder.totalFrac, retailPrice: confirmOrder.retailPrice,
       clubPrice: confirmOrder.clubPrice, savings: confirmOrder.savings,
@@ -313,18 +353,13 @@ export default function GemConfigurator() {
           <span>{CARAT_RANGE.min} ct</span><span>{CARAT_RANGE.max} ct</span>
         </div>
         <div className="flex gap-1 mt-2">
-          {(availableCarats.length > 0 ? availableCarats.map(c => c/100) : [0.5, 1.0, 1.5, 2.0, 3.0, 5.0]).map(v => (
+          {[0.3, 0.5, 1.0, 1.5, 2.0, 3.0, 5.0].map(v => (
             <button key={v} onClick={() => setCarats(v)}
               className={`flex-1 py-1 rounded-lg text-[9px] font-bold transition-all border ${sel(Math.abs(carats-v)<0.05)}`}>
               {v}
             </button>
           ))}
         </div>
-        {snapped && Math.abs(snapped - Math.round(carats*100)) > 1 && (
-          <div className="mt-1.5 text-[8px] text-gold-400 text-center">
-            Ближайший доступный: {(snapped/100).toFixed(2)} ct
-          </div>
-        )}
       </div>
 
       {/* ═══ ЦЕНА ═══ */}
@@ -347,7 +382,7 @@ export default function GemConfigurator() {
                 }
               </div>
               <div className="text-[9px] text-slate-500">
-                {(snapped/100).toFixed(2)} ct • {hasCert ? '✅ Сертификат' : 'Без серт.'} • {REGIONS.find(r=>r.id===region)?.name}
+                {carats.toFixed(2)} ct • {hasCert ? '✅ Сертификат' : 'Без серт.'} • {REGIONS.find(r=>r.id===region)?.name}
               </div>
             </div>
           </div>
