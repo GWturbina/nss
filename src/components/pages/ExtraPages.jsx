@@ -20,9 +20,9 @@ export function LinksTab() {
       const base = typeof window !== 'undefined' ? window.location.origin : ''
       const ref = wallet.slice(2, 10)
       setLinks([
-        { id: 1, type: 'gems', name: t('gemsAndTapper'), url: `${base}/invite?ref=${ref}&t=gems`, clicks: 0 },
-        { id: 2, type: 'house', name: t('houseZeroPercent'), url: `${base}/invite?ref=${ref}&t=house`, clicks: 0 },
-        { id: 3, type: 'money', name: `15 ${t('incomeSources')}`, url: `${base}/invite?ref=${ref}&t=money`, clicks: 0 },
+        { id: 1, type: 'gems', name: t('gemsAndTapper'), url: `${base}/invite/gems?ref=${ref}`, clicks: 0 },
+        { id: 2, type: 'house', name: t('houseZeroPercent'), url: `${base}/invite/house?ref=${ref}`, clicks: 0 },
+        { id: 3, type: 'money', name: `15 ${t('incomeSources')}`, url: `${base}/invite/money?ref=${ref}`, clicks: 0 },
       ])
     }
   }, [wallet, t])
@@ -40,7 +40,7 @@ export function LinksTab() {
     const base = typeof window !== 'undefined' ? window.location.origin : ''
     const ref = wallet?.slice(2, 10) || '0'
     const id = Date.now()
-    setLinks(prev => [...prev, { id, type: newType, name: newName.trim(), url: `${base}/invite?ref=${ref}&t=${newType}`, clicks: 0 }])
+    setLinks(prev => [...prev, { id, type: newType, name: newName.trim(), url: `${base}/invite/${newType}?ref=${ref}`, clicks: 0 }])
     setNewName('')
     setShowCreate(false)
   }
