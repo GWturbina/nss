@@ -6,6 +6,7 @@ import * as DC from '@/lib/diamondContracts'
 import ADDRESSES from '@/contracts/addresses'
 import { TeamsAdmin } from '@/components/pages/ExtraPages'
 import OrdersAdmin, { StaffAdmin } from '@/components/admin/OrdersAdmin'
+import PriceAdmin from '@/components/admin/PriceAdmin'
 import { GEMS as GEMS_DEFAULT, METALS as METALS_DEFAULT, GEM_ECONOMICS as GEM_ECON_DEFAULT, METAL_ECONOMICS as METAL_ECON_DEFAULT } from '@/lib/gameData'
 
 export default function AdminPanel() {
@@ -34,6 +35,7 @@ export default function AdminPanel() {
     { id: 'auth', icon: '🔑', label: t('authorization') },
     { id: 'content', icon: '📢', label: t('content') },
     { id: 'gems', icon: '💎', label: 'Камни' },
+    { id: 'prices', icon: '💲', label: 'Цены' },
     { id: 'orders', icon: '📋', label: 'Заказы' },
     { id: 'staff', icon: '👥', label: 'Сотрудники' },
     { id: 'metals', icon: '🥇', label: 'Металлы' },
@@ -1006,6 +1008,7 @@ export default function AdminPanel() {
           )}
           {activeSection === 'showcase' && <AdminShowcase wallet={wallet} addNotification={addNotification} setTxPending={setTxPending} txPending={txPending} />}
           {activeSection === 'orders' && <OrdersAdmin />}
+          {activeSection === 'prices' && <PriceAdmin />}
           {activeSection === 'staff' && <StaffAdmin />}
         </>
       )}
