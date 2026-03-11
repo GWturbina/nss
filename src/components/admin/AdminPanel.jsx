@@ -1056,22 +1056,39 @@ function AdminShowcase({ wallet, addNotification, setTxPending, txPending }) {
     if (!web3.signer) { addNotification('❌ Подключите кошелёк'); return }
     setTxPending(true)
     try {
-      const abi = [
+      // 1. Проверяем TrustScore — нужен SILVER (tier >= 3)
+      const trustAbi = [
+        'function getTier(address user) view returns (uint8)',
+        'function addScore(address user, uint16 points, string reason)',
+        'function getScore(address user) view returns (uint16)',
+      ]
+      const trust = new ethers.Contract(ADDRESSES.TrustScore, trustAbi, web3.signer)
+      const tier = await trust.getTier(wallet)
+      if (Number(tier) < 3) {
+        addNotification('📊 Повышаю TrustScore до SILVER...')
+        const tx0 = await trust.addScore(wallet, 500, 'Owner activation')
+        await tx0.wait()
+        addNotification('✅ TrustScore повышен!')
+      }
+
+      // 2. Ставим цену лицензии = 0
+      const smAbi = [
         'function setAgentPrice(uint256 _price)',
         'function buyAgentLicense()',
         'function agentLicensePrice() view returns (uint256)',
       ]
-      const c = new ethers.Contract(ADDRESSES.ShowcaseMarket, abi, web3.signer)
-      // Ставим цену 0 если не 0
+      const sm = new ethers.Contract(ADDRESSES.ShowcaseMarket, smAbi, web3.signer)
       try {
-        const currentPrice = await c.agentLicensePrice()
+        const currentPrice = await sm.agentLicensePrice()
         if (currentPrice > 0n) {
-          const tx1 = await c.setAgentPrice(0)
+          const tx1 = await sm.setAgentPrice(0)
           await tx1.wait()
         }
       } catch {}
-      // Получаем бесплатно
-      const tx2 = await c.buyAgentLicense()
+
+      // 3. Получаем лицензию бесплатно
+      addNotification('🏪 Активирую лицензию...')
+      const tx2 = await sm.buyAgentLicense()
       await tx2.wait()
       addNotification('✅ Агентская лицензия активирована!')
       reload()
