@@ -3,10 +3,13 @@ import { useState, useEffect } from 'react'
 import useGameStore from '@/lib/store'
 import * as C from '@/lib/contracts'
 import * as DC from '@/lib/diamondContracts'
+import { ethers } from 'ethers'
+import web3 from '@/lib/web3'
 import ADDRESSES from '@/contracts/addresses'
 import { TeamsAdmin } from '@/components/pages/ExtraPages'
 import OrdersAdmin, { StaffAdmin } from '@/components/admin/OrdersAdmin'
 import PriceAdmin from '@/components/admin/PriceAdmin'
+import supabase from '@/lib/supabase'
 import { GEMS as GEMS_DEFAULT, METALS as METALS_DEFAULT, GEM_ECONOMICS as GEM_ECON_DEFAULT, METAL_ECONOMICS as METAL_ECON_DEFAULT } from '@/lib/gameData'
 
 export default function AdminPanel() {
@@ -1049,27 +1052,25 @@ function AdminShowcase({ wallet, addNotification, setTxPending, txPending }) {
 
   useEffect(() => { reload() }, [wallet])
 
-  // Стать агентом бесплатно (owner ставит цену 0, потом получает лицензию)
   const handleGetLicense = async () => {
+    if (!web3.signer) { addNotification('❌ Подключите кошелёк'); return }
     setTxPending(true)
     try {
-      // Сначала ставим цену 0
-      const { ethers: eth } = await import('ethers')
-      const web3mod = (await import('@/lib/web3')).default
-      const ADDR = (await import('@/contracts/addresses')).default
       const abi = [
         'function setAgentPrice(uint256 _price)',
         'function buyAgentLicense()',
         'function agentLicensePrice() view returns (uint256)',
       ]
-      const c = new eth.Contract(ADDR.ShowcaseMarket, abi, web3mod.signer)
-      // Проверяем текущую цену
-      const currentPrice = await c.agentLicensePrice()
-      if (currentPrice > 0n) {
-        const tx1 = await c.setAgentPrice(0)
-        await tx1.wait()
-      }
-      // Теперь получаем бесплатно
+      const c = new ethers.Contract(ADDRESSES.ShowcaseMarket, abi, web3.signer)
+      // Ставим цену 0 если не 0
+      try {
+        const currentPrice = await c.agentLicensePrice()
+        if (currentPrice > 0n) {
+          const tx1 = await c.setAgentPrice(0)
+          await tx1.wait()
+        }
+      } catch {}
+      // Получаем бесплатно
       const tx2 = await c.buyAgentLicense()
       await tx2.wait()
       addNotification('✅ Агентская лицензия активирована!')
@@ -1080,7 +1081,6 @@ function AdminShowcase({ wallet, addNotification, setTxPending, txPending }) {
 
   // Загрузить файл в Supabase Storage
   const uploadFile = async (file, folder) => {
-    const supabase = (await import('@/lib/supabase')).default
     if (!supabase) throw new Error('Supabase не подключён')
     const ext = file.name.split('.').pop().toLowerCase()
     const name = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`
