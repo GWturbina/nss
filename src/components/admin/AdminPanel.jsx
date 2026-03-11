@@ -1025,9 +1025,15 @@ function AdminShowcase({ wallet, addNotification, setTxPending, txPending }) {
   const [isAgent, setIsAgent]     = useState(false)
   const [loading, setLoading]     = useState(true)
   const [showForm, setShowForm]   = useState(false)
-  const [form, setForm]           = useState({ assetType:0, title:'', description:'', imageURI:'', certURI:'', price:'' })
+  const [form, setForm]           = useState({ assetType:0, title:'', description:'', price:'' })
   const [confirmId, setConfirmId] = useState(null)
   const [buyerAddr, setBuyerAddr] = useState('')
+  // Загрузка файлов
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
+  const [certFile, setCertFile]   = useState(null)
+  const [certPreview, setCertPreview] = useState(null)
+  const [uploading, setUploading] = useState(false)
 
   const ASSET_TYPES = ['💎 Камень','🥇 Металл','💍 Ювелирка','📦 Другое']
 
@@ -1043,28 +1049,101 @@ function AdminShowcase({ wallet, addNotification, setTxPending, txPending }) {
 
   useEffect(() => { reload() }, [wallet])
 
+  // Стать агентом бесплатно (owner ставит цену 0, потом получает лицензию)
   const handleGetLicense = async () => {
     setTxPending(true)
     try {
-      await DC.buyAgentLicense()
-      addNotification('✅ Лицензия агента получена!')
+      // Сначала ставим цену 0
+      const { ethers: eth } = await import('ethers')
+      const web3mod = (await import('@/lib/web3')).default
+      const ADDR = (await import('@/contracts/addresses')).default
+      const abi = [
+        'function setAgentPrice(uint256 _price)',
+        'function buyAgentLicense()',
+        'function agentLicensePrice() view returns (uint256)',
+      ]
+      const c = new eth.Contract(ADDR.ShowcaseMarket, abi, web3mod.signer)
+      // Проверяем текущую цену
+      const currentPrice = await c.agentLicensePrice()
+      if (currentPrice > 0n) {
+        const tx1 = await c.setAgentPrice(0)
+        await tx1.wait()
+      }
+      // Теперь получаем бесплатно
+      const tx2 = await c.buyAgentLicense()
+      await tx2.wait()
+      addNotification('✅ Агентская лицензия активирована!')
       reload()
     } catch(e) { addNotification(`❌ ${e.message}`) }
     setTxPending(false)
   }
 
+  // Загрузить файл в Supabase Storage
+  const uploadFile = async (file, folder) => {
+    const supabase = (await import('@/lib/supabase')).default
+    if (!supabase) throw new Error('Supabase не подключён')
+    const ext = file.name.split('.').pop().toLowerCase()
+    const name = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`
+    const { data, error } = await supabase.storage.from('showcase').upload(name, file, {
+      cacheControl: '3600',
+      upsert: false,
+    })
+    if (error) throw error
+    const { data: urlData } = supabase.storage.from('showcase').getPublicUrl(name)
+    return urlData.publicUrl
+  }
+
+  // Выбрать фото
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) { addNotification('❌ Файл слишком большой (макс 10 МБ)'); return }
+    setPhotoFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setPhotoPreview(ev.target.result)
+    reader.readAsDataURL(file)
+  }
+
+  // Выбрать сертификат
+  const handleCertSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) { addNotification('❌ Файл слишком большой (макс 10 МБ)'); return }
+    setCertFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setCertPreview(ev.target.result)
+    reader.readAsDataURL(file)
+  }
+
+  // Публикация
   const handlePublish = async () => {
-    const { assetType, title, description, imageURI, certURI, price } = form
+    const { assetType, title, description, price } = form
     if (!title || !price) { addNotification('⚠️ Заполните название и цену'); return }
-    setTxPending(true)
+    setTxPending(true); setUploading(true)
     try {
+      let imageURI = ''
+      let certURI = ''
+      // Загрузка фото
+      if (photoFile) {
+        addNotification('📤 Загрузка фото...')
+        imageURI = await uploadFile(photoFile, 'photos')
+      }
+      // Загрузка сертификата
+      if (certFile) {
+        addNotification('📤 Загрузка сертификата...')
+        certURI = await uploadFile(certFile, 'certs')
+      }
+      setUploading(false)
+      // Публикация в контракт
+      addNotification('📝 Публикация на витрину...')
       await DC.listOnShowcase(assetType, title, description, imageURI, certURI, price)
       addNotification(`✅ «${title}» опубликовано!`)
       setShowForm(false)
-      setForm({ assetType:0, title:'', description:'', imageURI:'', certURI:'', price:'' })
+      setForm({ assetType:0, title:'', description:'', price:'' })
+      setPhotoFile(null); setPhotoPreview(null); setCertFile(null); setCertPreview(null)
       reload()
     } catch(e) { addNotification(`❌ ${e.message}`) }
-    setTxPending(false)
+    setTxPending(false); setUploading(false)
   }
 
   const handleConfirmSale = async () => {
@@ -1079,7 +1158,6 @@ function AdminShowcase({ wallet, addNotification, setTxPending, txPending }) {
   }
 
   const handleCancel = async (id) => {
-    if (!confirm(`Снять объявление #${id}?`)) return
     setTxPending(true)
     try {
       await DC.cancelShowcaseListing(id)
@@ -1089,7 +1167,7 @@ function AdminShowcase({ wallet, addNotification, setTxPending, txPending }) {
     setTxPending(false)
   }
 
-  const inp = 'w-full p-2 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none placeholder-slate-600'
+  const inp = 'w-full p-2.5 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none placeholder-slate-600'
 
   return (
     <div className="px-3 mt-2 space-y-3">
@@ -1120,8 +1198,8 @@ function AdminShowcase({ wallet, addNotification, setTxPending, txPending }) {
         </div>
         {!isAgent ? (
           <button onClick={handleGetLicense} disabled={txPending}
-            className="px-3 py-2 rounded-xl text-[10px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/20 disabled:opacity-50">
-            {txPending ? '⏳' : '🏪 Получить'}
+            className="px-3 py-2 rounded-xl text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 disabled:opacity-50">
+            {txPending ? '⏳' : '✅ Активировать'}
           </button>
         ) : (
           <button onClick={() => setShowForm(v => !v)}
@@ -1131,9 +1209,9 @@ function AdminShowcase({ wallet, addNotification, setTxPending, txPending }) {
         )}
       </div>
 
-      {/* Форма добавления */}
+      {/* Форма добавления с загрузкой фото */}
       {showForm && isAgent && (
-        <div className="p-3 rounded-2xl space-y-2" style={{ background:'rgba(255,215,0,0.04)', border:'1px solid rgba(255,215,0,0.15)' }}>
+        <div className="p-3 rounded-2xl space-y-2.5" style={{ background:'rgba(255,215,0,0.04)', border:'1px solid rgba(255,215,0,0.15)' }}>
           <div className="text-[12px] font-black text-gold-400">📝 Новое объявление</div>
 
           {/* Тип */}
@@ -1147,22 +1225,59 @@ function AdminShowcase({ wallet, addNotification, setTxPending, txPending }) {
           </div>
 
           <input value={form.title} onChange={e => setForm(f=>({...f,title:e.target.value}))}
-            placeholder="Название" className={inp} />
+            placeholder="Название (напр. Бриллиант 1.5ct, VVS1, D)" className={inp} />
           <textarea value={form.description} onChange={e => setForm(f=>({...f,description:e.target.value}))}
-            placeholder="Описание — огранка, происхождение, характеристики..."
-            rows={2} className={`${inp} resize-none`} />
-          <input value={form.imageURI} onChange={e => setForm(f=>({...f,imageURI:e.target.value}))}
-            placeholder="Фото (IPFS / URL)" className={inp} />
-          <input value={form.certURI} onChange={e => setForm(f=>({...f,certURI:e.target.value}))}
-            placeholder="Сертификат GIA/GRS (IPFS / URL)" className={inp} />
+            placeholder="Описание — огранка, характеристики, происхождение..."
+            rows={3} className={`${inp} resize-none`} />
+
+          {/* Загрузка фото */}
+          <div>
+            <div className="text-[10px] text-slate-500 mb-1">📷 Фото камня</div>
+            {photoPreview ? (
+              <div className="relative">
+                <img src={photoPreview} alt="Фото" className="w-full h-40 object-cover rounded-xl" />
+                <button onClick={() => { setPhotoFile(null); setPhotoPreview(null) }}
+                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center">✕</button>
+              </div>
+            ) : (
+              <label className="flex items-center justify-center w-full h-24 rounded-xl border-2 border-dashed border-white/15 cursor-pointer hover:border-gold-400/30 transition-all">
+                <input type="file" accept="image/*,video/mp4,video/webm" onChange={handlePhotoSelect} className="hidden" />
+                <div className="text-center">
+                  <div className="text-2xl mb-1">📷</div>
+                  <div className="text-[10px] text-slate-500">Нажмите для загрузки фото или видео</div>
+                  <div className="text-[8px] text-slate-600">JPG, PNG, MP4 до 10 МБ</div>
+                </div>
+              </label>
+            )}
+          </div>
+
+          {/* Загрузка сертификата */}
+          <div>
+            <div className="text-[10px] text-slate-500 mb-1">📜 Сертификат (необязательно)</div>
+            {certPreview ? (
+              <div className="relative">
+                <img src={certPreview} alt="Сертификат" className="w-full h-32 object-cover rounded-xl" />
+                <button onClick={() => { setCertFile(null); setCertPreview(null) }}
+                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center">✕</button>
+              </div>
+            ) : (
+              <label className="flex items-center justify-center w-full h-16 rounded-xl border-2 border-dashed border-white/10 cursor-pointer hover:border-emerald-500/30 transition-all">
+                <input type="file" accept="image/*,.pdf" onChange={handleCertSelect} className="hidden" />
+                <div className="text-[10px] text-slate-500">📜 Загрузить сертификат GIA / IGI / HRD</div>
+              </label>
+            )}
+          </div>
+
+          {/* Цена */}
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 font-bold">$</span>
             <input type="number" value={form.price} onChange={e => setForm(f=>({...f,price:e.target.value}))}
               placeholder="Цена USDT" className={`${inp} pl-7`} />
           </div>
-          <button onClick={handlePublish} disabled={txPending || !form.title || !form.price}
-            className="w-full py-2.5 rounded-xl text-[11px] font-black gold-btn disabled:opacity-40">
-            {txPending ? '⏳ Публикация...' : '🏪 Опубликовать'}
+
+          <button onClick={handlePublish} disabled={txPending || uploading || !form.title || !form.price}
+            className="w-full py-3 rounded-xl text-[11px] font-black gold-btn disabled:opacity-40">
+            {uploading ? '📤 Загрузка файлов...' : txPending ? '⏳ Публикация...' : '🏪 Опубликовать на витрину'}
           </button>
         </div>
       )}
@@ -1173,44 +1288,52 @@ function AdminShowcase({ wallet, addNotification, setTxPending, txPending }) {
         {loading ? (
           <div className="text-center py-4 text-[11px] text-slate-500">⏳ Загрузка...</div>
         ) : listings.length === 0 ? (
-          <div className="text-center py-6 text-[11px] text-slate-500">Витрина пуста</div>
+          <div className="text-center py-6 text-[11px] text-slate-500">Витрина пуста — добавьте первый камень</div>
         ) : (
           <div className="space-y-2">
-            {listings.map(l => (
-              <div key={l.id} className="p-2.5 rounded-xl bg-white/5 space-y-1.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[11px] font-bold text-white truncate">#{l.id} {l.title}</div>
-                    <div className="text-[9px] text-slate-500">{ASSET_TYPES[l.assetType]} • {l.seller.slice(0,8)}...{l.seller.slice(-4)}</div>
+            {listings.map(l => {
+              const hasImage = l.imageURI && (l.imageURI.startsWith('http') || l.imageURI.startsWith('ipfs'))
+              const imgSrc = hasImage ? (l.imageURI.startsWith('ipfs://') ? `https://ipfs.io/ipfs/${l.imageURI.slice(7)}` : l.imageURI) : null
+              return (
+                <div key={l.id} className="p-2.5 rounded-xl bg-white/5 space-y-1.5">
+                  {/* Фото */}
+                  {imgSrc && (
+                    <div className="w-full h-32 rounded-lg overflow-hidden bg-black/30">
+                      {imgSrc.match(/\.(mp4|webm)$/i) ? (
+                        <video src={imgSrc} className="w-full h-full object-cover" controls muted />
+                      ) : (
+                        <img src={imgSrc} alt={l.title} className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                  )}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-bold text-white truncate">#{l.id} {l.title}</div>
+                      <div className="text-[9px] text-slate-500">{ASSET_TYPES[l.assetType]}</div>
+                    </div>
+                    <div className="text-[13px] font-black text-gold-400 shrink-0">${parseFloat(l.price).toLocaleString()}</div>
                   </div>
-                  <div className="text-[13px] font-black text-gold-400 shrink-0">${parseFloat(l.price).toLocaleString()}</div>
-                </div>
-                {l.description && <div className="text-[9px] text-slate-400 line-clamp-2">{l.description}</div>}
-                <div className="flex gap-1.5">
-                  {l.imageURI && (
-                    <a href={l.imageURI} target="_blank" rel="noreferrer"
-                      className="px-2 py-1 rounded-lg text-[9px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                      🖼 Фото
-                    </a>
-                  )}
-                  {l.certURI && (
-                    <a href={l.certURI} target="_blank" rel="noreferrer"
+                  {l.description && <div className="text-[9px] text-slate-400 line-clamp-2">{l.description}</div>}
+                  <div className="flex gap-1.5">
+                    {l.certURI && (
+                      <a href={l.certURI.startsWith('ipfs://') ? `https://ipfs.io/ipfs/${l.certURI.slice(7)}` : l.certURI} target="_blank" rel="noreferrer"
+                        className="px-2 py-1 rounded-lg text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        ✅ Серт.
+                      </a>
+                    )}
+                    <div className="flex-1" />
+                    <button onClick={() => { setConfirmId(l.id); setBuyerAddr('') }}
                       className="px-2 py-1 rounded-lg text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      ✅ Сертификат
-                    </a>
-                  )}
-                  <div className="flex-1" />
-                  <button onClick={() => { setConfirmId(l.id); setBuyerAddr('') }}
-                    className="px-2 py-1 rounded-lg text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    ✅ Продать
-                  </button>
-                  <button onClick={() => handleCancel(l.id)} disabled={txPending}
-                    className="px-2 py-1 rounded-lg text-[9px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 disabled:opacity-50">
-                    ✕ Снять
-                  </button>
+                      ✅ Продать
+                    </button>
+                    <button onClick={() => handleCancel(l.id)} disabled={txPending}
+                      className="px-2 py-1 rounded-lg text-[9px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 disabled:opacity-50">
+                      ✕ Снять
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
