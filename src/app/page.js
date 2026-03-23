@@ -9,12 +9,10 @@ import LevelsTab from '@/components/game/LevelsTab'
 import { StakingTab, HomeTab, ExchangeTab } from '@/components/pages/ContentPages'
 import { LinksTab, VaultTab } from '@/components/pages/ExtraPages'
 import TeamTab from '@/components/pages/TeamPage'
-import DiamondClubTab from '@/components/pages/DiamondClubPage'
 import AdminPanel from '@/components/admin/AdminPanel'
 
 const TAB_COMPONENTS = {
   mine: MineTab,
-  // gems: GemsTab,  // ЗАМЕНЁН на Diamond Club (GemVaultV2)
   staking: StakingTab,
   exchange: ExchangeTab,
   home: HomeTab,
@@ -22,7 +20,6 @@ const TAB_COMPONENTS = {
   team: TeamTab,
   links: LinksTab,
   vault: VaultTab,
-  diamond: DiamondClubTab,
   admin: AdminPanel,
 }
 
