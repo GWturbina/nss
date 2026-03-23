@@ -1,7 +1,8 @@
 /**
  * Адреса контрактов NSS v2.5 на opBNB
  * ═══════════════════════════════════════
- * Обновлено: 09.03.2026
+ * Обновлено: 24.03.2026
+ * Метр Квадратный — только NSS Core + GlobalWay
  */
 const ADDRESSES = {
   // ═══ Внешние токены ═══
@@ -25,23 +26,6 @@ const ADDRESSES = {
   GlobalWayBridge:   '0x4489851e530924eB25e684E6b97c7C47364780F5',
   MatrixRegistry:    '0xD62945edFF7605dFc77A4bF607c96Da72E03cd0C',
   GWTToken:          '0x933B0Cb1f43170f3F0fcf082572CC931D6e93b5F',
-  // ═══ Diamond Club v10.2 (deployed 03.03.2026) ═══
-  TrustScore:        '0xE56B5cC834dF467D5deE8B69E3C4380F261e94c9',
-  PrivateMailbox:    '0xb251919Fa79dA48b060f57D5f0A0ECD1291e37A5',
-  UserBoost:         '0x7c84D88aa6b248c36FDcC63c3cE95815812046C5',
-  InsuranceFund:     '0x3dd0fC128E9ee119F1949fa44E9a92f3f607FfdB',
-  ReferralPool:      '0xaac7577784fde3E7113c03F7e3e108cB0cF2A54F',
-  GemVaultV2:        '0xb79Fa026cE35af801FA7B369907030e911B7c53C',
-  ShowcaseMarket:    '0xc5ED131e21ceEdeD20Fd131F84E49cAc4d229f97',
-  DiamondP2P:        '0xb22DCBd3B76Bf2E071CB172Ca00d885cf7D559DA',
-  // ═══ DCT Diamond Club v3.2 (deployed 09.03.2026) ═══
-  DCTToken:          '0xdd5Bad7dD3506417c9Cd5D1F35372aCf051D423d',
-  DCTBridge:         '0x669c7AAc85cb69cbF70ABc3ae21f39242783F01F',
-  FractionalGem:     '0x42EF377d9BD455FCa7298a55798C2c083507E65B',
-  GemShowcase:       '0x40AF17cB6DA5795df077E71ED6ef8Fbd08f42dd8',
-  DCTExchange:       '0xeba425D4FAadA67dE66a2BBa6a2CFA789D80d70C',
-  GemFractionDEX:    '0xDBcEbf6A85857be12b91FE685685d43C64E7823a',
-  DCTHeritage:       '0x9dDCA909905afF16A76279e854856bab7164D4C8',
   // ═══ PancakeSwap Router (opBNB) ═══
   PancakeRouter:     '0x10ED43C718714eb63d5aA57B78B54704E256024E',
 }
