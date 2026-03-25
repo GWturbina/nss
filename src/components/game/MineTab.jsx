@@ -266,7 +266,7 @@ export default function MineTab() {
         </div>
         <div className="text-right">
           <div className="text-xl font-black font-display" style={{ color: lv.color }}>{totalNst.toFixed(1)}</div>
-          <div className="text-[9px] text-slate-500">NST</div>
+          <div className="text-[9px] text-slate-500">CHT</div>
         </div>
       </div>
 
