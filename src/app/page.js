@@ -38,7 +38,7 @@ export default function MainPage() {
     const urlParams = new URLSearchParams(window.location.search)
     const refFromUrl = urlParams.get('ref')
     if (refFromUrl && /^\d+$/.test(refFromUrl)) {
-      localStorage.setItem('nss_ref', refFromUrl)
+      localStorage.setItem('nss_ref', String(parseInt(refFromUrl, 10)))
       const cleanUrl = window.location.pathname + window.location.hash
       window.history.replaceState({}, '', cleanUrl)
     }
@@ -48,7 +48,7 @@ export default function MainPage() {
     if (tg) {
       const startParam = tg.initDataUnsafe?.start_param
       if (startParam && /^\d+$/.test(startParam)) {
-        localStorage.setItem('nss_ref', startParam)
+        localStorage.setItem('nss_ref', String(parseInt(startParam, 10)))
       }
     }
   }, [])
