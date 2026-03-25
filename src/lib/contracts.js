@@ -51,6 +51,7 @@ const readProvider = new ethers.JsonRpcProvider(READ_RPC)
 
 function getContract(name) {
   if (!web3.signer) throw new Error('Кошелёк не подключён')
+  if (web3.chainId !== 204) throw new Error('Неправильная сеть! Переключитесь на opBNB (chainId 204)')
   const addr = ADDRESSES[name]
   if (!addr || addr.startsWith('0x_')) throw new Error(`Контракт ${name} не задеплоен`)
   return new ethers.Contract(addr, ABIS[name], web3.signer)
@@ -503,20 +504,14 @@ export async function getCharityBalance(address) {
  * Возвращает число, например 620.5
  */
 export async function getBNBPrice() {
-  // 1) Binance API — самый точный курс
-  try {
-    const r = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BNBUSDT')
-    const d = await r.json()
-    const price = parseFloat(d.price)
-    if (price > 10) return price
-  } catch {}
-  // 2) Fallback: SwapHelper (может быть неточным из-за низкой ликвидности)
+  // Primary: SwapHelper (on-chain, без CORS и утечки IP)
   try {
     const c = getReadContract('SwapHelper')
-    if (!c) return null
-    const [usdtAmount] = await c.quoteBNBtoUSDT(parse('1'))
-    const price = parseFloat(fmt(usdtAmount))
-    if (price > 10) return price
+    if (c) {
+      const [usdtAmount] = await c.quoteBNBtoUSDT(parse('1'))
+      const price = parseFloat(fmt(usdtAmount))
+      if (price > 10) return price
+    }
   } catch {}
   return null
 }
