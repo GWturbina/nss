@@ -110,9 +110,22 @@ export default function LevelsTab() {
     setTxPending(true)
     try {
       addNotification(`⏳ ${t('buyingLevel')} ${lv.name}...`)
-      await C.buyLevel(lv.id)
+      const receipt = await C.buyLevel(lv.id)
       setLevel(lv.id)
       addNotification(`✅ ${lv.name} ${t('levelActivated')}`)
+
+      // Начисляем бонус за уровень (CHT + CGT + GWT)
+      try {
+        const { claimLevelBonus, isSupabaseAvailable } = await import('@/lib/tapService')
+        if (isSupabaseAvailable()) {
+          const txHash = receipt?.hash || receipt?.transactionHash || ''
+          const bonus = await claimLevelBonus(wallet, lv.id, txHash)
+          if (bonus && bonus.ok) {
+            addNotification(`🎁 Бонус: +${bonus.nst_bonus} CHT, +${bonus.cgt_bonus} CGT, +${bonus.gwt_bonus} GWT`)
+          }
+        }
+      } catch {}
+
       setTimeout(async () => {
         const gwStatus = await C.getGWUserStatus(wallet).catch(() => null)
         if (gwStatus && gwStatus.maxPackage > 0) {
