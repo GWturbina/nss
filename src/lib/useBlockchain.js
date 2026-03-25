@@ -50,6 +50,18 @@ async function refreshDataForAddress(address) {
     // owner для admin-проверки
     const owner = await C.getOwner('RealEstateMatrix').catch(() => null)
     if (owner) store.setOwnerWallet(owner)
+
+    // Синхронизация тапалки с сервером (Supabase)
+    store.syncTapState()
+
+    // Загрузка бонусов за уровни
+    try {
+      const { getUserBonuses, isSupabaseAvailable } = await import('./tapService')
+      if (isSupabaseAvailable()) {
+        const bonuses = await getUserBonuses(address)
+        if (bonuses) store.setLevelBonuses(bonuses)
+      }
+    } catch {}
   } catch (err) {
     console.error('refreshData error:', err)
   }
