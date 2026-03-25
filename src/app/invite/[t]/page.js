@@ -3,26 +3,27 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useParams } from 'next/navigation'
 
 const TEMPLATES = {
-  gems: { emoji: '💎', title: 'Бриллианты по клубной цене!', sub: 'Экономия до 64%. Стейкинг от 50% годовых.', color: '#a855f7', ogImage: 'invite-gems.jpg' },
   house: { emoji: '🏠', title: 'Свой дом под 0%!', sub: 'Заработай 35% — клуб добавит 65%.', color: '#f59e0b', ogImage: 'invite-house.jpg' },
-  money: { emoji: '💰', title: '15 источников дохода!', sub: 'Бриллианты, стейкинг, токены — всё в одном.', color: '#10b981', ogImage: 'invite-money.jpg' },
+  build: { emoji: '🏗', title: 'Строй дом — зарабатывай!', sub: 'Бесплатный старт. Тапай и копи на метры.', color: '#a855f7', ogImage: 'invite-build.jpg' },
+  money: { emoji: '💰', title: '15 источников дохода!', sub: 'Недвижимость, инвестиции, AI — всё в одном.', color: '#10b981', ogImage: 'invite-money.jpg' },
 }
 
 const FEATURES = [
-  { emoji: '💎', title: 'Реальные бриллианты', desc: 'От завода по клубной цене — экономия до 64%' },
-  { emoji: '📈', title: 'Стейкинг камней', desc: 'От 50% до 75% годовых на ваших активах' },
-  { emoji: '🪙', title: 'DCT токен', desc: 'Обеспечен реальными бриллиантами' },
+  { emoji: '⛏', title: 'Бесплатный старт', desc: 'Тапай руками — зарабатывай CHT токены' },
+  { emoji: '📐', title: 'Метры квадратные', desc: 'Покупай м² от $50 — копи на свой дом' },
+  { emoji: '🏔', title: '3 бизнеса', desc: 'От $50. Деньги работают в клубной системе' },
   { emoji: '🏠', title: 'Свой дом под 0%', desc: 'Заработай 35% — клуб добавит 65%!' },
-  { emoji: '🧩', title: 'Доли камней', desc: 'Инвестируй от малой суммы в дорогие камни' },
+  { emoji: '🏗', title: 'Клубные дома', desc: 'Совместное строительство — экономия до 40%' },
   { emoji: '👥', title: 'Партнёрская программа', desc: 'До 10% пожизненно от приглашённых' },
 ]
 
 function InviteContent() {
   const searchParams = useSearchParams()
   const params = useParams()
-  const ref = searchParams.get('ref') || '0'
-  const t = params.t || 'gems'
-  const tpl = TEMPLATES[t] || TEMPLATES.gems
+  const rawRef = searchParams.get('ref') || '0'
+  const ref = /^\d+$/.test(rawRef) ? parseInt(rawRef, 10) : 0
+  const t = params.t || 'house'
+  const tpl = TEMPLATES[t] || TEMPLATES.house
 
   const [registered, setRegistered] = useState(false)
   const [showExitPopup, setShowExitPopup] = useState(false)
@@ -50,8 +51,8 @@ function InviteContent() {
   }, [registered])
 
   const handleRegister = () => {
-    if (ref && ref !== '0') {
-      localStorage.setItem('nss_ref', ref)
+    if (ref > 0) {
+      localStorage.setItem('nss_ref', String(ref))
     }
     setRegistered(true)
     setShowExitPopup(false)
@@ -61,7 +62,7 @@ function InviteContent() {
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #0a0a20 0%, #1a1040 50%, #0a0a20 100%)' }}>
       <div className="max-w-[430px] mx-auto px-4 py-6">
         <div className="flex justify-center mb-4">
-          <img src="/icons/logo.png" alt="NSS" className="w-16 h-16 rounded-2xl" onError={e => { e.target.style.display='none' }} />
+          <img src="/icons/logo.png" alt="Club House" className="w-16 h-16 rounded-2xl" onError={e => { e.target.style.display='none' }} />
         </div>
 
         <div className="text-center mb-6">
@@ -77,12 +78,12 @@ function InviteContent() {
         </div>
 
         <div className="flex justify-center gap-3 mb-2">
-          <span className="text-4xl">💎</span>
-          <span className="text-4xl">🪙</span>
+          <span className="text-4xl">📐</span>
+          <span className="text-4xl">🏗</span>
           <span className="text-4xl">🏠</span>
         </div>
-        <h2 className="text-center text-lg font-black text-white mb-0.5">NSS Diamond Club</h2>
-        <p className="text-center text-[12px] text-slate-500 mb-4">Бриллианты • Инвестиции • Доход</p>
+        <h2 className="text-center text-lg font-black text-white mb-0.5">Метр Квадратный — Club House</h2>
+        <p className="text-center text-[12px] text-slate-500 mb-4">Тапай • Копи метры • Строй дом</p>
 
         <div className="space-y-2 mb-6">
           {FEATURES.map((f, i) => (
@@ -114,7 +115,7 @@ function InviteContent() {
         )}
 
         <div className="text-center text-[10px] text-slate-600 mt-4">
-          NSS Diamond Club • Powered by GlobalWay
+          Метр Квадратный — Club House • Powered by GlobalWay
         </div>
       </div>
 
@@ -127,9 +128,9 @@ function InviteContent() {
               <p className="text-[12px] text-slate-400 mb-4">Ты в одном шаге от вступления в клуб</p>
               <div className="space-y-2 mb-4 text-left">
                 <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">Бесплатная регистрация</span></div>
-                <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">Бриллианты со скидкой до 64%</span></div>
-                <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">Стейкинг от 50% годовых</span></div>
                 <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">Свой дом под 0% годовых</span></div>
+                <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">3 бизнеса от $50</span></div>
+                <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">CHT токены — тапай бесплатно</span></div>
               </div>
               <button onClick={handleRegister} className="w-full py-3 rounded-2xl text-base font-black mb-2" style={{ background: 'linear-gradient(135deg, #ffd700, #f5a623)', color: '#000' }}>
                 🎁 Присоединиться
