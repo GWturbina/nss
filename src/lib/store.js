@@ -40,8 +40,8 @@ const useGameStore = create(
   // GAME STATE (тапалка — локальная)
   // ═══════════════════════════════════════════════════
   level: 0,
-  energy: 500,
-  maxEnergy: 500,
+  energy: 200,
+  maxEnergy: 200,
   taps: 0,
   localNst: 0,          // Локальные NST от тапов (не блокчейн)
 
