@@ -1,6 +1,6 @@
 {
-  "name": "nss-platform",
-  "version": "3.0.0",
+  "name": "meter-kvadratny",
+  "version": "4.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
