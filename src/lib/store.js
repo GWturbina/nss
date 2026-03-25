@@ -273,10 +273,10 @@ const useGameStore = create(
   setLevel: (lv) => set({ level: lv }),
 }),
     {
-      name: 'nss-storage-v5',   // v5: сохраняем wallet+registered — токены больше не испаряются
+      name: 'nss-storage-v6',   // v6: ownerWallet убран — всегда из контракта
       partialize: (state) => ({
         lang: state.lang,
-        ownerWallet: state.ownerWallet,
+        // ownerWallet НЕ сохраняем — всегда читаем из контракта (безопасность)
         // *** КЛЮЧЕВОЕ: сохраняем wallet и registered ***
         // Без этого при перезагрузке registered=false → испарение включается → токены пропадают
         wallet: state.wallet,
@@ -286,17 +286,14 @@ const useGameStore = create(
         localNst: state.localNst,
         taps: state.taps,
       }),
-      version: 5,
-      // *** КЛЮЧЕВОЕ: миграция СОХРАНЯЕТ данные ***
-      // Раньше было migrate: () => ({}) — всё стиралось при смене версии
+      version: 6,
       migrate: (persisted, version) => {
-        // Из v4 → v5: просто добавились новые поля, старые данные сохраняем
         return {
           ...persisted,
-          // Если wallet/registered не было в v4 — ставим дефолты
           wallet: persisted.wallet ?? null,
           registered: persisted.registered ?? false,
           sponsorId: persisted.sponsorId ?? null,
+          // ownerWallet убираем при миграции — будет null до загрузки из контракта
         }
       },
     }
