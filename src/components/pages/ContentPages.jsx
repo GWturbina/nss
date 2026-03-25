@@ -492,13 +492,13 @@ export function HomeTab() {
 // ═════════════════════════════════════════════════════════
 export function ExchangeTab() {
   const { wallet, nst, cgt, bnb, usdt, addNotification, setTxPending, txPending, t } = useGameStore()
-  const [fromToken, setFromToken] = useState('NST')
+  const [fromToken, setFromToken] = useState('CHT')
   const [toToken, setToToken] = useState('USDT')
   const [amount, setAmount] = useState('')
   const [rate, setRate] = useState(null)
 
   const tokens = [
-    { id: 'NST', name: 'NST', balance: nst, color: '#ffd700', icon: '💎' },
+    { id: 'CHT', name: 'CHT', balance: nst, color: '#ffd700', icon: '💎' },
     { id: 'CGT', name: 'CGT', balance: cgt, color: '#10b981', icon: '◆' },
     { id: 'USDT', name: 'USDT', balance: parseFloat(usdt), color: '#22c55e', icon: '💵' },
     { id: 'BNB', name: 'BNB', balance: bnb, color: '#f0b90b', icon: '🔶' },
@@ -554,7 +554,7 @@ export function ExchangeTab() {
     <div className="flex-1 overflow-y-auto pb-4">
       <div className="px-3 pt-3 pb-1">
         <h2 className="text-lg font-black text-gold-400">💱 {t('exchangeTitle')}</h2>
-        <p className="text-[11px] text-slate-500">{t('exchangeSwap')} NST ↔ CGT ↔ USDT</p>
+        <p className="text-[11px] text-slate-500">{t('exchangeSwap')} CHT ↔ CGT ↔ USDT</p>
       </div>
 
       <div className="mx-3 mt-2 p-3 rounded-2xl glass">
