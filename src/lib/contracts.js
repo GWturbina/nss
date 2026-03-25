@@ -21,6 +21,8 @@ import SwapHelperABIFile from '@/contracts/abi/SwapHelper.json'
 import AICreditsABIFile from '@/contracts/abi/AICredits.json'
 import CardGiftMarketingABIFile from '@/contracts/abi/CardGiftMarketing.json'
 import SafeVaultABIFile from '@/contracts/abi/SafeVault.json'
+import LoanThresholdManagerABIFile from '@/contracts/abi/LoanThresholdManager.json'
+import CHTExchangeABIFile from '@/contracts/abi/CHTExchange.json'
 
 // Извлекаем массив ABI из обёртки GlobalWay формата {contractName, address, network, chainId, abi:[]}
 const ABIS = {
@@ -36,6 +38,8 @@ const ABIS = {
   AICredits: AICreditsABIFile.abi || AICreditsABIFile,
   CardGiftMarketing: CardGiftMarketingABIFile.abi || CardGiftMarketingABIFile,
   SafeVault: SafeVaultABIFile.abi || SafeVaultABIFile,
+  LoanThresholdManager: LoanThresholdManagerABIFile.abi || LoanThresholdManagerABIFile,
+  CHTExchange: CHTExchangeABIFile.abi || CHTExchangeABIFile,
 }
 
 // ═══════════════════════════════════════════════════
