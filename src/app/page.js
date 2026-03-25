@@ -9,6 +9,8 @@ import LevelsTab from '@/components/game/LevelsTab'
 import { StakingTab, HomeTab, ExchangeTab } from '@/components/pages/ContentPages'
 import { LinksTab, VaultTab } from '@/components/pages/ExtraPages'
 import TeamTab from '@/components/pages/TeamPage'
+import LoanTab from '@/components/pages/LoanTab'
+import CHTExchangeTab from '@/components/pages/CHTExchangeTab'
 import AdminPanel from '@/components/admin/AdminPanel'
 
 const TAB_COMPONENTS = {
@@ -16,6 +18,8 @@ const TAB_COMPONENTS = {
   staking: StakingTab,
   exchange: ExchangeTab,
   home: HomeTab,
+  loan: LoanTab,
+  chtExchange: CHTExchangeTab,
   levels: LevelsTab,
   team: TeamTab,
   links: LinksTab,
