@@ -5,7 +5,7 @@
       "headers": [
         {
           "key": "X-Frame-Options",
-          "value": "DENY"
+          "value": "SAMEORIGIN"
         },
         {
           "key": "X-Content-Type-Options",
@@ -25,7 +25,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co https://opbnb-mainnet-rpc.bnbchain.org https://*.bnbchain.org wss://*.supabase.co; font-src 'self'; frame-ancestors 'none';"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co https://opbnb-mainnet-rpc.bnbchain.org https://*.bnbchain.org wss://*.supabase.co https://telegram.org; font-src 'self'; frame-ancestors 'self' https://web.telegram.org https://*.telegram.org;"
         }
       ]
     }
