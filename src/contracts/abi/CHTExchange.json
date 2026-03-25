@@ -1,0 +1,491 @@
+{
+  "contractName": "CHTExchange",
+  "address": "0x0943Da3D0D5107a2c87d9c814874da5C58C4a2EE",
+  "network": "opBNB",
+  "chainId": 204,
+  "abi": [
+    {
+      "inputs": [
+        { "internalType": "address", "name": "_chtToken", "type": "address" },
+        { "internalType": "address", "name": "_usdt", "type": "address" },
+        { "internalType": "address", "name": "_feeCollector", "type": "address" }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "EnforcedPause",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ExpectedPause",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        { "internalType": "address", "name": "owner", "type": "address" }
+      ],
+      "name": "OwnableInvalidOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        { "internalType": "address", "name": "account", "type": "address" }
+      ],
+      "name": "OwnableUnauthorizedAccount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ReentrancyGuardReentrantCall",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "address", "name": "newCollector", "type": "address" }
+      ],
+      "name": "FeeCollectorUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "orderId", "type": "uint256" }
+      ],
+      "name": "OrderCancelled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "orderId", "type": "uint256" },
+        { "indexed": false, "internalType": "uint8", "name": "orderType", "type": "uint8" },
+        { "indexed": true, "internalType": "address", "name": "maker", "type": "address" },
+        { "indexed": false, "internalType": "uint256", "name": "chtAmount", "type": "uint256" },
+        { "indexed": false, "internalType": "uint256", "name": "pricePerCHT", "type": "uint256" }
+      ],
+      "name": "OrderCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "orderId", "type": "uint256" }
+      ],
+      "name": "OrderExpired",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "orderId", "type": "uint256" },
+        { "indexed": true, "internalType": "address", "name": "taker", "type": "address" },
+        { "indexed": false, "internalType": "uint256", "name": "chtAmount", "type": "uint256" },
+        { "indexed": false, "internalType": "uint256", "name": "usdtAmount", "type": "uint256" },
+        { "indexed": false, "internalType": "uint256", "name": "fee", "type": "uint256" }
+      ],
+      "name": "OrderFilled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "address", "name": "previousOwner", "type": "address" },
+        { "indexed": true, "internalType": "address", "name": "newOwner", "type": "address" }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": false, "internalType": "address", "name": "account", "type": "address" }
+      ],
+      "name": "Paused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": false, "internalType": "address", "name": "account", "type": "address" }
+      ],
+      "name": "Unpaused",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "MIN_ORDER_CHT",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "MIN_PRICE_USDT",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "ORDER_EXPIRY",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "TRADE_FEE_BP",
+      "outputs": [{ "internalType": "uint16", "name": "", "type": "uint16" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "", "type": "uint256" }
+      ],
+      "name": "activeBuyOrderIds",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "", "type": "uint256" }
+      ],
+      "name": "activeSellOrderIds",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "orderId", "type": "uint256" }
+      ],
+      "name": "cancelExpiredOrder",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "orderId", "type": "uint256" }
+      ],
+      "name": "cancelOrder",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "chtToken",
+      "outputs": [{ "internalType": "contract IERC20", "name": "", "type": "address" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "chtAmount", "type": "uint256" },
+        { "internalType": "uint256", "name": "pricePerCHT", "type": "uint256" }
+      ],
+      "name": "createBuyOrder",
+      "outputs": [{ "internalType": "uint256", "name": "orderId", "type": "uint256" }],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "chtAmount", "type": "uint256" },
+        { "internalType": "uint256", "name": "pricePerCHT", "type": "uint256" }
+      ],
+      "name": "createSellOrder",
+      "outputs": [{ "internalType": "uint256", "name": "orderId", "type": "uint256" }],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "emergencyWithdrawCHT",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "emergencyWithdrawUSDT",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "feeCollector",
+      "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "orderId", "type": "uint256" },
+        { "internalType": "uint256", "name": "chtAmount", "type": "uint256" }
+      ],
+      "name": "fillBuyOrder",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "orderId", "type": "uint256" },
+        { "internalType": "uint256", "name": "chtAmount", "type": "uint256" }
+      ],
+      "name": "fillSellOrder",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getActiveBuyOrders",
+      "outputs": [
+        {
+          "components": [
+            { "internalType": "uint256", "name": "id", "type": "uint256" },
+            { "internalType": "uint8", "name": "orderType", "type": "uint8" },
+            { "internalType": "address", "name": "maker", "type": "address" },
+            { "internalType": "uint256", "name": "chtAmount", "type": "uint256" },
+            { "internalType": "uint256", "name": "chtFilled", "type": "uint256" },
+            { "internalType": "uint256", "name": "pricePerCHT", "type": "uint256" },
+            { "internalType": "uint256", "name": "feeDeposited", "type": "uint256" },
+            { "internalType": "uint8", "name": "status", "type": "uint8" },
+            { "internalType": "uint64", "name": "createdAt", "type": "uint64" },
+            { "internalType": "uint64", "name": "expiresAt", "type": "uint64" }
+          ],
+          "internalType": "struct CHTExchange.Order[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getActiveSellOrders",
+      "outputs": [
+        {
+          "components": [
+            { "internalType": "uint256", "name": "id", "type": "uint256" },
+            { "internalType": "uint8", "name": "orderType", "type": "uint8" },
+            { "internalType": "address", "name": "maker", "type": "address" },
+            { "internalType": "uint256", "name": "chtAmount", "type": "uint256" },
+            { "internalType": "uint256", "name": "chtFilled", "type": "uint256" },
+            { "internalType": "uint256", "name": "pricePerCHT", "type": "uint256" },
+            { "internalType": "uint256", "name": "feeDeposited", "type": "uint256" },
+            { "internalType": "uint8", "name": "status", "type": "uint8" },
+            { "internalType": "uint64", "name": "createdAt", "type": "uint64" },
+            { "internalType": "uint64", "name": "expiresAt", "type": "uint64" }
+          ],
+          "internalType": "struct CHTExchange.Order[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getBestPrices",
+      "outputs": [
+        { "internalType": "uint256", "name": "bestBid", "type": "uint256" },
+        { "internalType": "uint256", "name": "bestAsk", "type": "uint256" }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getExchangeStats",
+      "outputs": [
+        { "internalType": "uint256", "name": "trades", "type": "uint256" },
+        { "internalType": "uint256", "name": "volumeCHT", "type": "uint256" },
+        { "internalType": "uint256", "name": "volumeUSDT", "type": "uint256" },
+        { "internalType": "uint256", "name": "fees", "type": "uint256" },
+        { "internalType": "uint256", "name": "activeBuys", "type": "uint256" },
+        { "internalType": "uint256", "name": "activeSells", "type": "uint256" }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "address", "name": "user", "type": "address" }
+      ],
+      "name": "getUserOrders",
+      "outputs": [
+        {
+          "components": [
+            { "internalType": "uint256", "name": "id", "type": "uint256" },
+            { "internalType": "uint8", "name": "orderType", "type": "uint8" },
+            { "internalType": "address", "name": "maker", "type": "address" },
+            { "internalType": "uint256", "name": "chtAmount", "type": "uint256" },
+            { "internalType": "uint256", "name": "chtFilled", "type": "uint256" },
+            { "internalType": "uint256", "name": "pricePerCHT", "type": "uint256" },
+            { "internalType": "uint256", "name": "feeDeposited", "type": "uint256" },
+            { "internalType": "uint8", "name": "status", "type": "uint8" },
+            { "internalType": "uint64", "name": "createdAt", "type": "uint64" },
+            { "internalType": "uint64", "name": "expiresAt", "type": "uint64" }
+          ],
+          "internalType": "struct CHTExchange.Order[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "lockedCHT",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "lockedUSDT",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nextOrderId",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "", "type": "uint256" }
+      ],
+      "name": "orders",
+      "outputs": [
+        { "internalType": "uint256", "name": "id", "type": "uint256" },
+        { "internalType": "uint8", "name": "orderType", "type": "uint8" },
+        { "internalType": "address", "name": "maker", "type": "address" },
+        { "internalType": "uint256", "name": "chtAmount", "type": "uint256" },
+        { "internalType": "uint256", "name": "chtFilled", "type": "uint256" },
+        { "internalType": "uint256", "name": "pricePerCHT", "type": "uint256" },
+        { "internalType": "uint256", "name": "feeDeposited", "type": "uint256" },
+        { "internalType": "uint8", "name": "status", "type": "uint8" },
+        { "internalType": "uint64", "name": "createdAt", "type": "uint64" },
+        { "internalType": "uint64", "name": "expiresAt", "type": "uint64" }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "paused",
+      "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "address", "name": "_collector", "type": "address" }
+      ],
+      "name": "setFeeCollector",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalFees",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalTrades",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalVolumeCHT",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalVolumeUSDT",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "address", "name": "newOwner", "type": "address" }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "unpause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "address", "name": "", "type": "address" },
+        { "internalType": "uint256", "name": "", "type": "uint256" }
+      ],
+      "name": "userOrderIds",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "usdt",
+      "outputs": [{ "internalType": "contract IERC20", "name": "", "type": "address" }],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ]
+}
