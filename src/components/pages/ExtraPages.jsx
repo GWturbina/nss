@@ -8,7 +8,7 @@ import * as C from '@/lib/contracts'
 // LINKS PAGE — CardGift ссылки
 // ═════════════════════════════════════════════════════════
 export function LinksTab() {
-  const { wallet, registered, t } = useGameStore()
+  const { wallet, registered, sponsorId, t } = useGameStore()
   const [links, setLinks] = useState([])
   const [copied, setCopied] = useState(null)
   const [showCreate, setShowCreate] = useState(false)
@@ -18,19 +18,19 @@ export function LinksTab() {
   useEffect(() => {
     if (wallet) {
       const base = typeof window !== 'undefined' ? window.location.origin : ''
-      const ref = wallet.slice(2, 10)
+      const ref = sponsorId || '0'
       setLinks([
-        { id: 1, type: 'gems', name: t('gemsAndTapper'), url: `${base}/invite/gems?ref=${ref}`, clicks: 0 },
-        { id: 2, type: 'house', name: t('houseZeroPercent'), url: `${base}/invite/house?ref=${ref}`, clicks: 0 },
-        { id: 3, type: 'money', name: `15 ${t('incomeSources')}`, url: `${base}/invite/money?ref=${ref}`, clicks: 0 },
+        { id: 1, type: 'house', name: t('houseZeroPercent'), url: `${base}/invite?ref=${ref}&t=house`, clicks: 0 },
+        { id: 2, type: 'build', name: t('buildAndEarn') || 'Строй и зарабатывай', url: `${base}/invite?ref=${ref}&t=build`, clicks: 0 },
+        { id: 3, type: 'money', name: `15 ${t('incomeSources')}`, url: `${base}/invite?ref=${ref}&t=money`, clicks: 0 },
       ])
     }
-  }, [wallet, t])
+  }, [wallet, sponsorId, t])
 
   const copyLink = (id) => {
     const link = links.find(l => l.id === id)
     if (!link) return
-    navigator.clipboard.writeText(link.url)
+    try { navigator.clipboard.writeText(link.url) } catch { /* fallback for http */ }
     setCopied(id)
     setTimeout(() => setCopied(null), 2000)
   }
@@ -38,9 +38,9 @@ export function LinksTab() {
   const addLink = () => {
     if (!newName.trim()) return
     const base = typeof window !== 'undefined' ? window.location.origin : ''
-    const ref = wallet?.slice(2, 10) || '0'
+    const ref = sponsorId || '0'
     const id = Date.now()
-    setLinks(prev => [...prev, { id, type: newType, name: newName.trim(), url: `${base}/invite/${newType}?ref=${ref}`, clicks: 0 }])
+    setLinks(prev => [...prev, { id, type: newType, name: newName.trim(), url: `${base}/invite?ref=${ref}&t=${newType}`, clicks: 0 }])
     setNewName('')
     setShowCreate(false)
   }
