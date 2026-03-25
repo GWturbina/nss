@@ -96,10 +96,10 @@ const useGameStore = create(
   evapActive: false,
 
   // News/Quests (из админки)
-  news: ['Добро пожаловать в NSS!', 'Халвинг при 100K пользователей'],
+  news: ['Добро пожаловать в Метр²!', 'Сжигай CHT — снижай порог займа'],
   quests: [
-    { name: 'Сделай 100 тапов', reward: '50 NST', done: false },
-    { name: 'Пригласи друга', reward: '100 NST', done: false },
+    { name: 'Сделай 100 тапов', reward: '50 CHT', done: false },
+    { name: 'Пригласи друга', reward: '100 CHT', done: false },
   ],
 
   // ═══════════════════════════════════════════════════
