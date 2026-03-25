@@ -156,7 +156,7 @@ export default function Header() {
       {/* Token bar */}
       <div className="flex gap-1.5 px-3 pb-2 overflow-x-auto scrollbar-hide">
         {[
-          ['gold', 'NST', totalNst.toFixed(1), '💎'],
+          ['gold', 'CHT', totalNst.toFixed(1), '💎'],
           ['emerald', 'CGT', cgt.toFixed(1), '◆'],
           ['slate', 'USDT', parseFloat(usdt).toFixed(0), '💵'],
           ['purple', 'BNB', bnb.toFixed(3), '🔶'],
