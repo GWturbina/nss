@@ -9,7 +9,7 @@ import { shortAddress } from '@/lib/web3'
 // GEMS PAGE — Магазин камней (GemVault)
 // ═════════════════════════════════════════════════════════
 export function GemsTab() {
-  const { wallet, registered, addNotification, setTxPending, txPending, t } = useGameStore()
+  const { wallet, registered, addNotification, setTxPending, txPending, t, bnbPrice } = useGameStore()
   const [selectedGem, setSelectedGem] = useState(null)
   const [nstBurn, setNstBurn] = useState(0)
   const [filter, setFilter] = useState('all')
@@ -58,7 +58,7 @@ export function GemsTab() {
 
   const nstBonusPercent = Math.min(Math.floor(nstBurn / 1000), 10)
   const totalDiscount = 30 + nstBonusPercent
-  const BNB_RATE = 580
+  const BNB_RATE = bnbPrice > 10 ? bnbPrice : 580  // Из SwapHelper, fallback 580
 
   const calcPrice = (gem) => {
     const finalPrice = gem.price * (1 - totalDiscount / 100)
