@@ -3,15 +3,15 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 const TEMPLATES = {
-  gems: { emoji: '💎', title: 'Ищи камни — зарабатывай!', sub: 'Бесплатный старт. Тапай и добывай.', color: '#a855f7', ogImage: 'invite-gems.jpg' },
   house: { emoji: '🏠', title: 'Свой дом под 0%!', sub: 'Заработай 35% — клуб добавит 65%.', color: '#f59e0b', ogImage: 'invite-house.jpg' },
-  money: { emoji: '💰', title: '15 источников дохода!', sub: 'Камни, инвестиции, AI — всё в одном.', color: '#10b981', ogImage: 'invite-money.jpg' },
+  build: { emoji: '🏗', title: 'Строй дом — зарабатывай!', sub: 'Бесплатный старт. Тапай и копи на метры.', color: '#a855f7', ogImage: 'invite-build.jpg' },
+  money: { emoji: '💰', title: '15 источников дохода!', sub: 'Недвижимость, инвестиции, AI — всё в одном.', color: '#10b981', ogImage: 'invite-money.jpg' },
 }
 
 const FEATURES = [
-  { emoji: '⛏', title: 'Бесплатный старт', desc: 'Тапай руками — зарабатывай NST токены' },
-  { emoji: '💎', title: 'Реальные камни', desc: 'Рубины, сапфиры, изумруды со скидкой до 40%' },
-  { emoji: '🏔', title: '3 инвест-проекта', desc: 'От $50. Деньги работают в клубной системе' },
+  { emoji: '⛏', title: 'Бесплатный старт', desc: 'Тапай руками — зарабатывай CHT токены' },
+  { emoji: '📐', title: 'Метры квадратные', desc: 'Покупай м² — копи на свой дом' },
+  { emoji: '🏔', title: '3 бизнеса', desc: 'От $50. Деньги работают в клубной системе' },
   { emoji: '🏠', title: 'Свой дом под 0%', desc: 'Заработай 35% — клуб добавит 65%!' },
   { emoji: '🤖', title: 'AI-помощник', desc: 'Генерация картинок и озвучка для бизнеса' },
   { emoji: '👥', title: '9 уровней партнёрки', desc: 'До 10% ПОЖИЗНЕННО от приглашённых' },
@@ -19,15 +19,16 @@ const FEATURES = [
 
 function InviteContent() {
   const searchParams = useSearchParams()
-  const ref = searchParams.get('ref') || '0'
-  const t = searchParams.get('t') || 'gems'
-  const tpl = TEMPLATES[t] || TEMPLATES.gems
+  const rawRef = searchParams.get('ref') || '0'
+  const ref = /^\d+$/.test(rawRef) ? parseInt(rawRef, 10) : 0
+  const t = searchParams.get('t') || 'house'
+  const tpl = TEMPLATES[t] || TEMPLATES.house
 
   const [registered, setRegistered] = useState(false)
   const [myRef, setMyRef] = useState('')
   const [showExitPopup, setShowExitPopup] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [selTemplate, setSelTemplate] = useState('gems')
+  const [selTemplate, setSelTemplate] = useState('house')
 
   useEffect(() => {
     let triggered = false
@@ -52,16 +53,15 @@ function InviteContent() {
   }, [registered])
 
   const handleRegister = () => {
-    // Сохраняем реферала в localStorage — при открытии приложения он подтянется в модал регистрации
-    if (ref && ref !== '0') {
-      localStorage.setItem('nss_ref', ref)
+    if (ref > 0) {
+      localStorage.setItem('nss_ref', String(ref))
     }
     setRegistered(true)
     setShowExitPopup(false)
   }
 
   const myLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/invite?ref=${myRef}&t=${selTemplate}`
-  const shareText = `💎 NSS — Искатели Камней! Бесплатный старт, реальные камни со скидкой 40%, свой дом под 0%! Присоединяйся: ${myLink}`
+  const shareText = `🏠 Метр Квадратный — Club House! Бесплатный старт, свой дом под 0%, 3 бизнеса от $50! Присоединяйся: ${myLink}`
 
   const copyLink = () => {
     navigator.clipboard.writeText(myLink)
@@ -80,7 +80,7 @@ function InviteContent() {
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #0a0a20 0%, #1a1040 50%, #0a0a20 100%)' }}>
       <div className="max-w-[430px] mx-auto px-4 py-6">
         <div className="flex justify-center mb-4">
-          <img src="/icons/logo.png" alt="NSS" className="w-16 h-16 rounded-2xl" onError={e => { e.target.style.display='none' }} />
+          <img src="/icons/logo.png" alt="Club House" className="w-16 h-16 rounded-2xl" onError={e => { e.target.style.display='none' }} />
         </div>
 
         <div className="text-center mb-6">
@@ -96,12 +96,12 @@ function InviteContent() {
         </div>
 
         <div className="flex justify-center gap-3 mb-2">
-          <span className="text-4xl">💎</span>
-          <span className="text-4xl">⛏</span>
+          <span className="text-4xl">📐</span>
+          <span className="text-4xl">🏗</span>
           <span className="text-4xl">🏠</span>
         </div>
-        <h2 className="text-center text-lg font-black text-white mb-0.5">NSS — Искатели Камней</h2>
-        <p className="text-center text-[12px] text-slate-500 mb-4">Тапай • Зарабатывай • Строй дом</p>
+        <h2 className="text-center text-lg font-black text-white mb-0.5">Метр Квадратный — Club House</h2>
+        <p className="text-center text-[12px] text-slate-500 mb-4">Тапай • Копи метры • Строй дом</p>
 
         <div className="space-y-2 mb-6">
           {FEATURES.map((f, i) => (
@@ -133,7 +133,7 @@ function InviteContent() {
         )}
 
         <div className="text-center text-[10px] text-slate-600 mt-4">
-          NSS — Искатели Природных Камней • Powered by GlobalWay
+          Метр Квадратный — Club House • Powered by GlobalWay
         </div>
       </div>
 
@@ -146,9 +146,9 @@ function InviteContent() {
               <p className="text-[12px] text-slate-400 mb-4">Ты в одном шаге от бесплатного старта</p>
               <div className="space-y-2 mb-4 text-left">
                 <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">Бесплатная регистрация</span></div>
-                <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">21 день тестового периода</span></div>
-                <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">Камни со скидкой до 40%</span></div>
                 <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">Свой дом под 0% годовых</span></div>
+                <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">3 бизнеса от $50</span></div>
+                <div className="flex items-center gap-2 text-[12px]"><span className="text-emerald-400">✓</span><span className="text-slate-300">CHT токены — тапай бесплатно</span></div>
               </div>
               <button onClick={handleRegister} className="w-full py-3 rounded-2xl text-base font-black mb-2" style={{ background: 'linear-gradient(135deg, #ffd700, #f5a623)', color: '#000' }}>
                 🎁 Получить подарок
