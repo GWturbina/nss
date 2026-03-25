@@ -252,6 +252,15 @@ export default function MineTab() {
   const toolSrc = `/icons/tools/${['hands','shovel','sieve','cart','auto','cutting','jewelry','building','earth','house','village','resort','empire'][level]}.png`
   const lvBg = LEVEL_BACKGROUNDS[level] || LEVEL_BACKGROUNDS[0]
   const bgSrc = `/icons/backgrounds/levels/${lvBg.file}`
+  const [bgLoaded, setBgLoaded] = useState(false)
+
+  useEffect(() => {
+    setBgLoaded(false)
+    const img = new Image()
+    img.onload = () => setBgLoaded(true)
+    img.onerror = () => setBgLoaded(false)
+    img.src = bgSrc
+  }, [bgSrc])
 
   return (
     <div className="flex flex-col flex-1">
@@ -442,7 +451,7 @@ export default function MineTab() {
         style={{ borderColor: `${lv.color}20`, background: 'var(--lv-ambient)', boxShadow: `inset 0 0 60px ${lvBg.glow}, 0 0 20px ${lvBg.glow}` }}>
         {/* ═══ Фоновая картинка уровня ═══ */}
         <div className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
-          style={{ backgroundImage: `url(${bgSrc})`, filter: 'brightness(0.85)' }} />
+          style={{ backgroundImage: bgLoaded ? `url(${bgSrc})` : 'none', filter: 'brightness(0.85)' }} />
         {/* ═══ Оверлей с цветом уровня ═══ */}
         <div className="absolute inset-0 transition-all duration-700"
           style={{ background: `linear-gradient(180deg, ${lvBg.overlay} 0%, ${lv.color}15 50%, ${lvBg.overlay} 100%)` }} />
