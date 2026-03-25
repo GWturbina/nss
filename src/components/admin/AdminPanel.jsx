@@ -6,10 +6,10 @@ import * as C from '@/lib/contracts'
 
 import ADDRESSES from '@/contracts/addresses'
 import { TeamsAdmin } from '@/components/pages/ExtraPages'
+import ClubHousesAdmin from '@/components/admin/ClubHousesAdmin'
 
 
 
-import { GEMS as GEMS_DEFAULT, METALS as METALS_DEFAULT, GEM_ECONOMICS as GEM_ECON_DEFAULT, METAL_ECONOMICS as METAL_ECON_DEFAULT } from '@/lib/gameData'
 
 export default function AdminPanel() {
   const { wallet, isAdmin, ownerWallet, addNotification, setTxPending, txPending, 
@@ -36,8 +36,7 @@ export default function AdminPanel() {
     { id: 'matrix', icon: '🏔', label: t('business') },
     { id: 'auth', icon: '🔑', label: t('authorization') },
     { id: 'content', icon: '📢', label: t('content') },
-    { id: 'gems', icon: '💎', label: 'Камни' },
-    { id: 'metals', icon: '🥇', label: 'Металлы' },
+    { id: 'clubhouses', icon: '🏘', label: t('clubHouses') || 'Клубные дома' },
     { id: 'test', icon: '🎮', label: t('test') },
   ]
 
@@ -50,15 +49,6 @@ export default function AdminPanel() {
   const [fundsData, setFundsData] = useState(null)   // { clubFund, authorFund, ... + balances }
   const [fundsLoading, setFundsLoading] = useState(false)
   const [withdrawingFund, setWithdrawingFund] = useState(null)  // имя фонда который сейчас выводим
-
-  // State for gems/metals editing
-  const [gems, setGems] = useState(GEMS_DEFAULT)
-  const [metals, setMetals] = useState(METALS_DEFAULT)
-  const [gemEcon, setGemEcon] = useState(GEM_ECON_DEFAULT)
-  const [metalEcon, setMetalEcon] = useState(METAL_ECON_DEFAULT)
-  const [editingItem, setEditingItem] = useState(null)   // {type:'gem'|'metal', idx, data}
-  const [gemTab, setGemTab] = useState('list')           // 'list' | 'economics'
-  const [metalTab, setMetalTab] = useState('list')
 
   // State for gift slots
   const [giftAddress, setGiftAddress] = useState('')
@@ -690,322 +680,11 @@ export default function AdminPanel() {
             </div>
           )}
 
-          {/* ═══════════════════════════════════════════ */}
-          {/* GEMS ADMIN                                  */}
-          {/* ═══════════════════════════════════════════ */}
-          {activeSection === 'gems' && (
-            <div className="px-3 mt-2 space-y-2">
-              {/* Sub-tabs */}
-              <div className="flex gap-1">
-                {[['list','💎 Список камней'],['economics','📊 Проценты / Скидки']].map(([id,label]) => (
-                  <button key={id} onClick={() => setGemTab(id)}
-                    className={`flex-1 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${gemTab===id ? 'bg-gold-400/15 border-gold-400/30 text-gold-400' : 'border-white/8 text-slate-500'}`}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {gemTab === 'list' && (
-                <div className="space-y-1.5">
-                  <div className="text-[10px] text-slate-500 px-1">
-                    PNG файлы → <span className="text-gold-400 font-mono">public/images/gems/</span>
-                  </div>
-
-                  {/* Форма редактирования */}
-                  {editingItem?.type === 'gem' && (
-                    <div className="p-3 rounded-2xl glass border-gold-400/20 space-y-2">
-                      <div className="text-[11px] font-bold text-gold-400">✏️ Редактирование: {editingItem.data.name}</div>
-
-                      {[
-                        ['name','Название','text'],
-                        ['price','Цена ($)','number'],
-                        ['supplierCost','Закупка ($)','number'],
-                        ['carat','Карат','text'],
-                        ['origin','Происхождение','text'],
-                        ['grade','Сорт','text'],
-                        ['stakingAPR','Стейкинг APR (%)','number'],
-                        ['img','PNG файл (имя)','text'],
-                        ['desc','Описание','text'],
-                      ].map(([field, label, type]) => (
-                        <div key={field}>
-                          <label className="text-[9px] text-slate-500 block mb-0.5">{label}</label>
-                          <input type={type} value={editingItem.data[field] || ''}
-                            onChange={e => setEditingItem(prev => ({
-                              ...prev, data: { ...prev.data, [field]: type==='number' ? Number(e.target.value) : e.target.value }
-                            }))}
-                            className="w-full p-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white outline-none" />
-                        </div>
-                      ))}
-
-                      <div className="flex items-center gap-2">
-                        <label className="text-[9px] text-slate-500">Активен:</label>
-                        <button onClick={() => setEditingItem(prev => ({...prev, data:{...prev.data, active:!prev.data.active}}))}
-                          className={`px-2 py-1 rounded text-[9px] font-bold ${editingItem.data.active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                          {editingItem.data.active ? '✅ Вкл' : '❌ Выкл'}
-                        </button>
-                      </div>
-
-                      <div className="flex gap-1 pt-1">
-                        <button onClick={() => {
-                          const updated = [...gems]
-                          updated[editingItem.idx] = editingItem.data
-                          setGems(updated)
-                          setEditingItem(null)
-                          addNotification(`✅ ${editingItem.data.name} обновлён`)
-                        }} className="flex-1 py-2 rounded-xl text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                          💾 Сохранить
-                        </button>
-                        <button onClick={() => setEditingItem(null)}
-                          className="flex-1 py-2 rounded-xl text-[10px] font-bold border border-white/10 text-slate-500">
-                          Отмена
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Список камней */}
-                  {gems.map((gem, idx) => (
-                    <div key={gem.id} className="flex items-center gap-2 p-2 rounded-xl glass">
-                      {/* PNG превью или заглушка */}
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0 overflow-hidden"
-                        style={{ background: gem.active ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                        <img src={`/images/gems/${gem.img}`} alt={gem.name}
-                          className="w-full h-full object-cover"
-                          onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='block' }} />
-                        <span className="hidden text-lg">💎</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[11px] font-bold text-white truncate">{gem.name}</div>
-                        <div className="text-[9px] text-slate-500">${gem.price} • {gem.stakingAPR}% APR • {gem.img}</div>
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${gem.active ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'}`}>
-                          {gem.active ? '✅' : '❌'}
-                        </span>
-                        <button onClick={() => setEditingItem({ type:'gem', idx, data:{...gem} })}
-                          className="text-[10px] px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                          ✏️
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="text-[9px] text-slate-600 text-center pt-1">
-                    ℹ️ Изменения применяются локально. Для сохранения между сессиями — обнови gameData.js
-                  </div>
-                </div>
-              )}
-
-              {gemTab === 'economics' && (
-                <div className="p-3 rounded-2xl glass space-y-3">
-                  <div className="text-[11px] font-bold text-gold-400">📊 Распределение при покупке камня</div>
-
-                  {[
-                    ['supplierCut',    'Закупка камня (%)',         'Сколько % идёт поставщику'],
-                    ['sponsorCut',     'Спонсору / маркетинг (%)',  'Реферальная программа'],
-                    ['stakingFund',    'Фонд стейкинга (%)',        'Из него платится APR владельцам'],
-                    ['platformCut',    'Платформа (%)',             'Операционные расходы'],
-                  ].map(([key, label, hint]) => (
-                    <div key={key}>
-                      <div className="flex justify-between mb-0.5">
-                        <label className="text-[10px] text-slate-400">{label}</label>
-                        <span className="text-[10px] font-bold text-gold-400">{gemEcon[key]/100}%</span>
-                      </div>
-                      <div className="text-[9px] text-slate-600 mb-1">{hint}</div>
-                      <input type="range" min={0} max={10000} step={100}
-                        value={gemEcon[key]}
-                        onChange={e => setGemEcon(prev => ({...prev, [key]: Number(e.target.value)}))}
-                        className="w-full accent-yellow-400" />
-                    </div>
-                  ))}
-
-                  {/* Итоговая сумма */}
-                  {(() => {
-                    const total = (gemEcon.supplierCut + gemEcon.sponsorCut + gemEcon.stakingFund + gemEcon.platformCut) / 100
-                    const ok = total === 100
-                    return (
-                      <div className={`p-2 rounded-lg text-center text-[11px] font-bold ${ok ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                        Итого: {total}% {ok ? '✅ Сумма = 100%' : '❌ Должно быть 100%!'}
-                      </div>
-                    )
-                  })()}
-
-                  <div className="border-t border-white/8 pt-3">
-                    <div className="text-[11px] font-bold text-purple-400 mb-2">🎁 Клубные скидки</div>
-                    {[
-                      ['baseDiscountBP',  'Базовая скидка (%)',           'Скидка для всех зарегистрированных'],
-                      ['maxNstBonusBP',   'Макс. бонус NST (%)',          'Доп. скидка за наличие NST'],
-                      ['nstPerPercent',   '1% = сколько NST нужно',       'Например: 1000 NST = +1% скидки'],
-                      ['stakingLockMonths','Заморозка стейкинга (мес)',   'Срок блокировки при стейкинге'],
-                    ].map(([key, label, hint]) => (
-                      <div key={key} className="mb-3">
-                        <div className="flex justify-between mb-0.5">
-                          <label className="text-[10px] text-slate-400">{label}</label>
-                          <span className="text-[10px] font-bold text-purple-400">
-                            {key === 'nstPerPercent' || key === 'stakingLockMonths' ? gemEcon[key] : gemEcon[key]/100+'%'}
-                          </span>
-                        </div>
-                        <div className="text-[9px] text-slate-600 mb-1">{hint}</div>
-                        <input type="number" value={gemEcon[key]}
-                          onChange={e => setGemEcon(prev => ({...prev, [key]: Number(e.target.value)}))}
-                          className="w-full p-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white outline-none" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ═══════════════════════════════════════════ */}
-          {/* METALS ADMIN                                */}
-          {/* ═══════════════════════════════════════════ */}
-          {activeSection === 'metals' && (
-            <div className="px-3 mt-2 space-y-2">
-              <div className="flex gap-1">
-                {[['list','🥇 Список металлов'],['economics','📊 Спреды / Проценты']].map(([id,label]) => (
-                  <button key={id} onClick={() => setMetalTab(id)}
-                    className={`flex-1 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${metalTab===id ? 'bg-yellow-400/15 border-yellow-400/30 text-yellow-400' : 'border-white/8 text-slate-500'}`}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {metalTab === 'list' && (
-                <div className="space-y-1.5">
-                  <div className="text-[10px] text-slate-500 px-1">
-                    PNG файлы → <span className="text-yellow-400 font-mono">public/images/metals/</span>
-                  </div>
-
-                  {/* Форма редактирования металла */}
-                  {editingItem?.type === 'metal' && (
-                    <div className="p-3 rounded-2xl glass border-yellow-400/20 space-y-2">
-                      <div className="text-[11px] font-bold text-yellow-400">✏️ {editingItem.data.name}</div>
-                      {[
-                        ['name','Название','text'],
-                        ['price','Цена ($/ед)','number'],
-                        ['unit','Единица (1г, 50г...)','text'],
-                        ['purity','Проба','text'],
-                        ['stakingAPR','APR % (0 = нет)','number'],
-                        ['img','PNG файл (имя)','text'],
-                        ['desc','Описание','text'],
-                      ].map(([field, label, type]) => (
-                        <div key={field}>
-                          <label className="text-[9px] text-slate-500 block mb-0.5">{label}</label>
-                          <input type={type} value={editingItem.data[field] || ''}
-                            onChange={e => setEditingItem(prev => ({
-                              ...prev, data: { ...prev.data, [field]: type==='number' ? Number(e.target.value) : e.target.value }
-                            }))}
-                            className="w-full p-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white outline-none" />
-                        </div>
-                      ))}
-                      <div className="flex items-center gap-2">
-                        <label className="text-[9px] text-slate-500">Категория:</label>
-                        {['gold','silver','scrap'].map(cat => (
-                          <button key={cat} onClick={() => setEditingItem(prev => ({...prev, data:{...prev.data, category:cat}}))}
-                            className={`px-2 py-1 rounded text-[9px] font-bold border ${editingItem.data.category===cat ? 'border-yellow-400/40 text-yellow-400 bg-yellow-400/10' : 'border-white/10 text-slate-500'}`}>
-                            {{'gold':'🥇 Золото','silver':'🥈 Серебро','scrap':'🔩 Лом'}[cat]}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <label className="text-[9px] text-slate-500">Активен:</label>
-                        <button onClick={() => setEditingItem(prev => ({...prev, data:{...prev.data, active:!prev.data.active}}))}
-                          className={`px-2 py-1 rounded text-[9px] font-bold ${editingItem.data.active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                          {editingItem.data.active ? '✅ Вкл' : '❌ Выкл'}
-                        </button>
-                      </div>
-                      <div className="flex gap-1 pt-1">
-                        <button onClick={() => {
-                          const updated = [...metals]
-                          updated[editingItem.idx] = editingItem.data
-                          setMetals(updated)
-                          setEditingItem(null)
-                          addNotification(`✅ ${editingItem.data.name} обновлён`)
-                        }} className="flex-1 py-2 rounded-xl text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                          💾 Сохранить
-                        </button>
-                        <button onClick={() => setEditingItem(null)}
-                          className="flex-1 py-2 rounded-xl text-[10px] font-bold border border-white/10 text-slate-500">
-                          Отмена
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Группировка по категориям */}
-                  {['gold','silver','scrap'].map(cat => {
-                    const catMetals = metals.filter(m => m.category === cat)
-                    if (!catMetals.length) return null
-                    const catLabels = { gold:'🥇 Золото', silver:'🥈 Серебро', scrap:'🔩 Лом / Скупка' }
-                    return (
-                      <div key={cat}>
-                        <div className="text-[10px] font-bold text-slate-400 px-1 mt-2 mb-1">{catLabels[cat]}</div>
-                        {catMetals.map(metal => {
-                          const idx = metals.indexOf(metal)
-                          return (
-                            <div key={metal.id} className="flex items-center gap-2 p-2 rounded-xl glass mb-1">
-                              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0 overflow-hidden"
-                                style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.15)' }}>
-                                <img src={`/images/metals/${metal.img}`} alt={metal.name}
-                                  className="w-full h-full object-cover"
-                                  onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='block' }} />
-                                <span className="hidden">🥇</span>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-[11px] font-bold text-white truncate">{metal.name}</div>
-                                <div className="text-[9px] text-slate-500">${metal.price}/{metal.unit} • {metal.purity} • {metal.img}</div>
-                              </div>
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${metal.active ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'}`}>
-                                  {metal.active ? '✅' : '❌'}
-                                </span>
-                                <button onClick={() => setEditingItem({ type:'metal', idx, data:{...metal} })}
-                                  className="text-[10px] px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                                  ✏️
-                                </button>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )
-                  })}
-
-                  <div className="text-[9px] text-slate-600 text-center pt-1">
-                    ℹ️ Металлы — будущий раздел. Покупка через P2PEscrow контракт (уже в системе)
-                  </div>
-                </div>
-              )}
-
-              {metalTab === 'economics' && (
-                <div className="p-3 rounded-2xl glass space-y-3">
-                  <div className="text-[11px] font-bold text-yellow-400">📊 Спреды и комиссии металлов</div>
-                  {[
-                    ['buyupSpread', 'Наценка при продаже нам (%)', 'Мы продаём клиенту с наценкой'],
-                    ['sellSpread',  'Скидка при скупке лома (%)', 'Мы покупаем лом с дисконтом к рынку'],
-                    ['sponsorCut',  'Спонсору (%)',                'Реферальная программа'],
-                    ['platformCut', 'Платформа (%)',               'Операционные расходы'],
-                    ['stakingFund', 'Фонд хранения (%)',           'Страховой фонд хранилища'],
-                  ].map(([key, label, hint]) => (
-                    <div key={key}>
-                      <div className="flex justify-between mb-0.5">
-                        <label className="text-[10px] text-slate-400">{label}</label>
-                        <span className="text-[10px] font-bold text-yellow-400">{metalEcon[key]/100}%</span>
-                      </div>
-                      <div className="text-[9px] text-slate-600 mb-1">{hint}</div>
-                      <input type="range" min={0} max={5000} step={50}
-                        value={metalEcon[key]}
-                        onChange={e => setMetalEcon(prev => ({...prev, [key]: Number(e.target.value)}))}
-                        className="w-full accent-yellow-400" />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
           
-          
+          {/* ═══ КЛУБНЫЕ ДОМА ═══ */}
+          {activeSection === 'clubhouses' && (
+            <ClubHousesAdmin />
+          )}
           
           
         </>
