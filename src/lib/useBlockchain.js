@@ -148,11 +148,25 @@ export function useBlockchainInit() {
     }
   }, [])
 
-  // Если wallet уже есть (reload) — запустить рефреш
+  // Если wallet уже есть (reload) — попробовать восстановить signer
   useEffect(() => {
     if (wallet && !_refreshInterval) {
-      refreshDataForAddress(wallet)
-      startRefreshCycle(wallet)
+      // После перезагрузки signer = null, нужно переподключить
+      if (!web3.signer) {
+        // Тихое переподключение без уведомлений
+        web3.connect().then((result) => {
+          const store = useGameStore.getState()
+          store.setWallet(result)
+          refreshDataForAddress(result.address)
+          startRefreshCycle(result.address)
+        }).catch(() => {
+          // Кошелёк недоступен — сбрасываем
+          useGameStore.getState().clearWallet()
+        })
+      } else {
+        refreshDataForAddress(wallet)
+        startRefreshCycle(wallet)
+      }
     }
     if (!wallet) {
       stopRefreshCycle()
