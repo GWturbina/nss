@@ -9,6 +9,7 @@ export default function BottomNav() {
 
   const BOTTOM_TABS = [
     { id: 'levels', icon: '🗺', label: t('tabLevels') },
+    { id: 'exchange', icon: '💱', label: t('tabExchange') || 'Обмен' },
     { id: 'team', icon: '👥', label: t('tabTeam') },
     { id: 'links', icon: '✂️', label: t('tabLinks') },
     { id: 'vault', icon: '🔐', label: t('tabVault') },
