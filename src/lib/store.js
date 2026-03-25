@@ -215,28 +215,83 @@ const useGameStore = create(
   clearError: () => set({ lastError: null }),
 
   // ═══════════════════════════════════════════════════
-  // GAME ACTIONS (тапалка — локальная)
+  // GAME ACTIONS (тапалка — серверная + optimistic)
   // ═══════════════════════════════════════════════════
   setTab: (tab) => set({ activeTab: tab }),
   toggleDayMode: () => set(s => ({ dayMode: !s.dayMode })),
 
+  // Бонусы за уровни
+  levelBonuses: { total_nst: 0, total_cgt: 0, total_gwt: 0, claimed_levels: [] },
+  setLevelBonuses: (data) => set({ levelBonuses: data }),
+
+  /**
+   * doTap — оптимистичный тап
+   * 1. Мгновенно обновляет UI (optimistic)
+   * 2. В фоне отправляет на сервер
+   * 3. Если сервер отказал — откатывает
+   *
+   * Без кошелька — локальный тап с испарением (гостевой режим)
+   */
   doTap: () => {
     const { energy, level, localNst, taps, registered, wallet, evapActive } = get()
     if (energy <= 0) return null
     const lv = LEVELS[level]
     const earned = lv.nstPerTap
+
+    // Optimistic update (мгновенно)
     set({
       localNst: +(localNst + earned).toFixed(2),
       energy: energy - 1,
       taps: taps + 1,
     })
-    // Испарение включается ТОЛЬКО если нет кошелька И нет регистрации И первый тап
+
+    // Гостевой режим — испарение
     if (!registered && !wallet && !evapActive && taps === 0) set({ evapActive: true })
+
+    // Серверный тап в фоне (если есть кошелёк и Supabase)
+    if (wallet) {
+      import('./tapService').then(({ serverTap, isSupabaseAvailable }) => {
+        if (!isSupabaseAvailable()) return  // Нет Supabase — работаем локально
+        serverTap(wallet, level).then(result => {
+          if (result && result.ok) {
+            // Синхронизируем с сервером (сервер = источник правды)
+            set({
+              energy: result.energy,
+              localNst: parseFloat(result.local_nst) || 0,
+              taps: parseInt(result.taps) || 0,
+            })
+          }
+          // Если ошибка — оставляем optimistic (не откатываем ради UX)
+        }).catch(() => {})
+      }).catch(() => {})
+    }
+
     return earned
   },
 
+  /** Синхронизация состояния тапалки с сервером */
+  syncTapState: async () => {
+    const { wallet } = get()
+    if (!wallet) return
+    try {
+      const { getTapState, isSupabaseAvailable } = await import('./tapService')
+      if (!isSupabaseAvailable()) return
+      const state = await getTapState(wallet)
+      if (state) {
+        set({
+          energy: state.energy ?? 200,
+          maxEnergy: state.max_energy ?? 200,
+          localNst: parseFloat(state.local_nst) || 0,
+          taps: parseInt(state.taps) || 0,
+        })
+      }
+    } catch {}
+  },
+
+  // regenEnergy — только для гостей без кошелька (сервер сам считает)
   regenEnergy: () => {
-    const { energy, maxEnergy } = get()
+    const { energy, maxEnergy, wallet } = get()
+    if (wallet) return  // Сервер сам считает регенерацию
     if (energy < maxEnergy) set({ energy: Math.min(energy + 1, maxEnergy) })
   },
 
