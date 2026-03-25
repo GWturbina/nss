@@ -23,8 +23,9 @@ export default function Header() {
   const TOP_TABS = [
     { id: 'mine', icon: '⛏', label: t('tabMine') },
     { id: 'staking', icon: '🏔', label: t('tabBusiness') },
-    { id: 'exchange', icon: '💱', label: t('tabExchange') },
     { id: 'home', icon: '🏠', label: t('tabHome') },
+    { id: 'loan', icon: '🏗', label: t('tabLoan') || 'Займ' },
+    { id: 'chtExchange', icon: '📊', label: t('tabCHTExchange') || 'Биржа' },
   ]
 
   const handleWalletClick = async () => {
