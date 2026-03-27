@@ -82,6 +82,17 @@ async function doConnect() {
     // Запустить авторефреш (если ещё нет)
     startRefreshCycle(result.address)
 
+    // ═══ AUTO-REGISTER: если не зарегистрирован — показать модал ═══
+    const currentStore = useGameStore.getState()
+    if (!currentStore.registered) {
+      const savedRef = typeof localStorage !== 'undefined' ? localStorage.getItem('nss_ref') : null
+      if (savedRef && /^\d+$/.test(savedRef)) {
+        store.setAutoRegister(parseInt(savedRef, 10))
+      } else {
+        store.setAutoRegister(null) // Покажет модал с ручным вводом
+      }
+    }
+
     return true
   } catch (err) {
     store.addNotification(`❌ ${err.message}`)
