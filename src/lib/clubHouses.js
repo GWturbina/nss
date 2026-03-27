@@ -1,57 +1,58 @@
 'use client'
 /**
- * Club Houses Service — Supabase CRUD
+ * Club Houses Service — v2 SECURE
  * 
- * Таблицы Supabase:
+ * READ:   Напрямую через Supabase anon (RLS разрешает SELECT всем)
+ * WRITE:  Через серверные API routes с верификацией подписи кошелька
  * 
- * club_houses:
- *   id (uuid PK), name, city, country, total_price (numeric),
- *   total_sqm (numeric), image_url, description, status (text: 'planning','building','completed'),
- *   created_at (timestamptz)
- *
- * club_house_purchases:
- *   id (uuid PK), house_id (FK → club_houses.id), wallet (text),
- *   sqm_purchased (numeric), tx_hash (text), slot_table (int2),
- *   created_at (timestamptz)
- *
- * SQL для создания таблиц (выполнить в Supabase SQL Editor):
- *
- * CREATE TABLE IF NOT EXISTS club_houses (
- *   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
- *   name text NOT NULL,
- *   city text NOT NULL DEFAULT '',
- *   country text NOT NULL DEFAULT '',
- *   total_price numeric NOT NULL DEFAULT 0,
- *   total_sqm numeric NOT NULL DEFAULT 0,
- *   image_url text DEFAULT '',
- *   description text DEFAULT '',
- *   status text NOT NULL DEFAULT 'planning',
- *   created_at timestamptz DEFAULT now()
- * );
- *
- * CREATE TABLE IF NOT EXISTS club_house_purchases (
- *   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
- *   house_id uuid REFERENCES club_houses(id) ON DELETE CASCADE,
- *   wallet text NOT NULL,
- *   sqm_purchased numeric NOT NULL DEFAULT 0,
- *   tx_hash text DEFAULT '',
- *   slot_table smallint NOT NULL DEFAULT 0,
- *   created_at timestamptz DEFAULT now()
- * );
- *
- * -- RLS (read all, write only admin via service role or RPC)
- * ALTER TABLE club_houses ENABLE ROW LEVEL SECURITY;
- * CREATE POLICY "club_houses_read" ON club_houses FOR SELECT USING (true);
- * CREATE POLICY "club_houses_write" ON club_houses FOR ALL USING (true);
- *
- * ALTER TABLE club_house_purchases ENABLE ROW LEVEL SECURITY;
- * CREATE POLICY "purchases_read" ON club_house_purchases FOR SELECT USING (true);
- * CREATE POLICY "purchases_write" ON club_house_purchases FOR ALL USING (true);
+ * Изменения v2:
+ * - createClubHouse, updateClubHouse, deleteClubHouse → через /api/admin/houses
+ * - recordPurchase → через /api/admin/purchases (с верификацией tx_hash)
+ * - uploadHouseImage — по-прежнему через Supabase Storage (добавить RLS на bucket!)
+ * - Все write-операции требуют подпись кошелька (signAdminRequest)
  */
 import supabase from './supabase'
+import web3 from './web3'
 
 // ═══════════════════════════════════════════════════
-// CLUB HOUSES — CRUD
+// ПОДПИСЬ ADMIN-ЗАПРОСОВ
+// ═══════════════════════════════════════════════════
+
+/**
+ * Подписать admin-запрос кошельком
+ * Возвращает заголовки для API route
+ */
+async function signAdminHeaders() {
+  if (!web3.signer) throw new Error('Кошелёк не подключён')
+  const timestamp = String(Date.now())
+  const message = `admin:${timestamp}`
+  const signature = await web3.signer.signMessage(message)
+  return {
+    'Content-Type': 'application/json',
+    'x-wallet': web3.address,
+    'x-signature': signature,
+    'x-timestamp': timestamp,
+  }
+}
+
+/**
+ * Выполнить admin-запрос через API route
+ */
+async function adminFetch(url, options = {}) {
+  try {
+    const headers = await signAdminHeaders()
+    const res = await fetch(url, { ...options, headers: { ...headers, ...(options.headers || {}) } })
+    const data = await res.json()
+    if (!data.ok) return { ok: false, error: data.error || 'Ошибка сервера' }
+    return data
+  } catch (err) {
+    if (err.message?.includes('user rejected')) return { ok: false, error: 'Подпись отклонена' }
+    return { ok: false, error: err.message || 'Ошибка сети' }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// CLUB HOUSES — READ (через Supabase anon — безопасно)
 // ═══════════════════════════════════════════════════
 
 /** Получить все клубные дома */
@@ -80,70 +81,6 @@ export async function getClubHouseWithPurchases(houseId) {
   }
 }
 
-/** Создать клубный дом (админ) */
-export async function createClubHouse({ name, city, country, total_price, total_sqm, image_url, description }) {
-  if (!supabase) return { ok: false, error: 'Supabase не подключён' }
-  const { data, error } = await supabase
-    .from('club_houses')
-    .insert({
-      name,
-      city: city || '',
-      country: country || '',
-      total_price: parseFloat(total_price) || 0,
-      total_sqm: parseFloat(total_sqm) || 0,
-      image_url: image_url || '',
-      description: description || '',
-      status: 'planning',
-    })
-    .select()
-    .single()
-  if (error) return { ok: false, error: error.message }
-  return { ok: true, data }
-}
-
-/** Обновить клубный дом (админ) */
-export async function updateClubHouse(id, updates) {
-  if (!supabase) return { ok: false, error: 'Supabase не подключён' }
-  const { data, error } = await supabase
-    .from('club_houses')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single()
-  if (error) return { ok: false, error: error.message }
-  return { ok: true, data }
-}
-
-/** Удалить клубный дом (админ) */
-export async function deleteClubHouse(id) {
-  if (!supabase) return { ok: false, error: 'Supabase не подключён' }
-  const { error } = await supabase.from('club_houses').delete().eq('id', id)
-  if (error) return { ok: false, error: error.message }
-  return { ok: true }
-}
-
-// ═══════════════════════════════════════════════════
-// PURCHASES
-// ═══════════════════════════════════════════════════
-
-/** Записать покупку м² для клубного дома */
-export async function recordPurchase({ house_id, wallet, sqm_purchased, tx_hash, slot_table }) {
-  if (!supabase) return { ok: false, error: 'Supabase не подключён' }
-  const { data, error } = await supabase
-    .from('club_house_purchases')
-    .insert({
-      house_id,
-      wallet: wallet.toLowerCase(),
-      sqm_purchased: parseFloat(sqm_purchased) || 0,
-      tx_hash: tx_hash || '',
-      slot_table: slot_table ?? 0,
-    })
-    .select()
-    .single()
-  if (error) return { ok: false, error: error.message }
-  return { ok: true, data }
-}
-
 /** Получить покупки пользователя */
 export async function getUserPurchases(wallet) {
   if (!supabase || !wallet) return []
@@ -155,6 +92,50 @@ export async function getUserPurchases(wallet) {
   if (error) return []
   return data || []
 }
+
+// ═══════════════════════════════════════════════════
+// CLUB HOUSES — WRITE (через secure API routes)
+// ═══════════════════════════════════════════════════
+
+/** Создать клубный дом (admin) */
+export async function createClubHouse({ name, city, country, total_price, total_sqm, image_url, description }) {
+  return adminFetch('/api/admin/houses', {
+    method: 'POST',
+    body: JSON.stringify({ name, city, country, total_price, total_sqm, image_url, description }),
+  })
+}
+
+/** Обновить клубный дом (admin) */
+export async function updateClubHouse(id, updates) {
+  return adminFetch('/api/admin/houses', {
+    method: 'PUT',
+    body: JSON.stringify({ id, ...updates }),
+  })
+}
+
+/** Удалить клубный дом (admin) */
+export async function deleteClubHouse(id) {
+  return adminFetch(`/api/admin/houses?id=${id}`, {
+    method: 'DELETE',
+  })
+}
+
+// ═══════════════════════════════════════════════════
+// PURCHASES — WRITE (через secure API route)
+// ═══════════════════════════════════════════════════
+
+/** Записать покупку м² для клубного дома (admin, с верификацией tx_hash) */
+export async function recordPurchase({ house_id, wallet, sqm_purchased, tx_hash, slot_table }) {
+  return adminFetch('/api/admin/purchases', {
+    method: 'POST',
+    body: JSON.stringify({ house_id, wallet, sqm_purchased, tx_hash, slot_table }),
+  })
+}
+
+// ═══════════════════════════════════════════════════
+// UPLOAD — Supabase Storage (пока через anon)
+// TODO: добавить RLS на bucket 'images' — только авторизованные загрузки
+// ═══════════════════════════════════════════════════
 
 /** Загрузить фото в Supabase Storage */
 export async function uploadHouseImage(file) {
