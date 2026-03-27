@@ -1,24 +1,19 @@
 'use client'
 import useGameStore from '@/lib/store'
-
 export default function BottomNav() {
   const { activeTab, setTab, isAdmin, wallet, ownerWallet, t } = useGameStore()
-
-  // isAdmin = true если wallet совпадает с ownerWallet (и при reload, и после подключения)
   const showAdmin = isAdmin || (wallet && ownerWallet && wallet.toLowerCase() === ownerWallet.toLowerCase())
-
   const BOTTOM_TABS = [
     { id: 'levels', icon: '🗺', label: t('tabLevels') },
+    { id: 'houses', icon: '🏠', label: t('tabHouses') || 'Дома' },
     { id: 'exchange', icon: '💱', label: t('tabExchange') || 'Обмен' },
     { id: 'team', icon: '👥', label: t('tabTeam') },
     { id: 'links', icon: '✂️', label: t('tabLinks') },
     { id: 'vault', icon: '🔐', label: t('tabVault') },
   ]
-
   const tabs = showAdmin
     ? [...BOTTOM_TABS, { id: 'admin', icon: '⚙️', label: t('tabAdmin') }]
     : BOTTOM_TABS
-
   return (
     <div className="sticky bottom-0 z-50 flex border-t"
       style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
