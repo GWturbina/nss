@@ -26,6 +26,7 @@ const ADDRESSES = {
   GlobalWayBridge:   '0x4489851e530924eB25e684E6b97c7C47364780F5',
   MatrixRegistry:    '0xD62945edFF7605dFc77A4bF607c96Da72E03cd0C',
   GWTToken:          '0x933B0Cb1f43170f3F0fcf082572CC931D6e93b5F',
+  GlobalWayStats:    '0x1c5A63AfC7dd0b057B9dcAA3B6B47B4078a5A808',
   // ═══ Метр Квадратный — новые контракты ═══
   LoanThresholdManager: '0x09B3cECF6CADc995f38a527701bb6E68861AA140',
   CHTExchange:          '0x0943Da3D0D5107a2c87d9c814874da5C58C4a2EE',
