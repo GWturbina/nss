@@ -5,7 +5,7 @@ export default function BottomNav() {
   const showAdmin = isAdmin || (wallet && ownerWallet && wallet.toLowerCase() === ownerWallet.toLowerCase())
   const BOTTOM_TABS = [
     { id: 'levels', icon: '🗺', label: t('tabLevels') },
-    { id: 'houses', icon: '🏠', label: t('tabHouses') || 'Дома' },
+    { id: 'houses', icon: '🏠', label: 'Дома' },
     { id: 'exchange', icon: '💱', label: t('tabExchange') || 'Обмен' },
     { id: 'team', icon: '👥', label: t('tabTeam') },
     { id: 'links', icon: '✂️', label: t('tabLinks') },
