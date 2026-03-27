@@ -1,30 +1,30 @@
-const BASE_URL = 'https://nss-azure.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nss-azure.vercel.app'
 
 const templates = {
-  gems: {
-    title: '💎 NSS Diamond Club — Бриллианты по клубной цене',
-    description: 'Закрытый инвестиционный клуб. Бриллианты от завода со скидкой до 64%. Стейкинг от 50% годовых. Начни бесплатно!',
-    image: 'invite-gems.jpg',
-  },
   house: {
-    title: '🏠 NSS — Свой дом под 0% годовых',
+    title: '🏠 Метр Квадратный — Свой дом под 0% годовых',
     description: 'Заработай 35% депозит через клуб — мы добавим 65% под 0% годовых. Дом в любой стране мира. Без банков и кредитов.',
     image: 'invite-house.jpg',
   },
+  build: {
+    title: '🏗 Метр Квадратный — Строй дом, зарабатывай!',
+    description: 'Бесплатный старт. Тапай и копи метры квадратные. 3 бизнеса от $50. Клубные дома — экономия до 40%.',
+    image: 'invite-build.jpg',
+  },
   money: {
-    title: '💰 NSS — 15 источников дохода в одном приложении',
-    description: 'Бриллианты, стейкинг, P2P торговля, DCT токены, реферальная программа. Бесплатный старт — зарабатывай с первого дня.',
+    title: '💰 Метр Квадратный — 15 источников дохода',
+    description: 'Недвижимость, инвестиции, партнёрская программа. Бесплатный старт — зарабатывай с первого дня.',
     image: 'invite-money.jpg',
   },
 }
 
 export function generateStaticParams() {
-  return [{ t: 'gems' }, { t: 'house' }, { t: 'money' }]
+  return [{ t: 'house' }, { t: 'build' }, { t: 'money' }]
 }
 
 export async function generateMetadata({ params }) {
-  const t = params.t || 'gems'
-  const tpl = templates[t] || templates.gems
+  const t = params.t || 'house'
+  const tpl = templates[t] || templates.house
 
   return {
     title: tpl.title,
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }) {
       title: tpl.title,
       description: tpl.description,
       url: `${BASE_URL}/invite/${t}`,
-      siteName: 'NSS Diamond Club',
+      siteName: 'Метр Квадратный — Club House',
       images: [
         {
           url: `${BASE_URL}/previews/${tpl.image}`,
