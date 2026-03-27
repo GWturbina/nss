@@ -46,8 +46,7 @@ const ABIS = {
 // ПРЯМОЙ RPC ПРОВАЙДЕР ДЛЯ ЧТЕНИЯ (без кошелька!)
 // Решает "Request limit exceeded" от расширений
 // ═══════════════════════════════════════════════════
-const READ_RPC = 'https://opbnb-mainnet-rpc.bnbchain.org'
-const readProvider = new ethers.JsonRpcProvider(READ_RPC)
+import readProvider from './readProvider'
 
 // ═══════════════════════════════════════════════════
 // ХЕЛПЕРЫ
