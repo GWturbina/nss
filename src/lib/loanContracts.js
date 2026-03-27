@@ -13,8 +13,7 @@ import NSTTokenABIFile from '@/contracts/abi/NSTToken.json'
 const LoanABI = LoanABIFile.abi || LoanABIFile
 const NSTTokenABI = NSTTokenABIFile.abi || NSTTokenABIFile
 
-const READ_RPC = 'https://opbnb-mainnet-rpc.bnbchain.org'
-const readProvider = new ethers.JsonRpcProvider(READ_RPC)
+import readProvider from './readProvider'
 
 const fmt = ethers.formatEther
 const parse = ethers.parseEther
