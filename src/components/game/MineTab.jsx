@@ -450,10 +450,7 @@ export default function MineTab() {
         {/* ═══ Виньетка по краям ═══ */}
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.5) 100%)' }} />
 
-        {/* Центральная зона — только текст, без иконки */}
-        <div className="relative z-10 text-center select-none">
-          <div className="text-2xl mb-1">{lv.emoji}</div>
-        </div>
+        {/* Центральная зона — чистый фон, без иконок */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 text-[11px] px-3 py-1 rounded-full"
           style={{ color: '#eee8d5', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>
           ⛏ {t('tapHint')} • +{lv.nstPerTap} {t('nstPerTap')}
