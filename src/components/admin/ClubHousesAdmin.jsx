@@ -11,6 +11,11 @@ export default function ClubHousesAdmin() {
   const [showCreate, setShowCreate] = useState(false)
   const [selectedHouse, setSelectedHouse] = useState(null) // house with purchases
   const [detailLoading, setDetailLoading] = useState(false)
+  const [showGift, setShowGift] = useState(false)
+  const [giftWallet, setGiftWallet] = useState('')
+  const [giftSqm, setGiftSqm] = useState('')
+  const [giftAmount, setGiftAmount] = useState('')
+  const [gifting, setGifting] = useState(false)
 
   // Форма создания
   const [form, setForm] = useState({
@@ -90,6 +95,35 @@ export default function ClubHousesAdmin() {
     const detail = await CH.getClubHouseWithPurchases(id)
     setSelectedHouse(detail)
     setDetailLoading(false)
+  }
+
+  const handleGift = async () => {
+    if (!giftWallet || !giftSqm || !selectedHouse) return
+    if (!/^0x[a-fA-F0-9]{40}$/.test(giftWallet)) {
+      addNotification('❌ Некорректный адрес кошелька')
+      return
+    }
+    setGifting(true)
+    const result = await CH.recordPurchase({
+      house_id: selectedHouse.id,
+      wallet: giftWallet.toLowerCase(),
+      sqm_purchased: parseFloat(giftSqm),
+      amount_paid: parseFloat(giftAmount) || 0,
+      tx_hash: 'gift-' + Date.now(),
+      payment_type: 'gift',
+    })
+    if (result.ok) {
+      addNotification(`✅ Подарено ${giftSqm} м² → ${giftWallet.slice(0, 8)}...`)
+      setGiftWallet('')
+      setGiftSqm('')
+      setGiftAmount('')
+      setShowGift(false)
+      loadHouseDetail(selectedHouse.id)
+      loadHouses()
+    } else {
+      addNotification(`❌ ${result.error}`)
+    }
+    setGifting(false)
   }
 
   const STATUS_LABELS = {
@@ -269,12 +303,56 @@ export default function ClubHousesAdmin() {
                           <div>
                             <span className="text-[10px] font-bold text-white">{shortAddress(p.wallet)}</span>
                             <span className="text-[9px] text-slate-500 ml-2">{parseFloat(p.sqm_purchased).toFixed(2)} м²</span>
+                            {p.payment_type === 'gift' && <span className="text-[8px] text-purple-400 ml-1">🎁</span>}
                           </div>
                           <div className="text-[8px] text-slate-600">
-                            Стол #{p.slot_table} • {new Date(p.created_at).toLocaleDateString()}
+                            {p.payment_type === 'gift' ? '🎁 Подарок' : `$${parseFloat(p.amount_paid || 0)}`} • {new Date(p.created_at).toLocaleDateString()}
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ═══ Подарить м² ═══ */}
+                <div className="mb-3">
+                  <button onClick={() => setShowGift(!showGift)}
+                    className={`w-full py-2 rounded-xl text-[10px] font-bold border ${showGift ? 'bg-purple-500/15 border-purple-500/25 text-purple-400' : 'bg-gold-400/10 border-gold-400/20 text-gold-400'}`}>
+                    {showGift ? '✕ Отмена' : '🎁 Подарить м²'}
+                  </button>
+                  {showGift && (
+                    <div className="mt-2 p-3 rounded-xl space-y-2" style={{ background: 'rgba(168,85,247,0.05)', border: '1px solid rgba(168,85,247,0.15)' }}>
+                      <div>
+                        <label className="text-[9px] text-slate-500 block mb-0.5">Кошелёк получателя *</label>
+                        <input type="text" value={giftWallet} onChange={e => setGiftWallet(e.target.value)}
+                          placeholder="0x..." className="w-full p-2 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white outline-none" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[9px] text-slate-500 block mb-0.5">Количество м² *</label>
+                          <input type="number" value={giftSqm} onChange={e => setGiftSqm(e.target.value)}
+                            placeholder="0.25" step="0.05" className="w-full p-2 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white outline-none" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-slate-500 block mb-0.5">Сумма $ (необязательно)</label>
+                          <input type="number" value={giftAmount} onChange={e => setGiftAmount(e.target.value)}
+                            placeholder="250" className="w-full p-2 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white outline-none" />
+                        </div>
+                      </div>
+                      {/* Быстрые кнопки */}
+                      <div className="flex gap-1">
+                        {[{ sqm: '0.05', amt: '50' }, { sqm: '0.25', amt: '250' }, { sqm: '1.0', amt: '1000' }].map(q => (
+                          <button key={q.sqm} onClick={() => { setGiftSqm(q.sqm); setGiftAmount(q.amt) }}
+                            className="flex-1 py-1 rounded-lg text-[9px] font-bold bg-white/5 text-slate-400 hover:text-white border border-white/5">
+                            {q.sqm} м² (${q.amt})
+                          </button>
+                        ))}
+                      </div>
+                      <button onClick={handleGift} disabled={gifting || !giftWallet || !giftSqm}
+                        className="w-full py-2 rounded-xl text-[10px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/25"
+                        style={{ opacity: (!giftWallet || !giftSqm || gifting) ? 0.5 : 1 }}>
+                        {gifting ? '⏳ Подарок...' : `🎁 Подарить ${giftSqm || '?'} м²`}
+                      </button>
                     </div>
                   )}
                 </div>
