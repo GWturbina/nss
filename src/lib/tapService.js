@@ -2,10 +2,15 @@
 /**
  * Tap Service — серверный тапинг через Supabase RPC
  * 
+ * Метр Квадратный использует отдельные функции:
+ *   cht_do_tap / cht_get_tap_state / cht_tap_state
+ * Чтобы НЕ конфликтовать с Diamond Club (do_tap / get_tap_state / tap_state)
+ * 
  * Защита от фарма:
  * - Энергия и баланс хранятся на сервере (Supabase)
  * - Регенерация по серверному времени (нельзя перемотать часы)
- * - RPC функция do_tap() с SECURITY DEFINER (обходит RLS)
+ * - RPC функция cht_do_tap() с SECURITY DEFINER (обходит RLS)
+ * - Rate limit: 1 тап в 200ms
  * - Клиент не может напрямую менять energy/localNst
  */
 import supabase from './supabase'
@@ -20,7 +25,7 @@ export async function serverTap(wallet, level) {
   if (!supabase || !wallet) return { ok: false, error: 'Not connected' }
 
   try {
-    const { data, error } = await supabase.rpc('do_tap', {
+    const { data, error } = await supabase.rpc('cht_do_tap', {
       p_wallet: wallet.toLowerCase(),
       p_level: level,
     })
@@ -48,7 +53,7 @@ export async function getTapState(wallet) {
   }
 
   try {
-    const { data, error } = await supabase.rpc('get_tap_state', {
+    const { data, error } = await supabase.rpc('cht_get_tap_state', {
       p_wallet: wallet.toLowerCase(),
     })
 
@@ -58,33 +63,25 @@ export async function getTapState(wallet) {
     }
 
     return data
-  } catch {
+  } catch (err) {
+    console.error('getTapState exception:', err)
     return { energy: 200, max_energy: 200, local_nst: 0, taps: 0, level: 0 }
   }
 }
 
 /**
- * Начислить бонус за покупку уровня
- * @param {string} wallet
- * @param {number} level — купленный уровень (1-12)
- * @param {string} txHash — хэш транзакции
- * @returns {{ ok, nst_bonus, cgt_bonus, gwt_bonus, error }}
+ * Запросить бонус за уровень
  */
-export async function claimLevelBonus(wallet, level, txHash) {
+export async function claimLevelBonus(wallet, level) {
   if (!supabase || !wallet) return { ok: false, error: 'Not connected' }
 
   try {
     const { data, error } = await supabase.rpc('claim_level_bonus', {
       p_wallet: wallet.toLowerCase(),
       p_level: level,
-      p_tx_hash: txHash || '',
     })
 
-    if (error) {
-      console.error('claimLevelBonus error:', error)
-      return { ok: false, error: error.message }
-    }
-
+    if (error) return { ok: false, error: error.message }
     return data
   } catch (err) {
     return { ok: false, error: err.message }
@@ -92,9 +89,7 @@ export async function claimLevelBonus(wallet, level, txHash) {
 }
 
 /**
- * Получить статистику бонусов пользователя
- * @param {string} wallet
- * @returns {{ total_nst, total_cgt, total_gwt, claimed_levels }}
+ * Получить бонусы пользователя
  */
 export async function getUserBonuses(wallet) {
   if (!supabase || !wallet) {
@@ -113,9 +108,6 @@ export async function getUserBonuses(wallet) {
   }
 }
 
-/**
- * Проверка доступен ли Supabase
- */
 export function isSupabaseAvailable() {
   return !!supabase
 }
