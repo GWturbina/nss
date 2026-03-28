@@ -87,10 +87,11 @@ export default function MineTab() {
     ])
     setTimeout(() => setEffects(prev => prev.slice(1)), 800)
 
-    if (tapCountRef.current % 25 === 0 && lv.thought) {
+    if (tapCountRef.current % 25 === 0 && lv.thoughts?.length) {
       const shapes = ['thought-pill', 'thought-cloud', 'thought-crystal', 'thought-bubble']
       const shape = shapes[Math.floor(Math.random() * shapes.length)]
-      showThought(lv.thought, lv.thoughtColor, lv.thoughtIcon, shape)
+      const randomThought = lv.thoughts[Math.floor(Math.random() * lv.thoughts.length)]
+      showThought(randomThought, lv.thoughtColor, lv.thoughtIcon, shape)
     }
   }, [doTap, lv, showThought, isInTelegram, haptic])
 
