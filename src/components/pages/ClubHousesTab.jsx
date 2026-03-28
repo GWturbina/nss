@@ -13,16 +13,14 @@ function MyHomeSection({ wallet, totalSqm }) {
   const [housePrice, setHousePrice] = useState(120000) // стоимость дома по умолчанию
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
+useEffect(() => {
     if (!wallet) return
     setLoading(true)
     Team.getUserFullStats(wallet).then(stats => {
       if (stats) setEarnings(stats)
     }).catch(() => {})
-    // Порог из LoanThresholdManager
-    C.safeRead('LoanThresholdManager', 'getUserLoanPercent', [wallet]).then(pct => {
-      if (pct) setThreshold(100 - Number(pct)) // loanPercent=55 → deposit=45, loanPercent=65 → deposit=35
-    }).catch(() => {})
+    // Порог займа — по умолчанию 45%
+    setThreshold(45)
     setLoading(false)
   }, [wallet])
 
