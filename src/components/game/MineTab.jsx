@@ -450,9 +450,9 @@ export default function MineTab() {
         {/* ═══ Виньетка по краям ═══ */}
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.5) 100%)' }} />
 
-        <div className="relative z-10 active:animate-shake select-none transition-transform w-[100px] h-[100px] flex items-center justify-center drop-shadow-lg">
-          <img src={toolSrc} alt={lv.name} className="w-full h-full object-contain drop-shadow-[0_0_12px_rgba(255,215,0,0.3)]" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }} />
-          <span className="text-6xl hidden">{lv.emoji}</span>
+        {/* Центральная зона — только текст, без иконки */}
+        <div className="relative z-10 text-center select-none">
+          <div className="text-2xl mb-1">{lv.emoji}</div>
         </div>
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 text-[11px] px-3 py-1 rounded-full"
           style={{ color: '#eee8d5', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>
