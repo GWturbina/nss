@@ -1,14 +1,16 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import useGameStore from '@/lib/store'
+import * as C from '@/lib/contracts'
 import { shortAddress } from '@/lib/web3'
 
 export default function ClubHousesTab() {
-  const { wallet, totalSqm, t } = useGameStore()
+  const { wallet, totalSqm, level, registered, addNotification, setTxPending, txPending, t } = useGameStore()
   const [tab, setTab] = useState('clubs') // 'my' | 'clubs'
   const [houses, setHouses] = useState([])
   const [loading, setLoading] = useState(true)
   const [expandedHouse, setExpandedHouse] = useState(null)
+  const [buyingSlot, setBuyingSlot] = useState(null) // 'houseId-tableId'
 
   const loadHouses = useCallback(async () => {
     setLoading(true)
@@ -21,6 +23,48 @@ export default function ClubHousesTab() {
   }, [])
 
   useEffect(() => { loadHouses() }, [loadHouses])
+
+  const TABLES = [
+    { id: 0, price: 50, sqm: 0.05, color: '#3498DB', minLevel: 1 },
+    { id: 1, price: 250, sqm: 0.25, color: '#F39C12', minLevel: 3 },
+    { id: 2, price: 1000, sqm: 1.0, color: '#e74c3c', minLevel: 4 },
+  ]
+
+  const handleBuy = async (house, table) => {
+    if (!wallet) { addNotification('❌ Подключите кошелёк'); return }
+    if (!registered) { addNotification('❌ Сначала зарегистрируйтесь в GlobalWay'); return }
+    if (level < table.minLevel) { addNotification(`❌ Нужен уровень ${table.minLevel}+`); return }
+
+    const key = `${house.id}-${table.id}`
+    setBuyingSlot(key)
+    setTxPending(true)
+    try {
+      addNotification(`⏳ Покупка ${table.sqm} м² за $${table.price}...`)
+      const result = await C.safeCall(() => C.buySlot(table.id))
+      if (result.ok) {
+        addNotification(`✅ Куплено ${table.sqm} м² в "${house.name}"!`)
+        // Записываем покупку в Supabase для учёта по дому
+        try {
+          const CH = await import('@/lib/clubHouses')
+          await CH.recordPurchase({
+            house_id: house.id,
+            wallet,
+            sqm_purchased: table.sqm,
+            amount_paid: table.price,
+            tx_hash: result.tx?.hash || '',
+            payment_type: 'usdt',
+          })
+        } catch (e) { console.error('Record purchase error:', e) }
+        loadHouses()
+      } else {
+        addNotification(`❌ ${result.error || 'Ошибка покупки'}`)
+      }
+    } catch (err) {
+      addNotification(`❌ ${err?.message?.slice(0, 80) || 'Ошибка'}`)
+    }
+    setTxPending(false)
+    setBuyingSlot(null)
+  }
 
   const STATUS = {
     planning: { emoji: '📋', label: 'Планируется', color: '#f59e0b' },
@@ -133,23 +177,28 @@ export default function ClubHousesTab() {
 
                   {/* 3 кнопки покупки */}
                   <div className="space-y-2">
-                    {[
-                      { price: 50, sqm: 0.05, color: '#3498DB' },
-                      { price: 250, sqm: 0.25, color: '#F39C12' },
-                      { price: 1000, sqm: 1.0, color: '#e74c3c' },
-                    ].map(slot => (
-                      <button key={slot.price}
-                        className="w-full p-3 rounded-xl text-left flex items-center justify-between transition-all active:scale-[0.98]"
-                        style={{ background: `${slot.color}12`, border: `1px solid ${slot.color}30` }}>
-                        <div>
-                          <div className="text-[13px] font-black text-white">Купить за ${slot.price}</div>
-                          <div className="text-[10px] text-slate-400">→ {slot.sqm} м²</div>
-                        </div>
-                        <div className="text-[11px] font-bold" style={{ color: slot.color }}>
-                          {slot.sqm} м²
-                        </div>
-                      </button>
-                    ))}
+                    {TABLES.map(table => {
+                      const key = `${house.id}-${table.id}`
+                      const isBuying = buyingSlot === key
+                      const canBuy = wallet && registered && level >= table.minLevel && !txPending
+                      return (
+                        <button key={table.id}
+                          onClick={() => handleBuy(house, table)}
+                          disabled={!canBuy || isBuying}
+                          className="w-full p-3 rounded-xl text-left flex items-center justify-between transition-all active:scale-[0.98]"
+                          style={{ background: `${table.color}12`, border: `1px solid ${table.color}30`, opacity: canBuy ? 1 : 0.5 }}>
+                          <div>
+                            <div className="text-[13px] font-black text-white">
+                              {isBuying ? '⏳ Покупка...' : `Купить за $${table.price}`}
+                            </div>
+                            <div className="text-[10px] text-slate-400">→ {table.sqm} м²{level < table.minLevel ? ` • нужен Lv.${table.minLevel}` : ''}</div>
+                          </div>
+                          <div className="text-[11px] font-bold" style={{ color: table.color }}>
+                            {table.sqm} м²
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
 
                   {/* Описание — раскрывается */}
