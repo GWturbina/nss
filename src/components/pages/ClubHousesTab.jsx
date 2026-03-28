@@ -2,7 +2,144 @@
 import { useState, useEffect, useCallback } from 'react'
 import useGameStore from '@/lib/store'
 import * as C from '@/lib/contracts'
+import * as Team from '@/lib/teamContracts'
 import { shortAddress } from '@/lib/web3'
+import { ethers } from 'ethers'
+
+// ═══ Секция "Мой дом" — реальный прогресс из контрактов ═══
+function MyHomeSection({ wallet, totalSqm }) {
+  const [earnings, setEarnings] = useState(null)
+  const [threshold, setThreshold] = useState(45) // процент порога (35-45%)
+  const [housePrice, setHousePrice] = useState(120000) // стоимость дома по умолчанию
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!wallet) return
+    setLoading(true)
+    Team.getUserFullStats(wallet).then(stats => {
+      if (stats) setEarnings(stats)
+    }).catch(() => {})
+    // Порог из LoanThresholdManager
+    C.safeRead('LoanThresholdManager', 'getUserLoanPercent', [wallet]).then(pct => {
+      if (pct) setThreshold(100 - Number(pct)) // loanPercent=55 → deposit=45, loanPercent=65 → deposit=35
+    }).catch(() => {})
+    setLoading(false)
+  }, [wallet])
+
+  const partnerEarned = parseFloat(earnings?.partnerEarnings || 0)
+  const matrixEarned = parseFloat(earnings?.matrixEarnings || 0)
+  const totalEarned = partnerEarned + matrixEarned
+  const depositNeeded = housePrice * (threshold / 100)
+  const loanAmount = housePrice - depositNeeded
+  const progressPercent = depositNeeded > 0 ? Math.min((totalEarned / depositNeeded) * 100, 100) : 0
+  const remaining = Math.max(depositNeeded - totalEarned, 0)
+
+  return (
+    <div className="px-3 mt-3 space-y-3">
+      {/* Заголовок с порогом */}
+      <div className="p-4 rounded-2xl glass">
+        <div className="flex justify-between items-center mb-3">
+          <div className="text-[13px] font-black text-white">🏠 Мой дом</div>
+          <div className="px-2.5 py-1 rounded-full text-[10px] font-bold" style={{ background: 'rgba(249,115,22,0.15)', color: '#f97316' }}>
+            Порог: {threshold}%
+          </div>
+        </div>
+
+        {/* Заработано всего */}
+        <div className="mb-3">
+          <div className="flex justify-between text-[10px] mb-1">
+            <span className="text-slate-500">Заработано</span>
+            <span className="text-gold-400 font-bold">${totalEarned.toFixed(2)} из ${depositNeeded.toLocaleString()}</span>
+          </div>
+          <div className="h-3 rounded-full bg-white/5 overflow-hidden">
+            <div className="h-full rounded-full transition-all duration-1000" style={{ 
+              width: `${progressPercent}%`, 
+              background: progressPercent >= 100 ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #ffd700, #f59e0b)' 
+            }} />
+          </div>
+          <div className="text-[9px] text-slate-500 mt-0.5 text-right">{progressPercent.toFixed(1)}%</div>
+        </div>
+
+        {/* Депозит и Займ */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="p-2.5 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="text-[9px] text-slate-500">Твой депозит ({threshold}%)</div>
+            <div className="text-[15px] font-black text-gold-400">${depositNeeded.toLocaleString()}</div>
+          </div>
+          <div className="p-2.5 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="text-[9px] text-slate-500">Займ от клуба ({100 - threshold}%)</div>
+            <div className="text-[15px] font-black text-emerald-400">${loanAmount.toLocaleString()}</div>
+          </div>
+        </div>
+
+        {/* Осталось заработать */}
+        <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.1)' }}>
+          <div className="text-[9px] text-slate-500">Осталось заработать:</div>
+          <div className="text-xl font-black" style={{ color: remaining > 0 ? '#ffd700' : '#10b981' }}>
+            {remaining > 0 ? `$${remaining.toFixed(2)}` : '✅ Готово!'}
+          </div>
+          <div className="text-[9px] text-slate-500 mt-0.5">через 3 бизнеса (${totalEarned.toFixed(2)} уже заработано)</div>
+        </div>
+      </div>
+
+      {/* Детали заработка */}
+      {earnings && (
+        <div className="p-3 rounded-2xl glass">
+          <div className="text-[11px] font-bold text-blue-400 mb-2">💰 Детали заработка</div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-2 rounded-lg bg-white/5 text-center">
+              <div className="text-[12px] font-black text-emerald-400">${partnerEarned.toFixed(2)}</div>
+              <div className="text-[8px] text-slate-500">Партнёрка</div>
+            </div>
+            <div className="p-2 rounded-lg bg-white/5 text-center">
+              <div className="text-[12px] font-black text-blue-400">${matrixEarned.toFixed(2)}</div>
+              <div className="text-[8px] text-slate-500">Матричные</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Стоимость дома — редактируемая */}
+      <div className="p-3 rounded-2xl glass">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] text-slate-500">⚙️ Стоимость дома:</span>
+          <div className="flex items-center gap-1">
+            <span className="text-[11px] font-bold text-white">$</span>
+            <input type="number" value={housePrice} onChange={e => setHousePrice(parseInt(e.target.value) || 0)}
+              className="w-24 p-1 rounded-lg bg-white/5 border border-white/10 text-[11px] text-white text-right outline-none" />
+          </div>
+        </div>
+        <div className="flex gap-1 mt-2">
+          {[80000, 120000, 180000, 250000].map(p => (
+            <button key={p} onClick={() => setHousePrice(p)}
+              className={`flex-1 py-1 rounded-lg text-[8px] font-bold border ${housePrice === p ? 'bg-gold-400/15 border-gold-400/30 text-gold-400' : 'border-white/5 text-slate-500'}`}>
+              ${(p/1000)}k
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Как получить дом */}
+      <div className="p-3 rounded-2xl glass">
+        <div className="text-[11px] font-bold text-emerald-400 mb-2">📋 Как получить свой дом</div>
+        <div className="space-y-2 text-[10px] text-slate-300">
+          <div className="flex gap-2"><span className="text-gold-400 font-bold">1.</span><span>Покупай доли в бизнесе — зарабатывай деньги</span></div>
+          <div className="flex gap-2"><span className="text-gold-400 font-bold">2.</span><span>Сжигай CHT — снижай порог с 45% до 35%</span></div>
+          <div className="flex gap-2"><span className="text-gold-400 font-bold">3.</span><span>Заработай {threshold}% от стоимости дома</span></div>
+          <div className="flex gap-2"><span className="text-gold-400 font-bold">4.</span><span>Клуб добавляет {100-threshold}% под 0% годовых</span></div>
+          <div className="flex gap-2"><span className="text-gold-400 font-bold">5.</span><span>Получи ключи от собственного дома!</span></div>
+        </div>
+      </div>
+
+      {!wallet && (
+        <div className="p-4 rounded-2xl glass text-center">
+          <div className="text-2xl mb-2">🔐</div>
+          <div className="text-[11px] text-slate-400">Подключите кошелёк чтобы увидеть свой прогресс</div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function ClubHousesTab() {
   const { wallet, totalSqm, level, registered, addNotification, setTxPending, txPending, t } = useGameStore()
@@ -96,25 +233,7 @@ export default function ClubHousesTab() {
 
       {/* ═══ МОЙ ДОМ ═══ */}
       {tab === 'my' && (
-        <div className="px-3 mt-3 space-y-3">
-          <div className="p-4 rounded-2xl glass text-center">
-            <div className="text-3xl mb-2">🏠</div>
-            <div className="text-[13px] font-black text-white mb-1">Мой прогресс</div>
-            <div className="text-2xl font-black text-gold-400">{totalSqm.toFixed(2)} м²</div>
-            <div className="text-[10px] text-slate-500 mt-1">Накоплено через бизнес-систему</div>
-          </div>
-
-          <div className="p-3 rounded-2xl glass">
-            <div className="text-[11px] font-bold text-emerald-400 mb-2">📋 Как получить свой дом</div>
-            <div className="space-y-2 text-[10px] text-slate-300">
-              <div className="flex gap-2"><span className="text-gold-400 font-bold">1.</span><span>Покупай доли в бизнесе — копи метры квадратные</span></div>
-              <div className="flex gap-2"><span className="text-gold-400 font-bold">2.</span><span>Сжигай CHT — снижай порог займа с 45% до 35%</span></div>
-              <div className="flex gap-2"><span className="text-gold-400 font-bold">3.</span><span>Накопи 35% от стоимости дома</span></div>
-              <div className="flex gap-2"><span className="text-gold-400 font-bold">4.</span><span>Клуб добавляет 65% под 0% годовых</span></div>
-              <div className="flex gap-2"><span className="text-gold-400 font-bold">5.</span><span>Получи ключи от собственного дома!</span></div>
-            </div>
-          </div>
-        </div>
+        <MyHomeSection wallet={wallet} totalSqm={totalSqm} />
       )}
 
       {/* ═══ КЛУБНЫЕ ДОМА ═══ */}
