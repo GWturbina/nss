@@ -5,67 +5,145 @@
 export const LEVELS = [
   { id:0, name:'Бездомный', sub:'Улица', emoji:'🏚', nstPerTap:0.3,
     price:'Бесплатно', bnb:0, color:'#94a3b8', themeClass:'theme-0',
-    thought:'Холодно на улице... Начни табать — заработай свой первый угол!', thoughtColor:'gold', thoughtIcon:'💡',
+    thoughts:[
+      'Ночь. Холодно. Нету дома... Как бы согреться?',
+      'Начни тапать — заработай свои первые CHT токены!',
+      'Заработал на тапах? Не потеряй — пройди регистрацию!',
+      'Без регистрации токены испарятся через 30 минут...',
+      'Первый шаг к дому — купи Уровень 1. Это всего 0.0015 BNB!'
+    ], thoughtColor:'gold', thoughtIcon:'💡',
     desc:'Без регистрации. Токены испаряются через 30 мин!',
     earn:'Испаряются!', team:0, nstBonus:0, cgtBonus:0, gwtBonus:0 },
   { id:1, name:'Уголок', sub:'Общежитие', emoji:'🛏', nstPerTap:0.4,
     price:'0.0015 BNB', bnb:0.0015, color:'#C9903A', themeClass:'theme-1',
-    thought:'Есть угол — уже не на улице! Но хочется нормальную кровать...', thoughtColor:'green', thoughtIcon:'💡',
+    thoughts:[
+      'Есть угол — уже не на улице! Но спать на полу тяжело...',
+      'Тапай дальше — +0.4 CHT за тап. Каждый тап ближе к кровати!',
+      'Пригласи 2 друзей — получишь +50 CHT бонус!',
+      'Заработок с партнёров: 60% от их покупки уровня!',
+      'Круто! Но кровать лучше пола — покупай Уровень 2!'
+    ], thoughtColor:'green', thoughtIcon:'💡',
     desc:'Твой первый угол. Токены сохраняются навсегда.',
     earn:'2 партнёра × 60% = 0.0018 BNB (~$1.2)', team:2, nstBonus:50, cgtBonus:5, gwtBonus:5 },
   { id:2, name:'Кровать', sub:'Комната', emoji:'🛋', nstPerTap:0.4,
     price:'0.003 BNB', bnb:0.003, color:'#B8860B', themeClass:'theme-2',
-    thought:'Спать удобно! Но одежду некуда складывать... Нужен шкаф!', thoughtColor:'green', thoughtIcon:'🔍',
+    thoughts:[
+      'Кровать есть! Спать удобно. Но одежду некуда складывать...',
+      'Тапай, копи CHT — они пригодятся для снижения порога займа!',
+      '4 партнёра приносят 60% — это уже ощутимый доход!',
+      'Сжигай CHT → снижай порог займа с 45% до 35%!',
+      'Шкаф решит проблему! Уровень 3 — следующий шаг!'
+    ], thoughtColor:'green', thoughtIcon:'🔍',
     desc:'Своя кровать — своё место. Приглашай соседей!',
     earn:'4 партнёра × 60% = 0.0072 BNB (~$4.8)', team:4, nstBonus:100, cgtBonus:5, gwtBonus:5 },
   { id:3, name:'Шкаф', sub:'Уютный угол', emoji:'👔', nstPerTap:0.5,
     price:'0.006 BNB', bnb:0.006, color:'#CD7F32', themeClass:'theme-3',
-    thought:'Порядок! Но готовить негде... Без кухни — не жизнь!', thoughtColor:'gold', thoughtIcon:'💪',
+    thoughts:[
+      'Порядок! Одежда на месте, уют. Но готовить негде...',
+      'У тебя 8 мест в команде — заполни их партнёрами!',
+      'Бонус за уровень: +200 CHT, +10 CGT, +10 GWT!',
+      'Малый Бизнес за $50 уже доступен — доход $204 с доли!',
+      'Без кухни — не жизнь! Уровень 4 откроет её!'
+    ], thoughtColor:'gold', thoughtIcon:'💪',
     desc:'Одежда на месте. Команда растёт — 8 мест.',
     earn:'8 партнёров × 50% = 0.024 BNB', team:8, nstBonus:200, cgtBonus:10, gwtBonus:10 },
   { id:4, name:'Кухня', sub:'Полноценный быт', emoji:'🍳', nstPerTap:0.5,
     price:'0.012 BNB', bnb:0.012, color:'#E5A600', themeClass:'theme-4',
-    thought:'Своя кухня! Но это всё ещё чужие стены... Пора снимать квартиру!', thoughtColor:'gold', thoughtIcon:'🔥',
+    thoughts:[
+      'Своя кухня! Полноценный быт. Но стены-то чужие...',
+      '16 партнёров × 50% — серьёзный пассивный доход!',
+      'Натапал CHT? Покупай уровни — CHT пригодятся для займа!',
+      'Малый Бизнес крутится — $50 уже вернулись? Скоро $100!',
+      'Пора снимать СВОЮ квартиру — Уровень 5!'
+    ], thoughtColor:'gold', thoughtIcon:'🔥',
     desc:'🔥 Полноценный быт! Натабай токенов — покупай уровни!',
     earn:'16 партнёров × 50% = 0.096 BNB', team:16, nstBonus:400, cgtBonus:15, gwtBonus:15 },
   { id:5, name:'Однушка', sub:'Своя квартира', emoji:'🏠', nstPerTap:0.6,
     price:'0.024 BNB', bnb:0.024, color:'#10B981', themeClass:'theme-5',
-    thought:'Своя однушка — всё для жизни! Но сколько уходит на аренду... Пора копить на ДОМ!', thoughtColor:'green', thoughtIcon:'✨',
+    thoughts:[
+      'Своя однушка! Всё для жизни. Но аренда съедает доход...',
+      '32 партнёра — команда растёт! +800 CHT бонус!',
+      'Посчитай: аренда + коммуналка = твой первый метр²!',
+      'Средний Бизнес $250 — доход $1220 с доли!',
+      'Хватит платить за чужие стены — купи первый м²! Уровень 6!'
+    ], thoughtColor:'green', thoughtIcon:'✨',
     desc:'Снял квартиру! Посчитай — аренда + коммуналка = твой метр².',
     earn:'32 партнёра × 50% = 0.384 BNB', team:32, nstBonus:800, cgtBonus:35, gwtBonus:35 },
   { id:6, name:'Метр²', sub:'Первая инвестиция', emoji:'📐', nstPerTap:0.6,
     price:'0.048 BNB', bnb:0.048, color:'#E11D48', themeClass:'theme-6',
-    thought:'Первый метр² куплен! Каждый следующий — ближе к своему дому!', thoughtColor:'ruby', thoughtIcon:'📐',
+    thoughts:[
+      'Первый метр² куплен! Каждый следующий — ближе к дому!',
+      '64 партнёра × 50% = 1.536 BNB — машина работает!',
+      'Сжигай CHT — снижай порог займа. 5000 CHT = -1%!',
+      'Три бизнеса работают — копи на 35% депозит!',
+      'Фундамент не за горами — Уровень 7! Стройка начнётся!'
+    ], thoughtColor:'ruby', thoughtIcon:'📐',
     desc:'Начни копить на свой дом. Купи первый метр²!',
     earn:'64 партнёра × 50% = 1.536 BNB', team:64, nstBonus:1500, cgtBonus:75, gwtBonus:75 },
   { id:7, name:'Стройка 55%', sub:'Фундамент', emoji:'🏗', nstPerTap:0.7,
     price:'0.096 BNB', bnb:0.096, color:'#3B82F6', themeClass:'theme-7',
-    thought:'Заработал 45%! Клуб добавляет 55% под 0%! Сжигай CHT — снизь порог!', thoughtColor:'blue', thoughtIcon:'🏗',
+    thoughts:[
+      'Заработал 45%! Клуб добавляет 55% под 0% годовых!',
+      '128 партнёров! Бизнес кормит — $6.144 BNB с уровня!',
+      'Сжигай CHT → увеличь займ с 55% до 65%!',
+      'Большой Бизнес $1000 — доход $11200 с доли!',
+      'Стены растут — Уровень 8! Ещё больше займ от клуба!'
+    ], thoughtColor:'blue', thoughtIcon:'🏗',
     desc:'Получи займ 55%! Сжигай CHT чтобы увеличить до 65%.',
     earn:'128 партнёров × 50% = 6.144 BNB', team:128, nstBonus:3000, cgtBonus:150, gwtBonus:150 },
   { id:8, name:'Стройка 65%', sub:'Стены растут', emoji:'🏗️', nstPerTap:0.7,
     price:'0.192 BNB', bnb:0.192, color:'#F97316', themeClass:'theme-8',
-    thought:'65% от клуба! Осталось 35% — а CHT помогли снизить порог!', thoughtColor:'gold', thoughtIcon:'🏗️',
+    thoughts:[
+      '65% от клуба! Максимальный займ — 0% годовых!',
+      'Осталось 35% своих — а CHT уже снизили порог!',
+      '256 партнёров — лидер! +6000 CHT бонус!',
+      'Три бизнеса крутятся одновременно — деньги идут!',
+      'Дом почти готов — Уровень 9! Ключи уже ждут!'
+    ], thoughtColor:'gold', thoughtIcon:'🏗️',
     desc:'Максимальный займ 65% под 0%. Твой дом строится!',
     earn:'256 партнёров × 50% = 24.576 BNB', team:256, nstBonus:6000, cgtBonus:300, gwtBonus:300 },
   { id:9, name:'Владелец', sub:'Свой дом', emoji:'🔑', nstPerTap:0.8,
     price:'0.384 BNB', bnb:0.384, color:'#A855F7', themeClass:'theme-9',
-    thought:'🔑 Ключи в руках! Ты — владелец дома! Время строить бизнес!', thoughtColor:'green', thoughtIcon:'🔑',
+    thoughts:[
+      '🔑 Ключи в руках! Ты — ВЛАДЕЛЕЦ собственного дома!',
+      'Больше никакой аренды. Свой дом. Своя территория!',
+      '512 партнёров = ~100 BNB — серьёзный капитал!',
+      'Пенсия 10 BNB каждый квартал — пассивный доход!',
+      'Время строить бизнес — Уровень 10! Предприниматель!'
+    ], thoughtColor:'green', thoughtIcon:'🔑',
     desc:'🏠 Свой дом! Теперь — построй бизнес.',
     earn:'512 партнёров = ~100 BNB', team:512, nstBonus:12000, cgtBonus:600, gwtBonus:600 },
   { id:10, name:'Бизнес', sub:'Предприниматель', emoji:'🏨', nstPerTap:0.8,
     price:'0.768 BNB', bnb:0.768, color:'#67E8F9', themeClass:'theme-10',
-    thought:'Бизнес запущен! Туризм, медтуризм, экотуризм — выбирай направление!', thoughtColor:'blue', thoughtIcon:'🏨',
+    thoughts:[
+      'Бизнес запущен! Туризм, медтуризм, экотуризм — выбирай!',
+      '1024 партнёра = ~300 BNB! Империя растёт!',
+      'Клубные дома — экономия 40%. Строй для других!',
+      'Пассивный доход + бизнес + пенсия = финансовая свобода!',
+      'Один дом — это начало. Целый посёлок — Уровень 11!'
+    ], thoughtColor:'blue', thoughtIcon:'🏨',
     desc:'Выбери направление: туризм, медтуризм, экотуризм, круизы.',
     earn:'1024 партнёра = ~300 BNB', team:1024, nstBonus:25000, cgtBonus:1200, gwtBonus:1200 },
   { id:11, name:'Посёлок', sub:'Застройщик', emoji:'🏘', nstPerTap:0.9,
     price:'1.536 BNB', bnb:1.536, color:'#EC4899', themeClass:'theme-11',
-    thought:'Свой посёлок! Клубные дома, инфраструктура, управление!', thoughtColor:'ruby', thoughtIcon:'👑',
+    thoughts:[
+      'Свой посёлок! Клубные дома, инфраструктура, управление!',
+      '2048 партнёров = ~1500 BNB (~$1M)! Лидер экосистемы!',
+      'Строишь дома для людей — меняешь их жизни!',
+      'Посёлок работает — доход от каждого дома и бизнеса!',
+      'Осталось одно — ГОРОД! Уровень 12 — Империя!'
+    ], thoughtColor:'ruby', thoughtIcon:'👑',
     desc:'👑 Построй свой посёлок. Клубные дома — твой актив.',
     earn:'2048 партнёров = ~1,500 BNB (~$1M)', team:2048, nstBonus:50000, cgtBonus:2400, gwtBonus:2400 },
   { id:12, name:'Город', sub:'Магнат', emoji:'🏙', nstPerTap:1.0,
     price:'3.072 BNB', bnb:3.072, color:'#FFD700', themeClass:'theme-12',
-    thought:'Свой город! Производство, бизнесы, банк — Империя построена!', thoughtColor:'gold', thoughtIcon:'🏰',
+    thoughts:[
+      'Свой город! Производство, бизнесы — Империя построена!',
+      '4096 партнёров = ~6100 BNB (~$4M+)! Магнат!',
+      'Пенсия ПОЖИЗНЕННО. Банк. Производства. Всё твоё!',
+      'Ты прошёл путь от бездомного до Магната!',
+      'Максимальный уровень достигнут — ты легенда GlobalWay! 👑'
+    ], thoughtColor:'gold', thoughtIcon:'🏰',
     desc:'🏰 Свой городок. Производство, бизнесы. Пенсия ПОЖИЗНЕННО.',
     earn:'4096 партнёров = ~6,100 BNB (~$4M+)', team:4096, nstBonus:100000, cgtBonus:4500, gwtBonus:4500 },
 ];
@@ -76,19 +154,19 @@ export const LEVELS = [
 // Размер: 860×800px (2x retina), JPG, quality 80%
 // ═══════════════════════════════════════════════════
 export const LEVEL_BACKGROUNDS = [
-  { file: 'bg-homeless.jpg',  overlay: 'rgba(15,15,30,0.55)',  glow: 'rgba(148,163,184,0.08)' },  // 0  Улица
-  { file: 'bg-corner.jpg',   overlay: 'rgba(30,20,10,0.50)',  glow: 'rgba(201,144,58,0.15)'  },  // 1  Общежитие
-  { file: 'bg-bed.jpg',      overlay: 'rgba(20,18,5,0.50)',   glow: 'rgba(184,134,11,0.15)'  },  // 2  Комната
-  { file: 'bg-closet.jpg',   overlay: 'rgba(25,15,8,0.45)',   glow: 'rgba(205,127,50,0.18)'  },  // 3  Уютный угол
-  { file: 'bg-kitchen.jpg',  overlay: 'rgba(25,20,0,0.45)',   glow: 'rgba(229,166,0,0.20)'   },  // 4  Полноценный быт
-  { file: 'bg-flat.jpg',     overlay: 'rgba(5,20,15,0.45)',   glow: 'rgba(16,185,129,0.22)'  },  // 5  Своя квартира
-  { file: 'bg-sqm.jpg',      overlay: 'rgba(25,5,10,0.40)',   glow: 'rgba(225,29,72,0.22)'   },  // 6  Первая инвестиция
-  { file: 'bg-build55.jpg',  overlay: 'rgba(8,12,30,0.40)',   glow: 'rgba(59,130,246,0.22)'  },  // 7  Фундамент
-  { file: 'bg-build65.jpg',  overlay: 'rgba(25,12,3,0.40)',   glow: 'rgba(249,115,22,0.22)'  },  // 8  Стены растут
-  { file: 'bg-house.jpg',    overlay: 'rgba(15,5,25,0.40)',   glow: 'rgba(168,85,247,0.25)'  },  // 9  Свой дом
-  { file: 'bg-business.jpg', overlay: 'rgba(5,18,22,0.35)',   glow: 'rgba(103,232,249,0.25)' },  // 10 Предприниматель
-  { file: 'bg-village.jpg',  overlay: 'rgba(20,5,18,0.35)',   glow: 'rgba(236,72,153,0.25)'  },  // 11 Застройщик
-  { file: 'bg-city.jpg',     overlay: 'rgba(20,15,0,0.30)',   glow: 'rgba(255,215,0,0.35)'   },  // 12 Магнат
+  { file: 'bg-hands.jpg',    overlay: 'rgba(15,15,30,0.55)',  glow: 'rgba(148,163,184,0.08)' },  // 0  Бездомный
+  { file: 'bg-shovel.jpg',   overlay: 'rgba(30,20,10,0.50)',  glow: 'rgba(201,144,58,0.15)'  },  // 1  Уголок
+  { file: 'bg-sieve.jpg',    overlay: 'rgba(20,18,5,0.50)',   glow: 'rgba(184,134,11,0.15)'  },  // 2  Кровать
+  { file: 'bg-cart.jpg',     overlay: 'rgba(25,15,8,0.45)',   glow: 'rgba(205,127,50,0.18)'  },  // 3  Шкаф
+  { file: 'bg-auto.jpg',     overlay: 'rgba(25,20,0,0.45)',   glow: 'rgba(229,166,0,0.20)'   },  // 4  Кухня
+  { file: 'bg-cutting.jpg',  overlay: 'rgba(5,20,15,0.45)',   glow: 'rgba(16,185,129,0.22)'  },  // 5  Однушка
+  { file: 'bg-jewelry.jpg',  overlay: 'rgba(25,5,10,0.40)',   glow: 'rgba(225,29,72,0.22)'   },  // 6  Метр²
+  { file: 'bg-building.jpg', overlay: 'rgba(8,12,30,0.40)',   glow: 'rgba(59,130,246,0.22)'  },  // 7  Стройка 55%
+  { file: 'bg-earth.jpg',    overlay: 'rgba(25,12,3,0.40)',   glow: 'rgba(249,115,22,0.22)'  },  // 8  Стройка 65%
+  { file: 'bg-house.jpg',    overlay: 'rgba(15,5,25,0.40)',   glow: 'rgba(168,85,247,0.25)'  },  // 9  Владелец
+  { file: 'bg-resort.jpg',   overlay: 'rgba(5,18,22,0.35)',   glow: 'rgba(103,232,249,0.25)' },  // 10 Бизнес
+  { file: 'bg-village.jpg',  overlay: 'rgba(20,5,18,0.35)',   glow: 'rgba(236,72,153,0.25)'  },  // 11 Посёлок
+  { file: 'bg-empire.jpg',   overlay: 'rgba(20,15,0,0.30)',   glow: 'rgba(255,215,0,0.35)'   },  // 12 Город
 ];
 
 // ═══════════════════════════════════════════════════
@@ -137,15 +215,4 @@ export const DISTRIBUTION = {
   reinvest3: { spillover: 48, cut: 28, charity: 8, cgt_extra: 4, club: 8, author: 2, cgt: 2 },
 };
 
-export const LEADERBOARD = [
-  { name:'Александр К.', avatar:'👨‍💼', level:8, nst:45230, refs:12 },
-  { name:'Марина В.', avatar:'👩‍🔬', level:7, nst:38100, refs:9 },
-  { name:'Дмитрий С.', avatar:'🧔', level:6, nst:27500, refs:15 },
-  { name:'Елена П.', avatar:'👩‍💻', level:5, nst:19800, refs:7 },
-  { name:'Игорь М.', avatar:'👨‍🚀', level:5, nst:18200, refs:11 },
-  { name:'Наталья Ф.', avatar:'👩‍🎨', level:4, nst:12400, refs:6 },
-  { name:'Олег Т.', avatar:'🧑‍🔧', level:4, nst:11900, refs:8 },
-  { name:'Анна Б.', avatar:'👩‍🏫', level:3, nst:8700, refs:5 },
-  { name:'Виктор Д.', avatar:'👨‍🌾', level:3, nst:7200, refs:4 },
-  { name:'Светлана Р.', avatar:'👩‍⚕️', level:2, nst:4500, refs:3 },
-];
+export const LEADERBOARD = [];
