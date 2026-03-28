@@ -17,7 +17,12 @@ export default function ClubHousesTab() {
     try {
       const CH = await import('@/lib/clubHouses')
       const data = await CH.getClubHouses()
-      setHouses(data || [])
+      // Для каждого дома загружаем покупки
+      const withPurchases = await Promise.all((data || []).map(async h => {
+        const detail = await CH.getClubHouseWithPurchases(h.id).catch(() => null)
+        return { ...h, purchased_sqm: detail?.purchased_sqm || 0, buyers: detail?.purchases?.length || 0 }
+      }))
+      setHouses(withPurchases)
     } catch { setHouses([]) }
     setLoading(false)
   }, [])
@@ -167,11 +172,11 @@ export default function ClubHousesTab() {
                   {/* Прогресс */}
                   <div className="mb-3">
                     <div className="flex justify-between text-[10px] mb-1">
-                      <span className="text-slate-500">Собрано м²</span>
-                      <span className="text-emerald-400 font-bold">0 / {sqm} м²</span>
+                      <span className="text-slate-500">Собрано м² ({house.buyers || 0} чел.)</span>
+                      <span className="text-emerald-400 font-bold">{(house.purchased_sqm || 0).toFixed(2)} / {sqm} м²</span>
                     </div>
                     <div className="h-2 rounded-full bg-white/5 overflow-hidden">
-                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-blue-500" style={{ width: '0%' }} />
+                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-blue-500" style={{ width: `${Math.min(((house.purchased_sqm || 0) / (sqm || 1)) * 100, 100)}%` }} />
                     </div>
                   </div>
 
