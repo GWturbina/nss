@@ -251,10 +251,7 @@ export default function MineTab() {
   const evapSec = evapSeconds % 60
   const toolSrc = `/icons/tools/${['hands','shovel','sieve','cart','auto','cutting','jewelry','building','earth','house','village','resort','empire'][level]}.png`
   const lvBg = LEVEL_BACKGROUNDS[level] || LEVEL_BACKGROUNDS[0]
-  // Фоны отключены пока нет JPG в /public/icons/backgrounds/levels/
-  // Раскомментировать когда картинки будут добавлены:
-  // const bgSrc = `/icons/backgrounds/levels/${lvBg.file}`
-  const bgSrc = null
+  const bgSrc = `/icons/backgrounds/levels/${lvBg.file}`
 
   return (
     <div className="flex flex-col flex-1">
