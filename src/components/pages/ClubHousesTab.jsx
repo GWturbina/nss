@@ -337,7 +337,7 @@ export default function ClubHousesTab() {
                           style={{ background: `${table.color}12`, border: `1px solid ${table.color}30`, opacity: canBuy ? 1 : 0.5 }}>
                           <div>
                             <div className="text-[13px] font-black text-white">{isBuying ? '⏳...' : `Купить за $${table.price}`}</div>
-                            <div className="text-[10px] text-slate-400">→ {table.sqm} м² (50% = ${table.price/2} на дом)</div>
+                            <div className="text-[10px] text-slate-400">→ {table.sqm} м² (50% = {'$'}{Math.round(table.price * 0.5)} на дом)</div>
                           </div>
                           <div className="text-[11px] font-bold" style={{ color: table.color }}>{table.sqm} м²</div>
                         </button>
