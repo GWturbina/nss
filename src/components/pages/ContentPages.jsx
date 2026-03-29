@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react'
 import * as C from '@/lib/contracts'
 import { shortAddress } from '@/lib/web3'
 import HouseBuildVisualization from '@/components/game/HouseBuildVisualization'
+import BusinessHistory from '@/components/game/BusinessHistory'
 
 // ═════════════════════════════════════════════════════════
 // STAKING PAGE — Бизнес Недвижимости (RealEstateMatrix)
@@ -187,6 +188,9 @@ export function StakingTab() {
           )
         })}
       </div>
+
+      {/* ═══ Детали бизнесов + История ═══ */}
+      {wallet && <BusinessHistory />}
 
       <button onClick={() => setShowGuide(!showGuide)}
         className={`mx-3 mt-2 w-[calc(100%-24px)] py-2 rounded-xl text-[11px] font-bold border ${showGuide ? 'bg-blue-500/15 border-blue-500/25 text-blue-400' : 'border-white/8 text-slate-500'}`}>
