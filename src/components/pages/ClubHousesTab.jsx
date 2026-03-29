@@ -136,6 +136,19 @@ export default function ClubHousesTab() {
         <h2 className="text-lg font-black text-gold-400">🏠 Дома</h2>
       </div>
 
+      {/* Табы */}
+      <div className="flex gap-1 px-3 mt-1">
+        <button onClick={() => setShowClubHouses(false)} className={`flex-1 py-2 rounded-xl text-[10px] font-bold border ${!showClubHouses ? 'bg-gold-400/15 border-gold-400/30 text-gold-400' : 'border-white/8 text-slate-500'}`}>
+          🏠 Мой дом
+        </button>
+        <button onClick={() => setShowClubHouses(true)} className={`flex-1 py-2 rounded-xl text-[10px] font-bold border ${showClubHouses ? 'bg-gold-400/15 border-gold-400/30 text-gold-400' : 'border-white/8 text-slate-500'}`}>
+          🏘 Клубные дома ({houses.length})
+        </button>
+      </div>
+
+      {/* ═══ МОЙ ДОМ ═══ */}
+      {!showClubHouses && (
+        <>
       {/* ═══ ВИЗУАЛИЗАЦИЯ ДОМА ═══ */}
       <div className="px-3 mt-2">
         <HouseProgress percent={progressPercent} />
@@ -274,17 +287,12 @@ export default function ClubHousesTab() {
           </div>
         </div>
       </div>
+        </>
+      )}
 
       {/* ═══ КЛУБНЫЕ ДОМА ═══ */}
-      <div className="px-3 mt-3">
-        <button onClick={() => setShowClubHouses(!showClubHouses)}
-          className={`w-full py-2.5 rounded-xl text-[12px] font-bold border ${showClubHouses ? 'bg-gold-400/15 border-gold-400/30 text-gold-400' : 'border-white/8 text-slate-500'}`}>
-          🏘 Клубные дома ({houses.length}) {showClubHouses ? '▲' : '▼'}
-        </button>
-      </div>
-
       {showClubHouses && (
-        <div className="px-3 mt-2 space-y-3">
+        <div className="px-3 mt-3 space-y-3">
           {loadingHouses && <div className="text-center py-4 text-[11px] text-slate-500 animate-pulse">⏳ Загрузка...</div>}
 
           {!loadingHouses && houses.length === 0 && (
