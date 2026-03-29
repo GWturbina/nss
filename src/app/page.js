@@ -6,23 +6,21 @@ import Header from '@/components/ui/Header'
 import BottomNav from '@/components/ui/BottomNav'
 import MineTab from '@/components/game/MineTab'
 import LevelsTab from '@/components/game/LevelsTab'
-import { StakingTab, HomeTab, ExchangeTab } from '@/components/pages/ContentPages'
+import { StakingTab, ExchangeTab } from '@/components/pages/ContentPages'
+import ClubHousesTab from '@/components/pages/ClubHousesTab'
 import { LinksTab, VaultTab } from '@/components/pages/ExtraPages'
 import TeamTab from '@/components/pages/TeamPage'
 import LoanTab from '@/components/pages/LoanTab'
 import CHTExchangeTab from '@/components/pages/CHTExchangeTab'
 import AdminPanel from '@/components/admin/AdminPanel'
-import AutoRegisterModal from '@/components/ui/AutoRegisterModal'
-import ClubHousesTab from '@/components/pages/ClubHousesTab'
 
 const TAB_COMPONENTS = {
   mine: MineTab,
   staking: StakingTab,
   exchange: ExchangeTab,
-  home: HomeTab,
+  home: ClubHousesTab,
   loan: LoanTab,
   chtExchange: CHTExchangeTab,
-  houses: ClubHousesTab,
   levels: LevelsTab,
   team: TeamTab,
   links: LinksTab,
@@ -32,7 +30,7 @@ const TAB_COMPONENTS = {
 
 export default function MainPage() {
   useBlockchainInit()
-  const { activeTab, dayMode, level, showAutoRegister } = useGameStore()
+  const { activeTab, dayMode, level } = useGameStore()
 
   // ═══════════════════════════════════════════════════
   // ЗАХВАТ РЕФЕРАЛЬНОЙ ССЫЛКИ
@@ -63,6 +61,10 @@ export default function MainPage() {
   const ActiveComponent = TAB_COMPONENTS[activeTab] || MineTab
 
   return (
+    /* ═══ МОБИЛЬНЫЙ КОНТЕЙНЕР ═══
+       max-w-[430px] — ширина iPhone Pro Max
+       На мобилке — на весь экран
+       На десктопе — по центру как телефон с тенью */
     <div className="mx-auto w-full max-w-[430px] min-h-screen relative shadow-2xl shadow-black/50"
       style={{ contain: 'layout' }}>
       <div className={`min-h-screen flex flex-col theme-${level} ${dayMode ? 'bg-amber-50 text-stone-900' : 'bg-[#1a1a2e] text-white'}`}>
@@ -72,9 +74,6 @@ export default function MainPage() {
         </main>
         <BottomNav />
       </div>
-
-      {/* AutoRegister — показывается после подключения кошелька если не зарегистрирован */}
-      {showAutoRegister && <AutoRegisterModal />}
     </div>
   )
 }
