@@ -155,7 +155,7 @@ export default function ClubHousesTab() {
           <div className="mb-3">
             <div className="flex justify-between text-[10px] mb-1">
               <span className="text-slate-500">Заработано (USDT)</span>
-              <span className="text-gold-400 font-bold">${bizTotal.toFixed(2)} из ${depositNeeded.toLocaleString()}</span>
+              <span className="text-gold-400 font-bold">{'$'}{bizTotal.toFixed(2)} из {'$'}{depositNeeded.toLocaleString()}</span>
             </div>
             <div className="h-3 rounded-full bg-white/5 overflow-hidden">
               <div className="h-full rounded-full transition-all duration-1000" style={{
@@ -168,11 +168,11 @@ export default function ClubHousesTab() {
           <div className="grid grid-cols-2 gap-2 mb-3">
             <div className="p-2.5 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="text-[9px] text-slate-500">Депозит ({threshold}%)</div>
-              <div className="text-[15px] font-black text-gold-400">${depositNeeded.toLocaleString()}</div>
+              <div className="text-[15px] font-black text-gold-400">{'$'}{depositNeeded.toLocaleString()}</div>
             </div>
             <div className="p-2.5 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="text-[9px] text-slate-500">Займ ({100-threshold}%)</div>
-              <div className="text-[15px] font-black text-emerald-400">${loanAmount.toLocaleString()}</div>
+              <div className="text-[15px] font-black text-emerald-400">{'$'}{loanAmount.toLocaleString()}</div>
             </div>
           </div>
 
@@ -192,14 +192,14 @@ export default function ClubHousesTab() {
           <div className="grid grid-cols-3 gap-2">
             {['Малый $50', 'Средний $250', 'Большой $1000'].map((name, i) => (
               <div key={i} className="p-2 rounded-lg text-center" style={{ background: `${TABLES[i].color}10`, border: `1px solid ${TABLES[i].color}25` }}>
-                <div className="text-[13px] font-black" style={{ color: TABLES[i].color }}>${bizEarnings[i].toFixed(2)}</div>
+                <div className="text-[13px] font-black" style={{ color: TABLES[i].color }}>{'$'}{bizEarnings[i].toFixed(2)}</div>
                 <div className="text-[8px] text-slate-500">{name}</div>
               </div>
             ))}
           </div>
           {pending > 0 && (
             <div className="mt-2 p-2 rounded-lg bg-emerald-500/5 text-center">
-              <div className="text-[10px] text-emerald-400 font-bold">💳 К выводу: ${pending.toFixed(2)} USDT</div>
+              <div className="text-[10px] text-emerald-400 font-bold">💳 К выводу: {'$'}{pending.toFixed(2)} USDT</div>
             </div>
           )}
         </div>
@@ -219,7 +219,7 @@ export default function ClubHousesTab() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 text-[10px]">
-              <div><span className="text-slate-500">Стоимость:</span> <span className="text-white font-bold">${parseFloat(application.house_price).toLocaleString()}</span></div>
+              <div><span className="text-slate-500">Стоимость:</span> <span className="text-white font-bold">{'$'}{parseFloat(application.house_price).toLocaleString()}</span></div>
               <div><span className="text-slate-500">Порог:</span> <span className="text-orange-400 font-bold">{application.threshold || 45}%</span></div>
               {application.city && <div><span className="text-slate-500">Город:</span> <span className="text-white">{application.city}</span></div>}
               {application.country && <div><span className="text-slate-500">Страна:</span> <span className="text-white">{application.country}</span></div>}
@@ -269,7 +269,7 @@ export default function ClubHousesTab() {
             {[80000, 120000, 180000, 250000].map(p => (
               <button key={p} onClick={() => setHousePrice(p)}
                 className={`flex-1 py-1 rounded-lg text-[8px] font-bold border ${housePrice === p ? 'bg-gold-400/15 border-gold-400/30 text-gold-400' : 'border-white/5 text-slate-500'}`}>
-                ${(p/1000)}k
+                {'$'}{Math.round(p / 1000)}k
               </button>
             ))}
           </div>
@@ -305,8 +305,8 @@ export default function ClubHousesTab() {
                   <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(10,10,31,0.95) 0%, rgba(10,10,31,0.3) 50%, transparent 100%)' }} />
                   <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[9px] font-bold flex items-center gap-1" style={{ background: 'rgba(0,0,0,0.6)', color: st.color }}>{st.emoji} {st.label}</div>
                   <div className="absolute bottom-3 left-3">
-                    <div className="text-xl font-black text-gold-400">${price.toLocaleString()}</div>
-                    <div className="text-[10px] text-slate-400">{sqm} м² • ${pricePerSqm}/м²</div>
+                    <div className="text-xl font-black text-gold-400">{'$'}{price.toLocaleString()}</div>
+                    <div className="text-[10px] text-slate-400">{sqm} м² • {'$'}{pricePerSqm}/м²</div>
                   </div>
                 </div>
 
@@ -317,13 +317,12 @@ export default function ClubHousesTab() {
                   <div className="mb-3">
                     <div className="flex justify-between text-[10px] mb-1">
                       <span className="text-slate-500">На строительство ({house.buyers || 0} чел.)</span>
-                      <span className="text-emerald-400 font-bold">${(house.purchased_sqm * 1000 || 0).toFixed(0)} / ${price.toLocaleString()}</span>
+                      <span className="text-emerald-400 font-bold">{'$'}{(house.purchased_sqm * 1000 || 0).toFixed(0)} / {'$'}{price.toLocaleString()}</span>
                     </div>
                     <div className="h-2 rounded-full bg-white/5 overflow-hidden">
                       <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-blue-500" style={{ width: `${Math.min(((house.purchased_sqm * 1000 || 0) / (price || 1)) * 100, 100)}%` }} />
                     </div>
                     <div className="text-[8px] text-slate-600 mt-0.5">50% от каждой покупки идёт на строительство дома</div>
-                    </div>
                   </div>
 
                   <div className="space-y-2">
