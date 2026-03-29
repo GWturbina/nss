@@ -2,39 +2,53 @@
 import { useState, useEffect, useCallback } from 'react'
 import useGameStore from '@/lib/store'
 import * as C from '@/lib/contracts'
-import * as Team from '@/lib/teamContracts'
 import { shortAddress } from '@/lib/web3'
 import { ethers } from 'ethers'
 
-// ═══ Секция "Мой дом" — реальный прогресс из контрактов ═══
+// ═══ Секция "Мой дом" — заработок ТОЛЬКО из 3 бизнесов (USDT) ═══
 function MyHomeSection({ wallet, totalSqm }) {
-  const [earnings, setEarnings] = useState(null)
-  const [threshold, setThreshold] = useState(45) // процент порога (35-45%)
-  const [housePrice, setHousePrice] = useState(120000) // стоимость дома по умолчанию
+  const bnbPrice = useGameStore(s => s.bnbPrice)
+  const [bizEarnings, setBizEarnings] = useState([0, 0, 0])
+  const [threshold, setThreshold] = useState(45)
+  const [housePrice, setHousePrice] = useState(120000)
   const [loading, setLoading] = useState(false)
+  const [pending, setPending] = useState(0)
 
-useEffect(() => {
+  useEffect(() => {
     if (!wallet) return
     setLoading(true)
-    Team.getUserFullStats(wallet).then(stats => {
-      if (stats) setEarnings(stats)
+
+    // USDT заработок из RealEstateMatrix (3 бизнеса) — ЕДИНСТВЕННЫЙ источник
+    C.getUserAllTables(wallet).then(tables => {
+      if (tables) {
+        const earned = tables.map(t => {
+          if (!t) return 0
+          try { return parseFloat(ethers.formatEther(t.totalEarned || 0)) } catch { return 0 }
+        })
+        setBizEarnings(earned)
+      }
     }).catch(() => {})
-    // Порог займа — по умолчанию 45%
+
+    // Доступно к выводу
+    C.getWithdrawableAmount(wallet).then(amt => {
+      if (amt) setPending(parseFloat(ethers.formatEther(amt)))
+    }).catch(() => {})
+
     setThreshold(45)
     setLoading(false)
   }, [wallet])
 
-  const partnerEarned = parseFloat(earnings?.partnerEarnings || 0)
-  const matrixEarned = parseFloat(earnings?.matrixEarnings || 0)
-  const totalEarned = partnerEarned + matrixEarned
+  const bizTotal = bizEarnings.reduce((s, v) => s + v, 0)
   const depositNeeded = housePrice * (threshold / 100)
   const loanAmount = housePrice - depositNeeded
-  const progressPercent = depositNeeded > 0 ? Math.min((totalEarned / depositNeeded) * 100, 100) : 0
-  const remaining = Math.max(depositNeeded - totalEarned, 0)
+  const progressPercent = depositNeeded > 0 ? Math.min((bizTotal / depositNeeded) * 100, 100) : 0
+  const remaining = Math.max(depositNeeded - bizTotal, 0)
+
+  const BIZ_NAMES = ['Малый $50', 'Средний $250', 'Большой $1000']
+  const BIZ_COLORS = ['#3498DB', '#F39C12', '#e74c3c']
 
   return (
     <div className="px-3 mt-3 space-y-3">
-      {/* Заголовок с порогом */}
       <div className="p-4 rounded-2xl glass">
         <div className="flex justify-between items-center mb-3">
           <div className="text-[13px] font-black text-white">🏠 Мой дом</div>
@@ -43,16 +57,16 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Заработано всего */}
+        {/* Заработано */}
         <div className="mb-3">
           <div className="flex justify-between text-[10px] mb-1">
-            <span className="text-slate-500">Заработано</span>
-            <span className="text-gold-400 font-bold">${totalEarned.toFixed(2)} из ${depositNeeded.toLocaleString()}</span>
+            <span className="text-slate-500">Заработано (USDT)</span>
+            <span className="text-gold-400 font-bold">${bizTotal.toFixed(2)} из ${depositNeeded.toLocaleString()}</span>
           </div>
           <div className="h-3 rounded-full bg-white/5 overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-1000" style={{ 
-              width: `${progressPercent}%`, 
-              background: progressPercent >= 100 ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #ffd700, #f59e0b)' 
+            <div className="h-full rounded-full transition-all duration-1000" style={{
+              width: `${progressPercent}%`,
+              background: progressPercent >= 100 ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #ffd700, #f59e0b)'
             }} />
           </div>
           <div className="text-[9px] text-slate-500 mt-0.5 text-right">{progressPercent.toFixed(1)}%</div>
@@ -70,34 +84,35 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Осталось заработать */}
+        {/* Осталось */}
         <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.1)' }}>
           <div className="text-[9px] text-slate-500">Осталось заработать:</div>
           <div className="text-xl font-black" style={{ color: remaining > 0 ? '#ffd700' : '#10b981' }}>
             {remaining > 0 ? `$${remaining.toFixed(2)}` : '✅ Готово!'}
           </div>
-          <div className="text-[9px] text-slate-500 mt-0.5">через 3 бизнеса (${totalEarned.toFixed(2)} уже заработано)</div>
+          <div className="text-[9px] text-slate-500 mt-0.5">через 3 бизнеса (${bizTotal.toFixed(2)} уже заработано)</div>
         </div>
       </div>
 
-      {/* Детали заработка */}
-      {earnings && (
-        <div className="p-3 rounded-2xl glass">
-          <div className="text-[11px] font-bold text-blue-400 mb-2">💰 Детали заработка</div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="p-2 rounded-lg bg-white/5 text-center">
-              <div className="text-[12px] font-black text-emerald-400">${partnerEarned.toFixed(2)}</div>
-              <div className="text-[8px] text-slate-500">Партнёрка</div>
+      {/* 3 бизнеса — детали */}
+      <div className="p-3 rounded-2xl glass">
+        <div className="text-[11px] font-bold text-blue-400 mb-2">💰 Заработок по бизнесам</div>
+        <div className="grid grid-cols-3 gap-2">
+          {BIZ_NAMES.map((name, i) => (
+            <div key={i} className="p-2 rounded-lg text-center" style={{ background: `${BIZ_COLORS[i]}10`, border: `1px solid ${BIZ_COLORS[i]}25` }}>
+              <div className="text-[13px] font-black" style={{ color: BIZ_COLORS[i] }}>${bizEarnings[i].toFixed(2)}</div>
+              <div className="text-[8px] text-slate-500">{name}</div>
             </div>
-            <div className="p-2 rounded-lg bg-white/5 text-center">
-              <div className="text-[12px] font-black text-blue-400">${matrixEarned.toFixed(2)}</div>
-              <div className="text-[8px] text-slate-500">Матричные</div>
-            </div>
-          </div>
+          ))}
         </div>
-      )}
+        {pending > 0 && (
+          <div className="mt-2 p-2 rounded-lg bg-emerald-500/5 text-center">
+            <div className="text-[10px] text-emerald-400 font-bold">💳 К выводу: ${pending.toFixed(2)} USDT</div>
+          </div>
+        )}
+      </div>
 
-      {/* Стоимость дома — редактируемая */}
+      {/* Стоимость дома */}
       <div className="p-3 rounded-2xl glass">
         <div className="flex items-center justify-between">
           <span className="text-[10px] text-slate-500">⚙️ Стоимость дома:</span>
@@ -117,14 +132,14 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Как получить дом */}
+      {/* Инструкция */}
       <div className="p-3 rounded-2xl glass">
         <div className="text-[11px] font-bold text-emerald-400 mb-2">📋 Как получить свой дом</div>
         <div className="space-y-2 text-[10px] text-slate-300">
-          <div className="flex gap-2"><span className="text-gold-400 font-bold">1.</span><span>Покупай доли в бизнесе — зарабатывай деньги</span></div>
+          <div className="flex gap-2"><span className="text-gold-400 font-bold">1.</span><span>Покупай доли в 3 бизнесах — зарабатывай USDT</span></div>
           <div className="flex gap-2"><span className="text-gold-400 font-bold">2.</span><span>Сжигай CHT — снижай порог с 45% до 35%</span></div>
-          <div className="flex gap-2"><span className="text-gold-400 font-bold">3.</span><span>Заработай {threshold}% от стоимости дома</span></div>
-          <div className="flex gap-2"><span className="text-gold-400 font-bold">4.</span><span>Клуб добавляет {100-threshold}% под 0% годовых</span></div>
+          <div className="flex gap-2"><span className="text-gold-400 font-bold">3.</span><span>Заработай {threshold}% (${depositNeeded.toLocaleString()}) через бизнесы</span></div>
+          <div className="flex gap-2"><span className="text-gold-400 font-bold">4.</span><span>Клуб добавляет {100-threshold}% (${loanAmount.toLocaleString()}) под 0%</span></div>
           <div className="flex gap-2"><span className="text-gold-400 font-bold">5.</span><span>Получи ключи от собственного дома!</span></div>
         </div>
       </div>
@@ -132,7 +147,7 @@ useEffect(() => {
       {!wallet && (
         <div className="p-4 rounded-2xl glass text-center">
           <div className="text-2xl mb-2">🔐</div>
-          <div className="text-[11px] text-slate-400">Подключите кошелёк чтобы увидеть свой прогресс</div>
+          <div className="text-[11px] text-slate-400">Подключите кошелёк чтобы увидеть прогресс</div>
         </div>
       )}
     </div>
