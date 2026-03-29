@@ -31,7 +31,7 @@ export default function TeamTab() {
   const [expandedBiz, setExpandedBiz] = useState(null)
 
   // 9 ЛИНИЙ
-  const [lines, setLines] = useState({}) // {0: {addresses:[], details:[], loaded:false}, 1: {...}, ...}
+  const [lines, setLines] = useState({})
   const [expandedLine, setExpandedLine] = useState(null)
   const [expandedPartner, setExpandedPartner] = useState(null)
   const [loadingLine, setLoadingLine] = useState(null)
@@ -43,7 +43,6 @@ export default function TeamTab() {
     if (!wallet) return
     Team.getUserFullStats(wallet).then(setGwFullStats).catch(()=>{})
     Team.getUserGWBalances(wallet).then(setGwBalances).catch(()=>{})
-    // Загружаем 1 линию сразу
     loadLine1()
   }, [wallet])
 
@@ -57,12 +56,10 @@ export default function TeamTab() {
     setLoadingLine(null)
   }
 
-  // Загрузка линии N (по клику)
   const loadLine = useCallback(async (lineNum) => {
-    if (lines[lineNum]?.loaded) return // уже загружена
+    if (lines[lineNum]?.loaded) return
     const prevLine = lines[lineNum - 1]
-    if (!prevLine?.addresses?.length) return // предыдущая линия пуста
-
+    if (!prevLine?.addresses?.length) return
     setLoadingLine(lineNum)
     const addresses = await Team.getNextLineAddresses(prevLine.addresses)
     const details = await Team.loadLineDetails(addresses)
@@ -70,7 +67,6 @@ export default function TeamTab() {
     setLoadingLine(null)
   }, [lines])
 
-  // Раскрыть линию — загрузить если не загружена
   const toggleLine = async (lineNum) => {
     if (expandedLine === lineNum) { setExpandedLine(null); return }
     if (!lines[lineNum]?.loaded) await loadLine(lineNum)
@@ -108,7 +104,6 @@ export default function TeamTab() {
   const now=new Date();const eow=new Date(now);eow.setDate(eow.getDate()+(7-eow.getDay()));eow.setHours(23,59,59)
   const daysLeft=Math.ceil((eow-now)/(1000*60*60*24))
 
-  // Подсчёт общего количества по всем линиям
   const allLinesTotal = Object.values(lines).reduce((s, l) => s + (l.addresses?.length || 0), 0)
 
   return (
@@ -159,7 +154,6 @@ export default function TeamTab() {
                   const count = line?.addresses?.length || 0
                   const isOpen = expandedLine === lineNum
                   const isLoading = loadingLine === lineNum
-                  // Линия доступна если предыдущая загружена и не пуста (или это линия 0)
                   const prevLine = lineNum === 0 ? { addresses: [wallet], loaded: true } : lines[lineNum - 1]
                   const canLoad = lineNum === 0 || (prevLine?.loaded && prevLine?.addresses?.length > 0)
                   const isEmpty = line?.loaded && count === 0
@@ -182,7 +176,6 @@ export default function TeamTab() {
                         </span>
                       </button>
 
-                      {/* Раскрытая линия — список партнёров */}
                       {isOpen && line?.loaded && (
                         <div className="ml-2 mt-1 mb-2 space-y-0.5">
                           {count === 0 && <div className="py-2 text-[10px] text-slate-500 text-center">Пусто</div>}
@@ -211,8 +204,8 @@ export default function TeamTab() {
                                       <div><span className="text-slate-500">Ранг: </span><span style={{color:Team.RANK_COLORS[p.matrixRank]}}>{Team.RANK_NAMES[p.matrixRank]}</span></div>
                                       <div><span className="text-slate-500">Партнёры: </span><span className="text-white">{p.personalInvites}</span></div>
                                       <div><span className="text-slate-500">Quarterly: </span><span className={p.quarterlyActive?'text-emerald-400':'text-red-400'}>{p.quarterlyActive?'Да':'Нет'}</span></div>
-                                      <div><span className="text-slate-500">Партнёрка: </span><span className="text-emerald-400">${parseFloat(p.partnerEarnings).toFixed(2)}</span></div>
-                                      <div><span className="text-slate-500">Матричные: </span><span className="text-blue-400">${parseFloat(p.matrixEarnings).toFixed(2)}</span></div>
+                                      <div><span className="text-slate-500">Партнёрка: </span><span className="text-emerald-400">{parseFloat(p.partnerEarnings).toFixed(4)} BNB</span></div>
+                                      <div><span className="text-slate-500">Матричные: </span><span className="text-blue-400">{parseFloat(p.matrixEarnings).toFixed(4)} BNB</span></div>
                                     </div>
                                     <div className="mt-1 text-[8px] text-slate-600 font-mono break-all">{p.address}</div>
                                   </div>
@@ -229,17 +222,17 @@ export default function TeamTab() {
             )}
           </div>
 
-          {/* GW баланс */}
+          {/* GW баланс — BNB */}
           {gwBalances && (
             <div className="p-3 rounded-2xl glass">
-              <div className="text-[11px] font-bold text-gold-400 mb-2">💰 Баланс GlobalWay</div>
+              <div className="text-[11px] font-bold text-gold-400 mb-2">💰 Баланс GlobalWay (BNB)</div>
               <div className="grid grid-cols-2 gap-2 text-[10px]">
-                <div className="p-2 rounded-lg bg-white/5 text-center"><div className="font-black text-emerald-400">${parseFloat(gwBalances.partnerFromSponsor).toFixed(2)}</div><div className="text-[8px] text-slate-500">От спонсора</div></div>
-                <div className="p-2 rounded-lg bg-white/5 text-center"><div className="font-black text-emerald-400">${parseFloat(gwBalances.partnerFromUpline).toFixed(2)}</div><div className="text-[8px] text-slate-500">От аплайн</div></div>
-                <div className="p-2 rounded-lg bg-white/5 text-center"><div className="font-black text-blue-400">${parseFloat(gwBalances.matrixEarnings).toFixed(2)}</div><div className="text-[8px] text-slate-500">Матричные</div></div>
-                <div className="p-2 rounded-lg bg-white/5 text-center"><div className="font-black text-purple-400">${parseFloat(gwBalances.pensionBalance).toFixed(2)}</div><div className="text-[8px] text-slate-500">Пенсия</div></div>
+                <div className="p-2 rounded-lg bg-white/5 text-center"><div className="font-black text-emerald-400">{parseFloat(gwBalances.partnerFromSponsor).toFixed(4)}</div><div className="text-[8px] text-slate-500">От спонсора</div></div>
+                <div className="p-2 rounded-lg bg-white/5 text-center"><div className="font-black text-emerald-400">{parseFloat(gwBalances.partnerFromUpline).toFixed(4)}</div><div className="text-[8px] text-slate-500">От аплайн</div></div>
+                <div className="p-2 rounded-lg bg-white/5 text-center"><div className="font-black text-blue-400">{parseFloat(gwBalances.matrixEarnings).toFixed(4)}</div><div className="text-[8px] text-slate-500">Матричные</div></div>
+                <div className="p-2 rounded-lg bg-white/5 text-center"><div className="font-black text-purple-400">{parseFloat(gwBalances.pensionBalance).toFixed(4)}</div><div className="text-[8px] text-slate-500">Пенсия</div></div>
               </div>
-              <div className="mt-2 p-2 rounded-lg text-center" style={{background:'rgba(255,215,0,0.06)'}}><span className="text-[13px] font-black text-gold-400">${parseFloat(gwBalances.totalBalance).toFixed(2)}</span><span className="text-[9px] text-slate-500 ml-2">Итого</span></div>
+              <div className="mt-2 p-2 rounded-lg text-center" style={{background:'rgba(255,215,0,0.06)'}}><span className="text-[13px] font-black text-gold-400">{parseFloat(gwBalances.totalBalance).toFixed(4)} BNB</span><span className="text-[9px] text-slate-500 ml-2">Итого</span></div>
             </div>
           )}
         </div>
@@ -249,7 +242,7 @@ export default function TeamTab() {
       {section === 'business' && (
         <div className="px-3 mt-2 space-y-3">
           <div className="text-center text-[11px] text-slate-400 mb-1">Общая очередь • Одни усилия — множество реинвестов и доход</div>
-          {BUSINESSES.map((biz,idx)=>{const isOpen=expandedBiz===idx;const earned=bizEarned[idx]||0;const slots=tables[idx]?.slots||0;const reinvests=tables[idx]?.reinvests||0;return(<div key={biz.id} className="rounded-2xl overflow-hidden" style={{border:`1px solid ${biz.color}30`}}><button onClick={()=>setExpandedBiz(isOpen?null:idx)} className="w-full p-4 text-left flex items-center gap-3" style={{background:`${biz.color}10`}}><span className="text-3xl">{biz.emoji}</span><div className="flex-1"><div className="text-[14px] font-black text-white">{biz.name}</div><div className="text-[12px] font-bold" style={{color:biz.color}}>${biz.price} за долю</div></div><div className="text-right">{earned>0&&<div className="text-[13px] font-black text-emerald-400">${earned.toFixed(2)}</div>}{slots>0&&<div className="text-[9px] text-slate-500">{slots} долей • {reinvests} реинв.</div>}</div><span className="text-slate-500 text-[11px]">{isOpen?'▲':'▼'}</span></button>{isOpen&&(<div className="px-4 pb-4"><div className="grid grid-cols-3 gap-2 my-3"><div className="p-2 rounded-xl text-center" style={{background:`${biz.color}20`}}><div className="text-[16px] font-black" style={{color:biz.color}}>${biz.price}</div><div className="text-[8px] text-slate-400">за долю</div></div><div className="p-2 rounded-xl text-center" style={{background:`${biz.color}15`}}><div className="text-[14px] font-black" style={{color:biz.color}}>${biz.totalIncome.toLocaleString()}</div><div className="text-[8px] text-slate-400">чистый доход</div></div><div className="p-2 rounded-xl text-center" style={{background:`${biz.color}10`}}><div className="text-[14px] font-black" style={{color:biz.color}}>${biz.totalWithPartner.toLocaleString()}</div><div className="text-[8px] text-slate-400">общий доход</div></div></div><div className="space-y-0">{biz.steps.map((step,si)=>(<div key={si} className="flex gap-2 py-2" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}><div className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0" style={{background:si%2===0?`${biz.color}20`:'rgba(255,255,255,0.03)',color:si%2===0?biz.color:'#94a3b8'}}>{si+1}</div><div className="text-[11px] text-slate-300 leading-relaxed">{step}</div></div>))}</div><div className="mt-3 p-2.5 rounded-xl text-center text-[10px] font-bold" style={{background:'rgba(255,215,0,0.06)',color:'#ffd700',border:'1px solid rgba(255,215,0,0.15)'}}>{biz.footer}</div>{slots>0&&<div className="mt-2 p-2 rounded-xl bg-white/3 flex justify-between text-[10px]"><span className="text-slate-500">Долей: <b className="text-white">{slots}</b></span><span className="text-slate-500">Реинв.: <b className="text-white">{reinvests}</b></span><span className="text-emerald-400 font-bold">${earned.toFixed(2)}</span></div>}</div>)}</div>)})}
+          {BUSINESSES.map((biz,idx)=>{const isOpen=expandedBiz===idx;const earned=bizEarned[idx]||0;const slots=tables[idx]?.slots||0;const reinvests=tables[idx]?.reinvests||0;return(<div key={biz.id} className="rounded-2xl overflow-hidden" style={{border:`1px solid ${biz.color}30`}}><button onClick={()=>setExpandedBiz(isOpen?null:idx)} className="w-full p-4 text-left flex items-center gap-3" style={{background:`${biz.color}10`}}><span className="text-3xl">{biz.emoji}</span><div className="flex-1"><div className="text-[14px] font-black text-white">{biz.name}</div><div className="text-[12px] font-bold" style={{color:biz.color}}>{'$'}{biz.price} за долю</div></div><div className="text-right">{earned>0&&<div className="text-[13px] font-black text-emerald-400">{'$'}{earned.toFixed(2)}</div>}{slots>0&&<div className="text-[9px] text-slate-500">{slots} долей • {reinvests} реинв.</div>}</div><span className="text-slate-500 text-[11px]">{isOpen?'▲':'▼'}</span></button>{isOpen&&(<div className="px-4 pb-4"><div className="grid grid-cols-3 gap-2 my-3"><div className="p-2 rounded-xl text-center" style={{background:`${biz.color}20`}}><div className="text-[16px] font-black" style={{color:biz.color}}>{'$'}{biz.price}</div><div className="text-[8px] text-slate-400">за долю</div></div><div className="p-2 rounded-xl text-center" style={{background:`${biz.color}15`}}><div className="text-[14px] font-black" style={{color:biz.color}}>{'$'}{biz.totalIncome.toLocaleString()}</div><div className="text-[8px] text-slate-400">чистый доход</div></div><div className="p-2 rounded-xl text-center" style={{background:`${biz.color}10`}}><div className="text-[14px] font-black" style={{color:biz.color}}>{'$'}{biz.totalWithPartner.toLocaleString()}</div><div className="text-[8px] text-slate-400">общий доход</div></div></div><div className="space-y-0">{biz.steps.map((step,si)=>(<div key={si} className="flex gap-2 py-2" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}><div className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0" style={{background:si%2===0?`${biz.color}20`:'rgba(255,255,255,0.03)',color:si%2===0?biz.color:'#94a3b8'}}>{si+1}</div><div className="text-[11px] text-slate-300 leading-relaxed">{step}</div></div>))}</div><div className="mt-3 p-2.5 rounded-xl text-center text-[10px] font-bold" style={{background:'rgba(255,215,0,0.06)',color:'#ffd700',border:'1px solid rgba(255,215,0,0.15)'}}>{biz.footer}</div>{slots>0&&<div className="mt-2 p-2 rounded-xl bg-white/3 flex justify-between text-[10px]"><span className="text-slate-500">Долей: <b className="text-white">{slots}</b></span><span className="text-slate-500">Реинв.: <b className="text-white">{reinvests}</b></span><span className="text-emerald-400 font-bold">{'$'}{earned.toFixed(2)}</span></div>}</div>)}</div>)})}
         </div>
       )}
 
