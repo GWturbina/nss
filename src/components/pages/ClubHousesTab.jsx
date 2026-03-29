@@ -3,15 +3,14 @@ import { useState, useEffect, useCallback } from 'react'
 import useGameStore from '@/lib/store'
 import * as C from '@/lib/contracts'
 import { shortAddress } from '@/lib/web3'
-import { ethers } from 'ethers'
 import HouseProgress from '@/components/game/HouseProgress'
 
 export default function ClubHousesTab() {
-  const { wallet, totalSqm, level, registered, addNotification, setTxPending, txPending } = useGameStore()
+  const { wallet, totalSqm, level, registered, addNotification, setTxPending, txPending, tables, pendingWithdrawal } = useGameStore()
 
-  // Бизнес-заработок
-  const [bizEarnings, setBizEarnings] = useState([0, 0, 0])
-  const [pending, setPending] = useState(0)
+  // Заработок из store (те же данные что на вкладке "Бизнес")
+  const bizEarnings = [0, 1, 2].map(i => parseFloat((tables || [])[i]?.earned || 0))
+  const pending = parseFloat(pendingWithdrawal || 0)
   const [threshold, setThreshold] = useState(45)
   const [housePrice, setHousePrice] = useState(120000)
 
@@ -40,20 +39,6 @@ export default function ClubHousesTab() {
 
   useEffect(() => {
     if (!wallet) return
-
-    C.getUserAllTables(wallet).then(tables => {
-      if (tables) {
-        setBizEarnings(tables.map(t => {
-          if (!t) return 0
-          try { return parseFloat(ethers.formatEther(t.totalEarned || 0)) } catch { return 0 }
-        }))
-      }
-    }).catch(() => {})
-
-    C.getWithdrawableAmount(wallet).then(amt => {
-      if (amt) setPending(parseFloat(ethers.formatEther(amt)))
-    }).catch(() => {})
-
     loadApplication()
     setThreshold(45)
   }, [wallet])
@@ -79,7 +64,7 @@ export default function ClubHousesTab() {
       const supabase = (await import('@/lib/supabase')).default
       if (!supabase || !wallet) return
       const { data } = await supabase.from('house_applications').select('*')
-        .eq('wallet', wallet.toLowerCase()).order('created_at', { ascending: false }).limit(1).single()
+        .eq('wallet', wallet.toLowerCase()).order('created_at', { ascending: false }).limit(1).maybeSingle()
       if (data) { setApplication(data); setHousePrice(parseFloat(data.house_price) || 120000) }
     } catch {}
   }
