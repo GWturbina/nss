@@ -8,17 +8,26 @@ import { ethers } from 'ethers'
 // ═══ Секция "Мой дом" — заработок ТОЛЬКО из 3 бизнесов (USDT) ═══
 function MyHomeSection({ wallet, totalSqm }) {
   const bnbPrice = useGameStore(s => s.bnbPrice)
+  const { addNotification } = useGameStore()
   const [bizEarnings, setBizEarnings] = useState([0, 0, 0])
   const [threshold, setThreshold] = useState(45)
   const [housePrice, setHousePrice] = useState(120000)
   const [loading, setLoading] = useState(false)
   const [pending, setPending] = useState(0)
 
+  // Заявка на дом
+  const [application, setApplication] = useState(null) // {house_price, city, country, status, created_at}
+  const [showApplyForm, setShowApplyForm] = useState(false)
+  const [applyCity, setApplyCity] = useState('')
+  const [applyCountry, setApplyCountry] = useState('')
+  const [applyPrice, setApplyPrice] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
   useEffect(() => {
     if (!wallet) return
     setLoading(true)
 
-    // USDT заработок из RealEstateMatrix (3 бизнеса) — ЕДИНСТВЕННЫЙ источник
+    // USDT заработок из RealEstateMatrix (3 бизнеса)
     C.getUserAllTables(wallet).then(tables => {
       if (tables) {
         const earned = tables.map(t => {
@@ -34,9 +43,60 @@ function MyHomeSection({ wallet, totalSqm }) {
       if (amt) setPending(parseFloat(ethers.formatEther(amt)))
     }).catch(() => {})
 
+    // Загрузить заявку из Supabase
+    loadApplication()
+
     setThreshold(45)
     setLoading(false)
   }, [wallet])
+
+  const loadApplication = async () => {
+    try {
+      const supabase = (await import('@/lib/supabase')).default
+      if (!supabase || !wallet) return
+      const { data } = await supabase
+        .from('house_applications')
+        .select('*')
+        .eq('wallet', wallet.toLowerCase())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+      if (data) {
+        setApplication(data)
+        setHousePrice(parseFloat(data.house_price) || 120000)
+      }
+    } catch {}
+  }
+
+  const handleApply = async () => {
+    if (!applyPrice || parseFloat(applyPrice) <= 0) {
+      addNotification('❌ Укажите стоимость дома')
+      return
+    }
+    setSubmitting(true)
+    try {
+      const supabase = (await import('@/lib/supabase')).default
+      if (!supabase) { addNotification('❌ Supabase не подключён'); setSubmitting(false); return }
+      const { data, error } = await supabase
+        .from('house_applications')
+        .insert({
+          wallet: wallet.toLowerCase(),
+          house_price: parseFloat(applyPrice),
+          city: applyCity || null,
+          country: applyCountry || null,
+          threshold: threshold,
+          status: 'pending',
+        })
+        .select()
+        .single()
+      if (error) { addNotification(`❌ ${error.message}`); setSubmitting(false); return }
+      setApplication(data)
+      setHousePrice(parseFloat(applyPrice))
+      setShowApplyForm(false)
+      addNotification('✅ Заявка на дом подана!')
+    } catch (e) { addNotification(`❌ ${e.message}`) }
+    setSubmitting(false)
+  }
 
   const bizTotal = bizEarnings.reduce((s, v) => s + v, 0)
   const depositNeeded = housePrice * (threshold / 100)
@@ -93,6 +153,66 @@ function MyHomeSection({ wallet, totalSqm }) {
           <div className="text-[9px] text-slate-500 mt-0.5">через 3 бизнеса (${bizTotal.toFixed(2)} уже заработано)</div>
         </div>
       </div>
+
+      {/* ═══ ЗАЯВКА НА ДОМ ═══ */}
+      {application ? (
+        <div className="p-3 rounded-2xl glass" style={{ border: '1px solid rgba(16,185,129,0.2)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[12px] font-bold text-emerald-400">✅ Заявка подана</div>
+            <div className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{
+              background: application.status === 'approved' ? 'rgba(16,185,129,0.15)' : application.status === 'building' ? 'rgba(59,130,246,0.15)' : 'rgba(255,215,0,0.1)',
+              color: application.status === 'approved' ? '#10b981' : application.status === 'building' ? '#3b82f6' : '#ffd700',
+            }}>
+              {application.status === 'approved' ? '✅ Одобрена' : application.status === 'building' ? '🏗 Строится' : '⏳ На рассмотрении'}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <div><span className="text-slate-500">Стоимость:</span> <span className="text-white font-bold">${parseFloat(application.house_price).toLocaleString()}</span></div>
+            <div><span className="text-slate-500">Порог:</span> <span className="text-orange-400 font-bold">{application.threshold || 45}%</span></div>
+            {application.city && <div><span className="text-slate-500">Город:</span> <span className="text-white">{application.city}</span></div>}
+            {application.country && <div><span className="text-slate-500">Страна:</span> <span className="text-white">{application.country}</span></div>}
+          </div>
+          <div className="text-[8px] text-slate-600 mt-2">Подана: {new Date(application.created_at).toLocaleDateString()}</div>
+        </div>
+      ) : (
+        <div className="p-3 rounded-2xl glass">
+          {!showApplyForm ? (
+            <button onClick={() => { setShowApplyForm(true); setApplyPrice(String(housePrice)) }}
+              className="w-full py-3 rounded-xl text-[12px] font-bold gold-btn">
+              📝 Подать заявку на дом
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <div className="text-[12px] font-bold text-gold-400 mb-1">📝 Заявка на строительство дома</div>
+              <div>
+                <label className="text-[9px] text-slate-500 block mb-0.5">Стоимость дома ($) *</label>
+                <input type="number" value={applyPrice} onChange={e => setApplyPrice(e.target.value)} placeholder="120000"
+                  className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none" />
+                {applyPrice && <div className="text-[8px] text-slate-500 mt-0.5">{threshold}% депозит: ${(parseFloat(applyPrice) * threshold / 100).toLocaleString()} • Займ {100-threshold}%: ${(parseFloat(applyPrice) * (100-threshold) / 100).toLocaleString()}</div>}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[9px] text-slate-500 block mb-0.5">Город</label>
+                  <input value={applyCity} onChange={e => setApplyCity(e.target.value)} placeholder="Свалява"
+                    className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none" />
+                </div>
+                <div>
+                  <label className="text-[9px] text-slate-500 block mb-0.5">Страна</label>
+                  <input value={applyCountry} onChange={e => setApplyCountry(e.target.value)} placeholder="Украина"
+                    className="w-full p-2 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white outline-none" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setShowApplyForm(false)} className="flex-1 py-2 rounded-xl text-[10px] font-bold text-slate-500 border border-white/10">Отмена</button>
+                <button onClick={handleApply} disabled={submitting || !applyPrice}
+                  className="flex-1 py-2 rounded-xl text-[10px] font-bold gold-btn" style={{ opacity: (!applyPrice || submitting) ? 0.5 : 1 }}>
+                  {submitting ? '⏳...' : '✅ Подать заявку'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 3 бизнеса — детали */}
       <div className="p-3 rounded-2xl glass">
