@@ -95,7 +95,10 @@ export default function ClubHousesTab() {
       const result = await C.safeCall(() => C.buySlot(table.id))
       if (result.ok) {
         addNotification(`✅ Куплено ${table.sqm} м² в "${house.name}"!`)
-        try { const CH = await import('@/lib/clubHouses'); await CH.recordPurchase({ house_id: house.id, wallet, sqm_purchased: table.sqm, amount_paid: table.price, tx_hash: result.tx?.hash || '', payment_type: 'usdt' }) } catch {}
+        // 50% от покупки идёт на клубный дом
+        const houseAmount = table.price * 0.5
+        const houseSqm = table.sqm * 0.5
+        try { const CH = await import('@/lib/clubHouses'); await CH.recordPurchase({ house_id: house.id, wallet, sqm_purchased: houseSqm, amount_paid: houseAmount, tx_hash: result.tx?.hash || '', payment_type: 'usdt' }) } catch {}
         loadHouses()
       } else { addNotification(`❌ ${result.error || 'Ошибка'}`) }
     } catch (err) { addNotification(`❌ ${err?.message?.slice(0, 80) || 'Ошибка'}`) }
@@ -313,11 +316,13 @@ export default function ClubHousesTab() {
 
                   <div className="mb-3">
                     <div className="flex justify-between text-[10px] mb-1">
-                      <span className="text-slate-500">Собрано ({house.buyers || 0} чел.)</span>
-                      <span className="text-emerald-400 font-bold">{(house.purchased_sqm || 0).toFixed(2)} / {sqm} м²</span>
+                      <span className="text-slate-500">На строительство ({house.buyers || 0} чел.)</span>
+                      <span className="text-emerald-400 font-bold">${(house.purchased_sqm * 1000 || 0).toFixed(0)} / ${price.toLocaleString()}</span>
                     </div>
                     <div className="h-2 rounded-full bg-white/5 overflow-hidden">
-                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-blue-500" style={{ width: `${Math.min(((house.purchased_sqm || 0) / (sqm || 1)) * 100, 100)}%` }} />
+                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-blue-500" style={{ width: `${Math.min(((house.purchased_sqm * 1000 || 0) / (price || 1)) * 100, 100)}%` }} />
+                    </div>
+                    <div className="text-[8px] text-slate-600 mt-0.5">50% от каждой покупки идёт на строительство дома</div>
                     </div>
                   </div>
 
@@ -332,7 +337,7 @@ export default function ClubHousesTab() {
                           style={{ background: `${table.color}12`, border: `1px solid ${table.color}30`, opacity: canBuy ? 1 : 0.5 }}>
                           <div>
                             <div className="text-[13px] font-black text-white">{isBuying ? '⏳...' : `Купить за $${table.price}`}</div>
-                            <div className="text-[10px] text-slate-400">→ {table.sqm} м²</div>
+                            <div className="text-[10px] text-slate-400">→ {table.sqm} м² (50% = ${table.price/2} на дом)</div>
                           </div>
                           <div className="text-[11px] font-bold" style={{ color: table.color }}>{table.sqm} м²</div>
                         </button>
