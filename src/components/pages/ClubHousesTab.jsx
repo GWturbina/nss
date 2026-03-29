@@ -49,10 +49,18 @@ export default function ClubHousesTab() {
     setLoadingHouses(true)
     try {
       const CH = await import('@/lib/clubHouses')
+      const supabase = (await import('@/lib/supabase')).default
       const data = await CH.getClubHouses()
       const withPurchases = await Promise.all((data || []).map(async h => {
         const detail = await CH.getClubHouseWithPurchases(h.id).catch(() => null)
-        return { ...h, purchased_sqm: detail?.purchased_sqm || 0, buyers: detail?.purchases?.length || 0 }
+        // Мои покупки в этом доме
+        let myTotal = 0, myCount = 0
+        if (supabase && wallet) {
+          const { data: myP } = await supabase.from('club_house_purchases').select('sqm_purchased')
+            .eq('house_id', h.id).eq('wallet', wallet.toLowerCase())
+          if (myP) { myTotal = myP.reduce((s, p) => s + parseFloat(p.sqm_purchased || 0), 0); myCount = myP.length }
+        }
+        return { ...h, purchased_sqm: detail?.purchased_sqm || 0, buyers: detail?.purchases?.length || 0, myTotal, myCount }
       }))
       setHouses(withPurchases)
     } catch { setHouses([]) }
@@ -96,9 +104,14 @@ export default function ClubHousesTab() {
       if (result.ok) {
         addNotification(`✅ Куплено ${table.sqm} м² в "${house.name}"!`)
         // 50% от покупки идёт на клубный дом
-        const houseAmount = table.price * 0.5
         const houseSqm = table.sqm * 0.5
-        try { const CH = await import('@/lib/clubHouses'); await CH.recordPurchase({ house_id: house.id, wallet, sqm_purchased: houseSqm, amount_paid: houseAmount, tx_hash: result.tx?.hash || '', payment_type: 'usdt' }) } catch {}
+        try {
+          const supabase = (await import('@/lib/supabase')).default
+          if (supabase) await supabase.from('club_house_purchases').insert({
+            house_id: house.id, wallet: wallet.toLowerCase(), sqm_purchased: houseSqm,
+            tx_hash: result.tx?.hash || 'buy-' + Date.now(), slot_table: table.id
+          })
+        } catch {}
         loadHouses()
       } else { addNotification(`❌ ${result.error || 'Ошибка'}`) }
     } catch (err) { addNotification(`❌ ${err?.message?.slice(0, 80) || 'Ошибка'}`) }
@@ -324,6 +337,24 @@ export default function ClubHousesTab() {
                     </div>
                     <div className="text-[8px] text-slate-600 mt-0.5">50% от каждой покупки идёт на строительство дома</div>
                   </div>
+
+                  {/* Моя доля */}
+                  {wallet && house.myTotal > 0 && (
+                    <div className="mb-3 p-2.5 rounded-xl" style={{ background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.15)' }}>
+                      <div className="flex justify-between items-center">
+                        <div className="text-[10px] text-slate-400">🏷 Моя доля в этом доме:</div>
+                        <div className="text-[13px] font-black text-gold-400">{house.myTotal.toFixed(2)} м²</div>
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <div className="text-[9px] text-slate-500">Вложено ({house.myCount} покупок)</div>
+                        <div className="text-[11px] font-bold text-emerald-400">{'$'}{(house.myTotal * 1000).toFixed(0)}</div>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-white/5 mt-1.5 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-gold-400 to-amber-500" style={{ width: `${Math.min((house.myTotal / (sqm || 1)) * 100, 100)}%` }} />
+                      </div>
+                      <div className="text-[8px] text-slate-600 mt-0.5 text-right">{((house.myTotal / (sqm || 1)) * 100).toFixed(2)}% от дома</div>
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     {TABLES.map(table => {
