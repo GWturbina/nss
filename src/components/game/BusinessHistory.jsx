@@ -51,7 +51,7 @@ export default function BusinessHistory() {
       const abi = RealEstateMatrixABI.abi || RealEstateMatrixABI
       const contract = new ethers.Contract(ADDRESSES.RealEstateMatrix, abi, readProvider)
       const currentBlock = await readProvider.getBlockNumber()
-      const fromBlock = Math.max(0, currentBlock - 500000) // ~last 2 weeks on opBNB
+      const fromBlock = Math.max(0, currentBlock - 5000000) // ~2 months on opBNB
 
       // Read events in parallel
       const [purchases, spillovers, sponsors, reinvests, withdrawals] = await Promise.all([
