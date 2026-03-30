@@ -4,6 +4,7 @@ import useGameStore from '@/lib/store'
 import { useBlockchain } from '@/lib/useBlockchain'
 import { shortAddress } from '@/lib/web3'
 import { languages } from '@/locales'
+import HelpButton from '@/components/ui/HelpButton'
 
 export default function Header() {
   const {
@@ -78,6 +79,10 @@ export default function Header() {
           style={{ border: '1px solid var(--border)', background: 'var(--bg-card-light)' }}>
           {dayMode ? '☀️' : '🌙'}
         </button>
+
+        {/* ═══ HELP BUTTON — инструкция по текущей вкладке ═══ */}
+        <HelpButton activeTab={activeTab} />
+
         <button onClick={() => { setShowNotif(!showNotif); setShowWallet(false); setShowLang(false); if (!showNotif) markAllRead() }}
           className="w-8 h-8 rounded-lg flex items-center justify-center text-sm relative"
           style={{ border: '1px solid var(--border)', background: 'var(--bg-card-light)' }}>
