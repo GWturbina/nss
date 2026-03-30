@@ -36,6 +36,7 @@ function InviteContent() {
   const [copied, setCopied] = useState(false)
   const [tempId, setTempId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [contactError, setContactError] = useState('')
 
   const BOT_USERNAME = 'MeterKvadratnyBot'
 
@@ -90,6 +91,40 @@ function InviteContent() {
   }, [registered])
 
   // ═══ КНОПКА «ПРИСОЕДИНИТЬСЯ» → модалка захвата ═══
+  // ═══ ВАЛИДАЦИЯ КОНТАКТА ═══
+  const PLACEHOLDERS = {
+    telegram: '@username (латиница, мин. 5 символов)',
+    whatsapp: '+380501234567 (международный формат)',
+    viber: '+380501234567 (международный формат)',
+    phone: '+380501234567 (международный формат)',
+    email: 'name@example.com',
+  }
+
+  const validateContact = (messenger, contact) => {
+    if (!contact || contact.trim().length < 2) return { valid: false, error: 'Контакт слишком короткий', normalized: contact }
+    switch (messenger) {
+      case 'phone': case 'whatsapp': case 'viber': {
+        const clean = contact.replace(/[\s\-\(\)]/g, '')
+        if (!clean.startsWith('+')) return { valid: false, error: 'Номер должен начинаться с + (например +380501234567)', normalized: contact }
+        const digits = clean.replace(/\D/g, '')
+        if (digits.length < 10 || digits.length > 15) return { valid: false, error: 'Неверный формат номера (10-15 цифр)', normalized: contact }
+        return { valid: true, error: '', normalized: '+' + digits }
+      }
+      case 'email': {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) return { valid: false, error: 'Неверный формат email', normalized: contact }
+        return { valid: true, error: '', normalized: contact.toLowerCase() }
+      }
+      case 'telegram': {
+        let tg = contact.startsWith('@') ? contact : '@' + contact
+        if (tg.length < 6) return { valid: false, error: 'Username минимум 5 символов после @', normalized: contact }
+        if (!/^@[a-zA-Z0-9_]+$/.test(tg)) return { valid: false, error: 'Username: только буквы, цифры и _', normalized: contact }
+        return { valid: true, error: '', normalized: tg.toLowerCase() }
+      }
+      default:
+        return { valid: true, error: '', normalized: contact.trim() }
+    }
+  }
+
   const handleJoin = () => {
     if (ref && ref !== '0') localStorage.setItem('nss_ref', ref)
     setShowExitPopup(false)
@@ -99,15 +134,23 @@ function InviteContent() {
 
   // ═══ ОТПРАВКА КОНТАКТА → CardGift API ═══
   const submitCapture = async () => {
-    const name = document.getElementById('capName')?.value?.trim() || 'Гость'
+    const name = document.getElementById('capName')?.value?.trim() || ''
     const messenger = document.getElementById('capMessenger')?.value || 'telegram'
-    const contact = document.getElementById('capContact')?.value?.trim()
+    const rawContact = document.getElementById('capContact')?.value?.trim()
     const pushConsent = document.getElementById('capPush')?.checked || false
 
-    if (!contact) {
+    // Валидация
+    const v = validateContact(messenger, rawContact)
+    if (!v.valid) {
+      setContactError(v.error)
       document.getElementById('capContact').style.borderColor = '#ff4444'
       return
     }
+    setContactError('')
+    document.getElementById('capContact').style.borderColor = '#444'
+
+    const contact = v.normalized
+    const displayName = name || 'Гость'
 
     setSubmitting(true)
     try {
@@ -116,7 +159,7 @@ function InviteContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           referrerId: ref,
-          name,
+          name: displayName,
           messenger,
           contact,
           pushConsent,
@@ -277,6 +320,12 @@ function InviteContent() {
                 style={{ background: '#2a2a4a', border: '1px solid #444' }} />
 
               <select id="capMessenger"
+                onChange={() => {
+                  const m = document.getElementById('capMessenger')?.value || 'telegram'
+                  const inp = document.getElementById('capContact')
+                  if (inp) { inp.placeholder = PLACEHOLDERS[m] || '@username или +номер'; inp.style.borderColor = '#444' }
+                  setContactError('')
+                }}
                 className="w-full py-3 px-4 rounded-xl mb-3 text-[14px] text-white outline-none"
                 style={{ background: '#2a2a4a', border: '1px solid #444' }}>
                 <option value="telegram">📱 Telegram</option>
@@ -286,9 +335,16 @@ function InviteContent() {
                 <option value="email">📧 Email</option>
               </select>
 
-              <input type="text" id="capContact" placeholder="@username или +номер"
-                className="w-full py-3 px-4 rounded-xl mb-3 text-[14px] text-white outline-none"
+              <input type="text" id="capContact" placeholder="@username (латиница, мин. 5 символов)"
+                onFocus={() => { document.getElementById('capContact').style.borderColor = '#f59e0b'; setContactError('') }}
+                className="w-full py-3 px-4 rounded-xl text-[14px] text-white outline-none"
                 style={{ background: '#2a2a4a', border: '1px solid #444' }} />
+              {contactError && (
+                <div className="text-[11px] text-red-400 mt-1 mb-2 px-1">⚠️ {contactError}</div>
+              )}
+              {!contactError && (
+                <div className="h-2 mb-1"></div>
+              )}
 
               <label className="flex items-start gap-2.5 p-3 rounded-xl mb-4 cursor-pointer" style={{ background: 'rgba(245,166,35,0.08)', border: '1px solid rgba(245,166,35,0.15)' }}>
                 <input type="checkbox" id="capPush" defaultChecked className="mt-0.5 w-4 h-4 flex-shrink-0" />
