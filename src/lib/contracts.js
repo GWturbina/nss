@@ -503,11 +503,20 @@ export async function getCharityBalance(address) {
 // ═══════════════════════════════════════════════════
 
 /**
- * Текущая цена 1 BNB в USDT (из SwapHelper → PancakeSwap)
- * Возвращает число, например 620.5
+ * Текущая цена 1 BNB в USDT
+ * Primary: API route (Binance/CoinGecko — точный биржевой курс)
+ * Fallback: SwapHelper (on-chain)
  */
 export async function getBNBPrice() {
-  // Primary: SwapHelper (on-chain, без CORS и утечки IP)
+  // Primary: API route
+  try {
+    const res = await fetch('/api/bnb-price')
+    if (res.ok) {
+      const data = await res.json()
+      if (data.ok && data.price > 10) return data.price
+    }
+  } catch {}
+  // Fallback: SwapHelper (on-chain)
   try {
     const c = getReadContract('SwapHelper')
     if (c) {
