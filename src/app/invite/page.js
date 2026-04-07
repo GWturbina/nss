@@ -18,7 +18,7 @@ const FEATURES = [
 ]
 
 // API для захвата контактов (CardGift)
-const CAPTURE_API = process.env.NEXT_PUBLIC_CARDGIFT_API || 'https://cgm-brown.vercel.app/api/viral-registration'
+const CAPTURE_API = process.env.NEXT_PUBLIC_CARDGIFT_API || 'https://cgift.club/api/viral-registration'
 
 function InviteContent() {
   const searchParams = useSearchParams()
@@ -45,7 +45,7 @@ function InviteContent() {
     if (saved) { setTempId(saved); setRegistered(true) }
   }, [])
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://nss-azure.vercel.app'
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://gwm.ink'
 
   const shareRef = tempId || ref
   const myLink = `${baseUrl}/invite/${t}?ref=${shareRef}`
