@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nss-azure.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gwm.ink'
 
 const templates = {
   house: {
