@@ -16,7 +16,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://opbnb-mainnet-rpc.bnbchain.org https://*.supabase.co wss://*.supabase.co https://api.binance.com https://api.coingecko.com https://cgm-brown.vercel.app",
+              "connect-src 'self' https://opbnb-mainnet-rpc.bnbchain.org https://*.supabase.co wss://*.supabase.co https://api.binance.com https://api.coingecko.com https://cgift.club",
               "frame-ancestors 'self' https://web.telegram.org",
             ].join('; ')
           },
