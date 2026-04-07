@@ -10,7 +10,7 @@
 import { useState } from 'react'
 import useGameStore from '@/lib/store'
 
-const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nss-azure.vercel.app'
+const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gwm.ink'
 
 export default function SafePalPrompt({ compact = false, onClose }) {
   const { t } = useGameStore()
