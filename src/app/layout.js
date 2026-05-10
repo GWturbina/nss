@@ -1,5 +1,6 @@
 import './globals.css'
 import Script from 'next/script'
+import GwadUtmCapture from '@/components/GwadUtmCapture'
 
 export const metadata = {
   title: 'NSS — Natural Stone Seekers',
@@ -26,7 +27,10 @@ export default function RootLayout({ children }) {
         <meta name="theme-color" content="#2b2a1a" />
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <GwadUtmCapture />
+        {children}
+      </body>
     </html>
   )
 }
