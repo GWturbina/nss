@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import useGameStore from '@/lib/store'
 import { useBlockchain } from '@/lib/useBlockchain'
+import { gwadTrackRegistration } from '@/lib/gwadTracking'
 import * as C from '@/lib/contracts'
 import { shortAddress } from '@/lib/web3'
 
@@ -45,6 +46,12 @@ export default function AutoRegisterModal() {
       }
       
       addNotification('✅ Регистрация прошла успешно!')
+
+      // ★ Уведомляем рекламную систему gwad.ink о новой регистрации.
+      // Если пользователь пришёл не по нашей рекламе (нет UTM в localStorage) —
+      // функция тихо вернёт false и ничего не сделает.
+      gwadTrackRegistration(wallet).catch(() => {})
+
       setStep('success')
       setTimeout(() => refreshData(), 500)
       
